@@ -9,6 +9,7 @@ import {
   Dimensions,
 } from "react-native";
 import * as Haptics from "expo-haptics";
+import { DogPawIcon } from "@/assets/DogPawIcon";
 import { REACTION_EMOJI } from "@/utils/breed";
 import { colors, radius, spacing, typography } from "@/theme";
 import type { ReactionEnum } from "@/types";
@@ -32,10 +33,11 @@ export function ReactionBar({ reactions, userReaction, onSelect, onMenuOpenChang
   const likeButtonRef = useRef<View>(null);
 
   const totalCount = Object.values(reactions || {}).reduce((s, c) => s + (c ?? 0), 0);
+  const showPaw = !userReaction || userReaction === "LIKE";
   const displayEmoji = userReaction ? REACTION_EMOJI[userReaction] : "👍";
 
   const handleTap = () => {
-    if (userReaction === "LIKE") {
+    if (userReaction) {
       onSelect(null);
     } else {
       onSelect("LIKE");
@@ -73,21 +75,31 @@ export function ReactionBar({ reactions, userReaction, onSelect, onMenuOpenChang
             pressed && styles.pressed,
           ]}
         >
-          <Text style={styles.emoji}>{displayEmoji}</Text>
+          {showPaw ? (
+            <View style={styles.iconWrap} pointerEvents="none">
+              <DogPawIcon
+                size={18}
+                color={userReaction ? colors.primary : colors.textSecondary}
+              />
+            </View>
+          ) : (
+            <Text style={styles.emoji} pointerEvents="none">{displayEmoji}</Text>
+          )}
           <Text
+            pointerEvents="none"
             style={[
               styles.label,
               userReaction ? styles.labelActive : styles.labelInactive,
             ]}
           >
             {userReaction === "LIKE"
-              ? "Like"
+              ? "Paw"
               : userReaction
                 ? REACTION_LABELS[userReaction]
-                : "Like"}
+                : "Paw"}
           </Text>
           {totalCount > 0 && (
-            <Text style={[styles.count, userReaction && styles.countActive]}> {totalCount}</Text>
+            <Text pointerEvents="none" style={[styles.count, userReaction && styles.countActive]}> {totalCount}</Text>
           )}
         </Pressable>
       </View>
@@ -127,7 +139,14 @@ export function ReactionBar({ reactions, userReaction, onSelect, onMenuOpenChang
                   ]}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.stripEmojiText}>{REACTION_EMOJI[type]}</Text>
+                  {type === "LIKE" ? (
+                    <DogPawIcon
+                      size={28}
+                      color={userReaction === type ? colors.primary : colors.textSecondary}
+                    />
+                  ) : (
+                    <Text style={styles.stripEmojiText}>{REACTION_EMOJI[type]}</Text>
+                  )}
                 </TouchableOpacity>
               ))}
             </View>
@@ -139,7 +158,7 @@ export function ReactionBar({ reactions, userReaction, onSelect, onMenuOpenChang
 }
 
 const REACTION_LABELS: Record<ReactionEnum, string> = {
-  LIKE: "Like",
+  LIKE: "Paw",
   LOVE: "Love",
   HAHA: "Haha",
   WOW: "Wow",
@@ -170,6 +189,7 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.7,
   },
+  iconWrap: { marginRight: spacing.xs },
   emoji: {
     fontSize: 18,
     marginRight: spacing.xs,

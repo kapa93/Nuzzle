@@ -28,19 +28,18 @@ import { colors, radius, spacing, typography } from "@/theme";
 import type { PostWithDetails, ReactionEnum } from "@/types";
 import type { FeedFilter } from "@/store/uiStore";
 
-const TABS = ["Newest", "Trending", "Tips", "Questions", "Update/Story"] as const;
+const TABS = ["All", "Tips", "Questions", "Update/Story"] as const;
 type TabKey = (typeof TABS)[number];
 
 const TAB_TO_FILTER: Record<TabKey, FeedFilter> = {
-  Newest: "newest",
-  Trending: "trending",
+  All: "all",
   Tips: "TIP",
   Questions: "QUESTION",
   "Update/Story": "UPDATE_STORY",
 };
 
 const FILTER_TO_TAB = (f: FeedFilter): TabKey =>
-  f === "trending" ? "Trending" : f === "newest" ? "Newest" : f === "TIP" ? "Tips" : f === "QUESTION" ? "Questions" : "Update/Story";
+  f === "all" ? "All" : f === "TIP" ? "Tips" : f === "QUESTION" ? "Questions" : "Update/Story";
 
 export function HomeScreen({
   navigation,
@@ -106,7 +105,7 @@ export function HomeScreen({
     }
   };
 
-  const sort = feedFilter === "trending" ? "trending" : "newest";
+  const sort = "newest";
   const typeFilter = feedFilter === "QUESTION" || feedFilter === "UPDATE_STORY" || feedFilter === "TIP" ? feedFilter : null;
 
   const { data: posts, isLoading, refetch, isRefetching } = useQuery({
@@ -115,12 +114,32 @@ export function HomeScreen({
     enabled: !!user?.id,
   });
 
+  const feedQueryKey = ["feed", breed, feedFilter, user?.id] as const;
   const reactionMutation = useMutation({
     mutationFn: ({ postId, reaction }: { postId: string; reaction: ReactionEnum | null }) =>
       setReaction(postId, user!.id, reaction),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["feed", breed] });
-      queryClient.invalidateQueries({ queryKey: ["post"] });
+    onMutate: async ({ postId, reaction }) => {
+      await queryClient.cancelQueries({ queryKey: feedQueryKey });
+      const prev = queryClient.getQueryData<PostWithDetails[]>(feedQueryKey);
+      queryClient.setQueryData<PostWithDetails[]>(feedQueryKey, (old) => {
+        if (!old) return old;
+        return old.map((p) => {
+          if (p.id !== postId) return p;
+          const prevReaction = p.user_reaction;
+          const counts = { ...(p.reaction_counts ?? {}) } as Partial<Record<ReactionEnum, number>>;
+          if (prevReaction) {
+            counts[prevReaction] = Math.max(0, (counts[prevReaction] ?? 1) - 1);
+          }
+          if (reaction) {
+            counts[reaction] = (counts[reaction] ?? 0) + 1;
+          }
+          return { ...p, user_reaction: reaction, reaction_counts: counts };
+        });
+      });
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(feedQueryKey, ctx.prev);
     },
   });
 

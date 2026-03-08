@@ -35,6 +35,10 @@ import { commentSchema } from "@/utils/validation";
 import { colors, radius, shadow, spacing, typography } from "@/theme";
 import type { ReactionEnum } from "@/types";
 
+function getBarksText(count: number) {
+  return count === 1 ? "1 Bark" : `${count} Barks`;
+}
+
 export function PostDetailScreen() {
   const route = useRoute();
   const navigation = useNavigation<any>();
@@ -257,7 +261,7 @@ export function PostDetailScreen() {
 
           <View style={styles.commentsSection}>
             <Text style={styles.commentsTitle}>
-              {comments?.length ?? 0} Answers
+              {getBarksText(comments?.length ?? 0)}
             </Text>
 
             {(comments ?? []).map((c) => (

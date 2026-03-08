@@ -19,6 +19,10 @@ type Props = {
   onDelete?: (postId: string) => void;
 };
 
+function getBarksText(count: number) {
+  return count === 1 ? "1 Bark" : `${count} Barks`;
+}
+
 export function QuestionCard({ data, onPress, onReactionSelect, onReactionMenuOpenChange, currentUserId, onEdit, onDelete }: Props) {
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuLayout, setMenuLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
@@ -127,7 +131,7 @@ export function QuestionCard({ data, onPress, onReactionSelect, onReactionMenuOp
           </View>
         )}
         <View style={styles.answersPill}>
-          <Text style={styles.answersText}>💬 {data.answerCount ?? 0} Answers</Text>
+          <Text style={styles.answersText}>💬 {getBarksText(data.answerCount ?? 0)}</Text>
         </View>
       </View>
     </View>

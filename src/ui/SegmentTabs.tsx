@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     ...shadow.sm,
   },
-  tabGap: { marginRight: spacing.xs },
+  tabGap: { marginRight: spacing.xxs },
   tabActive: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,

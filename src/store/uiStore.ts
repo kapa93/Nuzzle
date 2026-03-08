@@ -3,7 +3,7 @@ import type { BreedEnum, PostWithDetails, PostTypeEnum } from '../types';
 
 export type FeedSort = 'newest' | 'trending';
 
-export type FeedFilter = FeedSort | PostTypeEnum;
+export type FeedFilter = 'all' | PostTypeEnum;
 
 interface UIState {
   feedFilter: FeedFilter;
@@ -13,7 +13,7 @@ interface UIState {
 }
 
 export const useUIStore = create<UIState>((set) => ({
-  feedFilter: 'newest',
+  feedFilter: 'all',
   setFeedFilter: (feedFilter) => set({ feedFilter }),
   reactionPickerPost: null,
   setReactionPickerPost: (reactionPickerPost) => set({ reactionPickerPost }),
