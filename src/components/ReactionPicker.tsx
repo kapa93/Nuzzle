@@ -50,8 +50,8 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   content: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
     padding: 24,
     width: '100%',
     maxWidth: 320,
@@ -71,12 +71,12 @@ const styles = StyleSheet.create({
   reactionBtn: {
     padding: 12,
     borderRadius: 24,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F2EFE8',
   },
   selected: {
-    backgroundColor: '#E3F2FD',
+    backgroundColor: '#DDF3E6',
     borderWidth: 2,
-    borderColor: '#2196F3',
+    borderColor: '#2E8B57',
   },
   emoji: {
     fontSize: 28,

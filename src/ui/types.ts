@@ -9,12 +9,17 @@ export type PackItem = {
   image: ImageSourcePropType;
 };
 
+import type { ReactionEnum } from "@/types";
+
 export type QuestionCardData = {
   id: string;
   author: string;
+  authorId?: string;
   authorMeta?: string;
+  authorAvatarUri?: string | null;
   breedKey: BreedColorKey;
   badge?: string;
+  badgeTone?: "neutral" | "question" | "tip" | "story";
   title: string;
   preview?: string;
   images?: ImageSourcePropType[];
@@ -22,4 +27,6 @@ export type QuestionCardData = {
   loveCount?: number;
   hahaCount?: number;
   answerCount?: number;
+  reaction_counts?: Partial<Record<ReactionEnum, number>>;
+  user_reaction?: ReactionEnum | null;
 };

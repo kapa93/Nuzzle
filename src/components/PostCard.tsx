@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
   Dimensions,
 } from 'react-native';
 import { PostWithDetails } from '../types';
@@ -13,6 +12,7 @@ import { ImageGrid } from './ImageGrid';
 import { ReactionBar } from './ReactionBar';
 import { formatRelativeTime } from '../utils/breed';
 import { BREED_LABELS, POST_TYPE_LABELS, POST_TAG_LABELS } from '../utils/breed';
+import { colors, radius, spacing, typography } from '@/theme';
 
 const { width } = Dimensions.get('window');
 const THUMB_SIZE = (width - 48) / 3;
@@ -20,10 +20,10 @@ const THUMB_SIZE = (width - 48) / 3;
 interface PostCardProps {
   post: PostWithDetails;
   onPress: () => void;
-  onReactionPress: () => void;
+  onReactionSelect: (reaction: import('@/types').ReactionEnum | null) => void;
 }
 
-export function PostCard({ post, onPress, onReactionPress }: PostCardProps) {
+export function PostCard({ post, onPress, onReactionSelect }: PostCardProps) {
   const breedLabel = BREED_LABELS[post.breed] ?? post.breed;
   const typeLabel = POST_TYPE_LABELS[post.type] ?? post.type;
   const tagLabel = POST_TAG_LABELS[post.tag] ?? post.tag;
@@ -70,7 +70,7 @@ export function PostCard({ post, onPress, onReactionPress }: PostCardProps) {
         <ReactionBar
           reactions={post.reaction_counts ?? {}}
           userReaction={post.user_reaction}
-          onPress={onReactionPress}
+          onSelect={onReactionSelect}
         />
         <Text style={styles.commentCount}>
           {post.comment_count ?? 0} comments
@@ -86,57 +86,33 @@ export function PostCard({ post, onPress, onReactionPress }: PostCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 12,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: colors.surface,
+    padding: spacing.lg,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   headerText: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: spacing.md,
   },
-  authorName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
-  },
-  meta: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: 2,
-  },
-  content: {
-    fontSize: 15,
-    color: '#374151',
-    lineHeight: 22,
-    marginBottom: 12,
-  },
-  images: {
-    marginBottom: 12,
-  },
+  authorName: { ...typography.subtitle },
+  meta: { ...typography.caption, marginTop: spacing.xxs },
+  content: { ...typography.body, marginBottom: spacing.md },
+  images: { marginBottom: spacing.md },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
-  commentCount: {
-    fontSize: 13,
-    color: '#6b7280',
-  },
-  timestamp: {
-    fontSize: 12,
-    color: '#9ca3af',
-  },
+  commentCount: { ...typography.bodyMuted, fontSize: 13 },
+  timestamp: { ...typography.caption },
 });

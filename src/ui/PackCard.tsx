@@ -1,9 +1,14 @@
 import React from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, ImageSourcePropType, Pressable, StyleSheet, Text, View } from "react-native";
 import { colors, radius, spacing, typography } from "../theme";
 import type { BreedColorKey } from "../theme";
 
-type Props = { label: string; image: any; breedColor: BreedColorKey; onPress?: () => void };
+type Props = {
+  label: string;
+  image: ImageSourcePropType;
+  breedColor: BreedColorKey;
+  onPress?: () => void;
+};
 
 export function PackCard({ label, image, breedColor, onPress }: Props) {
   const breed = colors.breeds[breedColor];
@@ -20,7 +25,7 @@ export function PackCard({ label, image, breedColor, onPress }: Props) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { alignItems: "center", width: "31%", marginBottom: spacing.lg },
+  wrap: { alignItems: "center", width: "100%" },
   pressed: { opacity: 0.92 },
   imageWrap: { width: "100%", aspectRatio: 1, borderRadius: radius.lg, overflow: "hidden", borderWidth: 2, marginBottom: spacing.sm },
   image: { width: "100%", height: "100%" },

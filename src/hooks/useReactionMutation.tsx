@@ -45,6 +45,7 @@ export function useReactionMutation() {
   ) : null;
 
   return {
+    mutation,
     openPicker: (post: PostWithDetails) => setReactionPickerPost(post),
     picker,
   };

@@ -204,7 +204,7 @@ export function ProfileScreen({ navigation }: { navigation: ProfileNav }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: 'transparent',
   },
   header: {
     alignItems: 'center',

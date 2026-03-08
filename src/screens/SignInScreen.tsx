@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { signIn } from '@/api/auth';
+import { colors } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
 import { signInSchema } from '@/utils/validation';
 import type { AuthStackParamList } from '@/navigation/types';
@@ -104,7 +105,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     padding: 24,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.background,
   },
   title: {
     fontSize: 28,
@@ -124,7 +125,7 @@ const styles = StyleSheet.create({
     padding: 16,
     fontSize: 16,
     marginBottom: 16,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: 'transparent',
   },
   error: {
     color: '#DC2626',

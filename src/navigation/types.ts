@@ -13,7 +13,7 @@ export type AuthStackParamList = {
 export type MainTabParamList = {
   Home: undefined;
   Explore: undefined;
-  Search: undefined;
+  Create: undefined;
   Notifications: undefined;
   Profile: undefined;
 };
@@ -22,13 +22,20 @@ export type HomeStackParamList = {
   HomeFeed: undefined;
   PostDetail: { postId: string };
   CreatePost: { breed: BreedEnum };
+  EditPost: { postId: string };
 };
 
 export type ExploreStackParamList = {
   ExploreList: undefined;
   BreedFeed: { breed: BreedEnum };
+  SearchMain: undefined;
   PostDetail: { postId: string };
   CreatePost: { breed: BreedEnum };
+  EditPost: { postId: string };
+};
+
+export type CreateStackParamList = {
+  CreatePost: { breed?: BreedEnum };
 };
 
 export type SearchStackParamList = {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,106 +8,91 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
-  Image,
 } from 'react-native';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { createPost } from '@/api/posts';
-import { uploadPostImage, pickImages } from '@/lib/imageUpload';
-import { supabase } from '@/lib/supabase';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getPostById, updatePost } from '@/api/posts';
 import { useAuthStore } from '@/store/authStore';
 import { BREED_LABELS, POST_TYPE_LABELS, POST_TAG_LABELS } from '@/utils/breed';
 import { postSchema } from '@/utils/validation';
-import type { BreedEnum, PostTypeEnum, PostTagEnum } from '@/types';
+import type { PostTypeEnum, PostTagEnum } from '@/types';
 
-type CreatePostRoute = {
-  CreatePost: { breed: BreedEnum };
+type EditPostRoute = {
+  EditPost: { postId: string };
 };
 
-export function CreatePostScreen() {
+export function EditPostScreen() {
   const navigation = useNavigation();
-  const route = useRoute<RouteProp<CreatePostRoute, 'CreatePost'>>();
-  const breed = route.params?.breed ?? 'GOLDEN_RETRIEVER';
+  const route = useRoute<RouteProp<EditPostRoute, 'EditPost'>>();
+  const postId = route.params?.postId ?? '';
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
 
   const [content, setContent] = useState('');
   const [type, setType] = useState<PostTypeEnum>('UPDATE_STORY');
   const [tag, setTag] = useState<PostTagEnum>('TRAINING');
-  const [imageUris, setImageUris] = useState<Array<{ uri: string; base64?: string }>>([]);
   const [error, setError] = useState('');
+
+  const { data: post, isLoading } = useQuery({
+    queryKey: ['post', postId],
+    queryFn: () => getPostById(postId, user?.id ?? null),
+    enabled: !!postId && !!user,
+  });
+
+  useEffect(() => {
+    if (post) {
+      setContent(post.content_text);
+      setType(post.type);
+      setTag(post.tag);
+    }
+  }, [post]);
 
   const mutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error('Not authenticated');
-      const parsed = postSchema.parse({ content_text: content, type, tag, breed });
-      const imageUrls: string[] = [];
-      const post = await createPost(user.id, {
-        breed: parsed.breed as BreedEnum,
+      const parsed = postSchema.parse({ content_text: content, type, tag, breed: post!.breed });
+      return updatePost(postId, user.id, {
+        content_text: parsed.content_text,
         type: parsed.type as PostTypeEnum,
         tag: parsed.tag as PostTagEnum,
-        content_text: parsed.content_text,
-      }, imageUrls);
-
-      for (let i = 0; i < imageUris.length; i++) {
-        const img = imageUris[i];
-        if (img.base64) {
-          const url = await uploadPostImage(user.id, post.id, img.base64, i);
-          imageUrls.push(url);
-        }
-      }
-
-      if (imageUrls.length > 0) {
-        await supabase.from('post_images').insert(
-          imageUrls.map((url, i) => ({
-            post_id: post.id,
-            image_url: url,
-            sort_order: i,
-          }))
-        );
-      }
-
-      return post;
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feed'] });
+      queryClient.invalidateQueries({ queryKey: ['post', postId] });
       queryClient.invalidateQueries({ queryKey: ['posts'] });
       navigation.goBack();
     },
-    onError: (err: Error) => {
-      setError(err.message);
-    },
+    onError: (err: Error) => setError(err.message),
   });
-
-  const handlePickImages = async () => {
-    try {
-      const picked = await pickImages(5 - imageUris.length);
-      if (picked.length > 0) {
-        setImageUris((prev) => [...prev, ...picked].slice(0, 5));
-      }
-    } catch (e) {
-      Alert.alert('Error', (e as Error).message);
-    }
-  };
-
-  const removeImage = (index: number) => {
-    setImageUris((prev) => prev.filter((_, i) => i !== index));
-  };
 
   const handleSubmit = () => {
     setError('');
     try {
-      postSchema.parse({ content_text: content, type, tag, breed });
+      postSchema.parse({ content_text: content, type, tag, breed: post?.breed });
       mutation.mutate();
-    } catch (e: unknown) {
-      if (e && typeof e === 'object' && 'issues' in e) {
-        const err = e as { issues: Array<{ message: string }> };
-        setError(err.issues[0]?.message ?? 'Invalid input');
-      }
+    } catch {
+      setError('Please fill in your post content');
     }
   };
 
   if (!user) return null;
+
+  if (isLoading || !post) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#3b82f6" />
+      </View>
+    );
+  }
+
+  if (post.author_id !== user.id) {
+    Alert.alert('Error', "You can't edit this post");
+    navigation.goBack();
+    return null;
+  }
+
+  const breed = post.breed;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -144,7 +129,7 @@ export function CreatePostScreen() {
         ))}
       </ScrollView>
 
-      <Text style={styles.label}>What's on your mind?</Text>
+      <Text style={styles.label}>Content</Text>
       <TextInput
         style={styles.input}
         placeholder="Share a question, update, or tip..."
@@ -156,23 +141,6 @@ export function CreatePostScreen() {
         textAlignVertical="top"
       />
 
-      <Text style={styles.label}>Images (optional)</Text>
-      <View style={styles.imageRow}>
-        {imageUris.map((img, i) => (
-          <TouchableOpacity key={i} style={styles.thumb} onPress={() => removeImage(i)}>
-            <Image source={{ uri: img.uri }} style={styles.thumbImage} resizeMode="cover" />
-            <View style={styles.removeOverlay}>
-              <Text style={styles.removeText}>×</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-        {imageUris.length < 5 && (
-          <TouchableOpacity style={styles.addImage} onPress={handlePickImages}>
-            <Text style={styles.addImageText}>+ Add</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <TouchableOpacity
@@ -183,7 +151,7 @@ export function CreatePostScreen() {
         {mutation.isPending ? (
           <ActivityIndicator color="#FFF" />
         ) : (
-          <Text style={styles.submitText}>Post</Text>
+          <Text style={styles.submitText}>Save</Text>
         )}
       </TouchableOpacity>
     </ScrollView>
@@ -193,6 +161,7 @@ export function CreatePostScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16, paddingBottom: 40 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8, marginTop: 16 },
   breedValue: { fontSize: 16, color: '#1f2937', marginBottom: 8 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -215,22 +184,6 @@ const styles = StyleSheet.create({
     minHeight: 120,
     backgroundColor: '#FFF',
   },
-  imageRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  thumb: { width: 72, height: 72, borderRadius: 8, overflow: 'hidden', backgroundColor: '#e5e7eb', position: 'relative' },
-  thumbImage: { width: 72, height: 72 },
-  removeOverlay: { position: 'absolute', top: 0, right: 0, width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  removeText: { fontSize: 18, color: '#fff', fontWeight: 'bold' },
-  addImage: {
-    width: 72,
-    height: 72,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#d1d5db',
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addImageText: { fontSize: 14, color: '#6b7280' },
   error: { color: '#ef4444', marginTop: 12, fontSize: 14 },
   submit: {
     backgroundColor: '#3b82f6',

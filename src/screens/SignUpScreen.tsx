@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { signUp } from '@/api/auth';
+import { colors } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
 import { signUpSchema } from '@/utils/validation';
 
@@ -118,7 +119,7 @@ export function SignUpScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.background,
   },
   scroll: {
     flexGrow: 1,
@@ -144,7 +145,7 @@ const styles = StyleSheet.create({
     padding: 16,
     fontSize: 16,
     marginBottom: 16,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: 'transparent',
   },
   error: {
     color: '#DC2626',

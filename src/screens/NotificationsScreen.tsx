@@ -120,7 +120,7 @@ export function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
+  container: { flex: 1 },
   markAllBtn: { padding: 16, alignItems: 'flex-end' },
   markAllText: { color: '#6366f1', fontWeight: '600', fontSize: 14 },
   list: { paddingBottom: 24 },

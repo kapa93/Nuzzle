@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
@@ -10,15 +10,17 @@ import { SignInScreen } from '@/screens/SignInScreen';
 import { SignUpScreen } from '@/screens/SignUpScreen';
 import { HomeScreen } from '@/screens/HomeScreen';
 import { ExploreScreen } from '@/screens/ExploreScreen';
-import { SearchScreen } from '@/screens/SearchScreen';
 import { NotificationsScreen } from '@/screens/NotificationsScreen';
 import { ProfileScreen } from '@/screens/ProfileScreen';
 import { BreedFeedScreen } from '@/screens/BreedFeedScreen';
 import { PostDetailScreen } from '@/screens/PostDetailScreen';
 import { CreatePostScreen } from '@/screens/CreatePostScreen';
+import { EditPostScreen } from '@/screens/EditPostScreen';
 import { EditProfileScreen } from '@/screens/EditProfileScreen';
 import { EditDogScreen } from '@/screens/EditDogScreen';
-import { Ionicons } from '@expo/vector-icons';
+import { BreedBuddyTabBar } from './BreedBuddyTabBar';
+import { SearchScreen } from '@/screens/SearchScreen';
+import { colors } from '@/theme';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -26,7 +28,12 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 
 function AuthNavigator() {
   return (
-    <AuthStack.Navigator screenOptions={{ headerShown: false }}>
+    <AuthStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.background },
+      }}
+    >
       <AuthStack.Screen name="SignIn" component={SignInScreen} />
       <AuthStack.Screen name="SignUp" component={SignUpScreen} />
     </AuthStack.Navigator>
@@ -36,10 +43,11 @@ function AuthNavigator() {
 function HomeTab() {
   const Stack = createNativeStackNavigator();
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={{ contentStyle: { backgroundColor: colors.background } }}>
       <Stack.Screen name="HomeFeed" component={HomeScreen} options={{ title: 'BreedBuddy' }} />
       <Stack.Screen name="PostDetail" component={PostDetailScreen} options={{ title: 'Post' }} />
       <Stack.Screen name="CreatePost" component={CreatePostScreen} options={{ title: 'Create Post' }} />
+      <Stack.Screen name="EditPost" component={EditPostScreen} options={{ title: 'Edit Post' }} />
     </Stack.Navigator>
   );
 }
@@ -47,21 +55,27 @@ function HomeTab() {
 function ExploreTab() {
   const Stack = createNativeStackNavigator();
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={{ contentStyle: { backgroundColor: colors.background } }}>
       <Stack.Screen name="ExploreList" component={ExploreScreen} options={{ title: 'Explore' }} />
       <Stack.Screen name="BreedFeed" component={BreedFeedScreen} options={({ route }: { route: { params?: { breed?: string } } }) => ({ title: (route.params?.breed ?? 'Feed').replace(/_/g, ' ') })} />
+      <Stack.Screen name="SearchMain" component={SearchScreen} options={{ title: 'Search' }} />
       <Stack.Screen name="PostDetail" component={PostDetailScreen} options={{ title: 'Post' }} />
       <Stack.Screen name="CreatePost" component={CreatePostScreen} options={{ title: 'Create Post' }} />
+      <Stack.Screen name="EditPost" component={EditPostScreen} options={{ title: 'Edit Post' }} />
     </Stack.Navigator>
   );
 }
 
-function SearchTab() {
+function CreateTab() {
   const Stack = createNativeStackNavigator();
   return (
-    <Stack.Navigator>
-      <Stack.Screen name="SearchMain" component={SearchScreen} options={{ title: 'Search' }} />
-      <Stack.Screen name="PostDetail" component={PostDetailScreen} options={{ title: 'Post' }} />
+    <Stack.Navigator screenOptions={{ contentStyle: { backgroundColor: colors.background } }}>
+      <Stack.Screen
+        name="CreatePost"
+        component={CreatePostScreen}
+        initialParams={{ breed: 'GOLDEN_RETRIEVER' }}
+        options={{ title: 'Ask' }}
+      />
     </Stack.Navigator>
   );
 }
@@ -69,7 +83,7 @@ function SearchTab() {
 function ProfileTab() {
   const Stack = createNativeStackNavigator();
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={{ contentStyle: { backgroundColor: colors.background } }}>
       <Stack.Screen name="ProfileMain" component={ProfileScreen} options={{ title: 'Profile' }} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ title: 'Edit Profile' }} />
       <Stack.Screen
@@ -86,52 +100,16 @@ function ProfileTab() {
 function MainTabs() {
   return (
     <Tab.Navigator
+      tabBar={(props) => <BreedBuddyTabBar {...props} />}
       screenOptions={{
-        tabBarActiveTintColor: '#2563EB',
-        tabBarInactiveTintColor: '#6b7280',
         headerShown: false,
       }}
     >
-      <Tab.Screen
-        name="Home"
-        component={HomeTab}
-        options={{
-          tabBarLabel: 'Home',
-          tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="Explore"
-        component={ExploreTab}
-        options={{
-          tabBarLabel: 'Explore',
-          tabBarIcon: ({ color, size }) => <Ionicons name="compass" size={size} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="Search"
-        component={SearchTab}
-        options={{
-          tabBarLabel: 'Search',
-          tabBarIcon: ({ color, size }) => <Ionicons name="search" size={size} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="Notifications"
-        component={NotificationsScreen}
-        options={{
-          tabBarLabel: 'Notifications',
-          tabBarIcon: ({ color, size }) => <Ionicons name="notifications" size={size} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="Profile"
-        component={ProfileTab}
-        options={{
-          tabBarLabel: 'Profile',
-          tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} />,
-        }}
-      />
+      <Tab.Screen name="Home" component={HomeTab} />
+      <Tab.Screen name="Explore" component={ExploreTab} />
+      <Tab.Screen name="Create" component={CreateTab} />
+      <Tab.Screen name="Notifications" component={NotificationsScreen} />
+      <Tab.Screen name="Profile" component={ProfileTab} />
     </Tab.Navigator>
   );
 }
@@ -156,15 +134,25 @@ export function RootNavigator() {
   if (loading) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator size="large" color="#2563EB" />
+        <ActivityIndicator size="large" color={colors.primary} />
         <Text style={styles.loadingText}>Loading...</Text>
       </View>
     );
   }
 
+  const theme = {
+    ...DefaultTheme,
+    colors: { ...DefaultTheme.colors, background: colors.background },
+  };
+
   return (
-    <NavigationContainer>
-      <RootStack.Navigator screenOptions={{ headerShown: false }}>
+    <NavigationContainer theme={theme}>
+      <RootStack.Navigator
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: colors.background },
+        }}
+      >
         {session && user ? (
           <RootStack.Screen name="Main" component={MainTabs} />
         ) : (
@@ -180,11 +168,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.background,
   },
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#6b7280',
+    color: '#5B6A61',
   },
 });

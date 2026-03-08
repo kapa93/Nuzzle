@@ -1,8 +1,16 @@
 import React from "react";
-import { ImageBackground, StyleSheet, Text, View } from "react-native";
+import { ImageBackground, ImageSourcePropType, StyleSheet, Text, View } from "react-native";
 import { colors, radius, spacing, typography } from "../theme";
 
-export function BreedHero({ title, image, joined = false }: { title: string; image: any; joined?: boolean }) {
+export function BreedHero({
+  title,
+  image,
+  joined = false,
+}: {
+  title: string;
+  image: ImageSourcePropType;
+  joined?: boolean;
+}) {
   return (
     <ImageBackground source={image} style={styles.hero} imageStyle={styles.image}>
       <View style={styles.topRow}>

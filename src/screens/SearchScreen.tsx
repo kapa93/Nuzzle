@@ -8,14 +8,13 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { searchPosts } from '@/api/posts';
+import { setReaction } from '@/api/reactions';
 import { PostCard } from '@/components/PostCard';
 import { useAuthStore } from '@/store/authStore';
-import { useReactionMutation } from '@/hooks/useReactionMutation';
-import { ReactionPicker } from '@/components/ReactionPicker';
 import {
   BREEDS,
   POST_TAGS,
@@ -35,9 +34,16 @@ export function SearchScreen() {
   const [tag, setTag] = useState<PostTagEnum | ''>('');
   const [type, setType] = useState<PostTypeEnum | ''>('');
   const [searchTrigger, setSearchTrigger] = useState(0);
-  const [reactionPickerPost, setReactionPickerPost] = useState<PostWithDetails | null>(null);
-
-  const reactionMutation = useReactionMutation();
+  const queryClient = useQueryClient();
+  const reactionMutation = useMutation({
+    mutationFn: ({ postId, reaction }: { postId: string; reaction: import('@/types').ReactionEnum | null }) =>
+      setReaction(postId, user!.id, reaction),
+    onSuccess: (_, { postId }) => {
+      queryClient.invalidateQueries({ queryKey: ['search'] });
+      queryClient.invalidateQueries({ queryKey: ['post', postId] });
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
+    },
+  });
 
   const { data: posts, isLoading } = useQuery({
     queryKey: ['search', query, breed || undefined, tag || undefined, type || undefined, searchTrigger],
@@ -57,19 +63,8 @@ export function SearchScreen() {
 
   const handleSearch = () => setSearchTrigger((t) => t + 1);
 
-  const handleReaction = (post: PostWithDetails) => {
-    setReactionPickerPost(post);
-  };
-
-  const handleReactionSelect = (reaction: ReactionEnum) => {
-    if (reactionPickerPost && user) {
-      reactionMutation.mutate({
-        postId: reactionPickerPost.id,
-        userId: user.id,
-        reaction: reaction === reactionPickerPost.user_reaction ? null : reaction,
-      });
-    }
-    setReactionPickerPost(null);
+  const handleReactionSelect = (post: PostWithDetails) => (reaction: ReactionEnum | null) => {
+    reactionMutation.mutate({ postId: post.id, reaction });
   };
 
   return (
@@ -153,25 +148,19 @@ export function SearchScreen() {
             <PostCard
               post={item}
               onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
-              onReactionPress={() => handleReaction(item)}
+              onReactionSelect={handleReactionSelect(item)}
             />
           )}
           contentContainerStyle={styles.list}
         />
       )}
 
-      <ReactionPicker
-        visible={!!reactionPickerPost}
-        onClose={() => setReactionPickerPost(null)}
-        onSelect={handleReactionSelect}
-        currentReaction={reactionPickerPost?.user_reaction ?? null}
-      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
+  container: { flex: 1 },
   searchRow: { flexDirection: 'row', padding: 16, gap: 8 },
   input: {
     flex: 1,

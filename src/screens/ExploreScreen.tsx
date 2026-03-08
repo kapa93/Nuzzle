@@ -1,57 +1,100 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { BREEDS, BREED_LABELS } from '@/utils/breed';
-import type { BreedEnum } from '@/types';
+import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  useWindowDimensions,
+  SafeAreaView,
+  Pressable,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { PackCard } from "@/ui/PackCard";
+import { getPackItems } from "@/utils/breedAssets";
+import { colors, spacing, typography } from "@/theme";
 
-const BREED_EMOJI: Record<BreedEnum, string> = {
-  AUSTRALIAN_SHEPHERD: '🐕',
-  HUSKY: '🐺',
-  GOLDEN_RETRIEVER: '🦮',
-  FRENCH_BULLDOG: '🐶',
-  PIT_BULL: '🐕',
-  LABRADOR_RETRIEVER: '🦮',
-};
+const CARD_GAP = spacing.md;
+const H_PADDING = spacing.lg;
+const NUM_COLUMNS = 3;
 
-export function ExploreScreen({ navigation }: { navigation: { navigate: (s: string, p: object) => void } }) {
+export function ExploreScreen({
+  navigation,
+}: {
+  navigation: { navigate: (s: string, p?: object) => void };
+}) {
+  const { width } = useWindowDimensions();
+  const cardWidth = (width - H_PADDING * 2 - CARD_GAP * (NUM_COLUMNS - 1)) / NUM_COLUMNS;
+  const packItems = getPackItems();
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Breed Communities</Text>
-      <Text style={styles.subtitle}>Choose a community to explore</Text>
-      {BREEDS.map((breed) => (
-        <TouchableOpacity
-          key={breed}
-          style={styles.card}
-          onPress={() => navigation.navigate('BreedFeed', { breed })}
-          activeOpacity={0.8}
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.topBar}>
+        <Text style={styles.title}>Choose Your Pack</Text>
+        <Pressable
+          onPress={() => navigation.navigate("SearchMain")}
+          style={styles.searchBtn}
+          hitSlop={12}
         >
-          <Text style={styles.emoji}>{BREED_EMOJI[breed]}</Text>
-          <Text style={styles.breedName}>{BREED_LABELS[breed]}</Text>
-          <Text style={styles.arrow}>→</Text>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
+          <Ionicons name="search" size={24} color={colors.textPrimary} />
+        </Pressable>
+      </View>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.subtitle}>Pick a breed community to explore</Text>
+
+        <View style={styles.grid}>
+          {packItems.map((item) => (
+            <View key={item.breed} style={[styles.cell, { width: cardWidth }]}>
+              <PackCard
+                label={item.label}
+                image={{ uri: item.imageUri }}
+                breedColor={item.breedColor}
+                onPress={() => navigation.navigate("BreedFeed", { breed: item.breed })}
+              />
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F5F5' },
-  content: { padding: 16, paddingBottom: 32 },
-  title: { fontSize: 24, fontWeight: '700', color: '#1a1a1a', marginBottom: 4 },
-  subtitle: { fontSize: 14, color: '#6b7280', marginBottom: 24 },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF',
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+  safe: { flex: 1 },
+  container: { flex: 1 },
+  content: {
+    paddingHorizontal: H_PADDING,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xxxl,
   },
-  emoji: { fontSize: 36, marginRight: 16 },
-  breedName: { flex: 1, fontSize: 18, fontWeight: '600', color: '#1a1a1a' },
-  arrow: { fontSize: 18, color: '#9ca3af' },
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: H_PADDING,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.sm,
+  },
+  title: {
+    ...typography.titleXL,
+  },
+  searchBtn: {
+    padding: spacing.sm,
+  },
+  subtitle: {
+    ...typography.bodyMuted,
+    marginBottom: spacing.xxl,
+  },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginHorizontal: -CARD_GAP / 2,
+  },
+  cell: {
+    paddingHorizontal: CARD_GAP / 2,
+    marginBottom: spacing.lg,
+  },
 });

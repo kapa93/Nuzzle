@@ -1,34 +1,54 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, ScrollView, TouchableOpacity } from 'react-native';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuthStore } from '@/store/authStore';
-import { useUIStore } from '@/store/uiStore';
-import { getFeed } from '@/api/posts';
-import { getDogsByOwner } from '@/api/dogs';
-import { PostCard } from '@/components/PostCard';
-import { ReactionPicker } from '@/components/ReactionPicker';
-import { setReaction } from '@/api/reactions';
-import type { PostWithDetails, ReactionEnum } from '@/types';
-import { BREED_LABELS } from '@/utils/breed';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  RefreshControl,
+  ScrollView,
+  Pressable,
+  SafeAreaView,
+  Alert,
+} from "react-native";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuthStore } from "@/store/authStore";
+import { useUIStore } from "@/store/uiStore";
+import { getFeed, deletePost } from "@/api/posts";
+import { getDogsByOwner } from "@/api/dogs";
+import { setReaction } from "@/api/reactions";
+import { BreedHero } from "@/ui/BreedHero";
+import { SegmentTabs } from "@/ui/SegmentTabs";
+import { QuestionCard } from "@/ui/QuestionCard";
+import { postToQuestionCardData } from "@/utils/postToQuestionCard";
+import { BREED_HERO_IMAGES } from "@/utils/breedAssets";
+import { BREED_LABELS } from "@/utils/breed";
+import { colors, radius, spacing, typography } from "@/theme";
+import type { PostWithDetails, ReactionEnum } from "@/types";
 
-export function HomeScreen({ navigation }: { navigation: { navigate: (s: string, p?: object) => void } }) {
+const TABS = ["Newest", "Trending"] as const;
+type TabKey = (typeof TABS)[number];
+
+export function HomeScreen({
+  navigation,
+}: {
+  navigation: { navigate: (s: string, p?: object) => void };
+}) {
   const { user } = useAuthStore();
-  const { feedSort } = useUIStore();
+  const { feedSort, setFeedSort } = useUIStore();
   const queryClient = useQueryClient();
-  const [reactionPickerPost, setReactionPickerPost] = useState<PostWithDetails | null>(null);
   const [selectedDogIndex, setSelectedDogIndex] = useState(0);
 
   const { data: dogs } = useQuery({
-    queryKey: ['dogs', user?.id],
+    queryKey: ["dogs", user?.id],
     queryFn: () => getDogsByOwner(user!.id),
     enabled: !!user?.id,
   });
 
   const selectedDog = dogs?.[selectedDogIndex];
-  const breed = selectedDog?.breed ?? 'GOLDEN_RETRIEVER';
+  const breed = selectedDog?.breed ?? "GOLDEN_RETRIEVER";
 
   const { data: posts, isLoading, refetch, isRefetching } = useQuery({
-    queryKey: ['feed', breed, feedSort, user?.id],
+    queryKey: ["feed", breed, feedSort, user?.id],
     queryFn: () => getFeed(breed, feedSort, 20, 0, user?.id ?? null),
     enabled: !!user?.id,
   });
@@ -37,44 +57,63 @@ export function HomeScreen({ navigation }: { navigation: { navigate: (s: string,
     mutationFn: ({ postId, reaction }: { postId: string; reaction: ReactionEnum | null }) =>
       setReaction(postId, user!.id, reaction),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['feed', breed] });
-      queryClient.invalidateQueries({ queryKey: ['post'] });
+      queryClient.invalidateQueries({ queryKey: ["feed", breed] });
+      queryClient.invalidateQueries({ queryKey: ["post"] });
     },
   });
 
-  const handleReactionPress = (post: PostWithDetails) => {
-    setReactionPickerPost(post);
+  const deleteMutation = useMutation({
+    mutationFn: (postId: string) => deletePost(postId, user!.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["feed", breed] });
+      queryClient.invalidateQueries({ queryKey: ["post"] });
+    },
+  });
+
+  const handleEditPost = (postId: string) => {
+    navigation.navigate("EditPost", { postId });
   };
 
-  const handleReactionSelect = (reaction: ReactionEnum) => {
-    if (reactionPickerPost) {
-      reactionMutation.mutate({
-        postId: reactionPickerPost.id,
-        reaction: reaction === reactionPickerPost.user_reaction ? null : reaction,
-      });
-      setReactionPickerPost(null);
-    }
+  const handleDeletePost = (postId: string) => {
+    Alert.alert(
+      "Delete post",
+      "Are you sure you want to delete this post? This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: () => deleteMutation.mutate(postId) },
+      ]
+    );
   };
+
+  const handleReactionSelect = (post: PostWithDetails) => (reaction: ReactionEnum | null) => {
+    reactionMutation.mutate({
+      postId: post.id,
+      reaction,
+    });
+  };
+
+  const tabKey: TabKey = feedSort === "trending" ? "Trending" : "Newest";
 
   if (!user) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.emptyText}>Sign in to see your feed</Text>
-      </View>
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.center}>
+          <Text style={styles.emptyText}>Sign in to see your feed</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (!dogs || dogs.length === 0) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.emptyText}>Add a dog profile to see your breed's feed</Text>
-        <Text
-          style={styles.link}
-          onPress={() => navigation.navigate('Profile')}
-        >
-          Go to Profile
-        </Text>
-      </View>
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.center}>
+          <Text style={styles.emptyText}>Add a dog profile to see your breed's feed</Text>
+          <Text style={styles.link} onPress={() => navigation.navigate("Profile")}>
+            Go to Profile
+          </Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -83,96 +122,152 @@ export function HomeScreen({ navigation }: { navigation: { navigate: (s: string,
       <Text style={styles.emptyEmoji}>🐕</Text>
       <Text style={styles.emptyTitle}>No posts yet in {BREED_LABELS[breed]} community</Text>
       <Text style={styles.emptySub}>Be the first to share!</Text>
-      <Text
-        style={styles.link}
-        onPress={() => navigation.navigate('CreatePost', { breed })}
-      >
-        Create a post
+      <Text style={styles.link} onPress={() => navigation.navigate("CreatePost", { breed })}>
+        Ask a question or share
       </Text>
     </View>
   );
 
-  return (
-    <View style={styles.container}>
+  const renderHeader = () => (
+    <>
       {dogs.length > 1 && (
         <View style={styles.dogSelector}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dogSelectorScroll}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.dogSelectorScroll}
+          >
             {dogs.map((dog, idx) => (
-              <TouchableOpacity
+              <Pressable
                 key={dog.id}
-                style={[styles.dogChip, selectedDogIndex === idx && styles.dogChipSelected]}
+                style={[
+                  styles.dogChip,
+                  selectedDogIndex === idx && styles.dogChipSelected,
+                ]}
                 onPress={() => setSelectedDogIndex(idx)}
               >
-                <Text style={[styles.dogChipText, selectedDogIndex === idx && styles.dogChipTextSelected]}>
+                <Text
+                  style={[
+                    styles.dogChipText,
+                    selectedDogIndex === idx && styles.dogChipTextSelected,
+                  ]}
+                >
                   {dog.name}
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
             ))}
           </ScrollView>
         </View>
       )}
-      <FlatList
-        data={posts ?? []}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <PostCard
-            post={item}
-            onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
-            onReactionPress={() => handleReactionPress(item)}
-          />
-        )}
-        ListEmptyComponent={!isLoading ? renderEmpty : null}
-        refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
-        }
-        contentContainerStyle={posts?.length === 0 ? styles.emptyList : undefined}
-      />
-      <ReactionPicker
-        visible={!!reactionPickerPost}
-        onClose={() => setReactionPickerPost(null)}
-        onSelect={handleReactionSelect}
-        currentReaction={reactionPickerPost?.user_reaction ?? null}
-      />
-    </View>
+      <View style={styles.heroSection}>
+        <BreedHero
+          title={BREED_LABELS[breed]}
+          image={{ uri: BREED_HERO_IMAGES[breed] }}
+        />
+      </View>
+      <View style={styles.tabsSection}>
+        <SegmentTabs
+          tabs={[...TABS]}
+          activeTab={tabKey}
+          onChange={(t) => setFeedSort(t === "Trending" ? "trending" : "newest")}
+        />
+      </View>
+    </>
+  );
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.container}>
+        <FlatList
+          data={posts ?? []}
+          keyExtractor={(item) => item.id}
+          ListHeaderComponent={renderHeader}
+          renderItem={({ item }) => (
+            <View style={styles.cardWrap}>
+              <QuestionCard
+                data={postToQuestionCardData(item)}
+                onPress={() => navigation.navigate("PostDetail", { postId: item.id })}
+                onReactionSelect={handleReactionSelect(item)}
+                currentUserId={user?.id}
+                onEdit={handleEditPost}
+                onDelete={handleDeletePost}
+              />
+            </View>
+          )}
+          ListEmptyComponent={!isLoading ? renderEmpty : null}
+          refreshControl={
+            <RefreshControl
+              refreshing={!!isRefetching}
+              onRefresh={refetch}
+              tintColor={colors.primary}
+            />
+          }
+          contentContainerStyle={[
+            styles.listContent,
+            (!posts || posts.length === 0) && styles.emptyList,
+          ]}
+          showsVerticalScrollIndicator={false}
+        />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F5F5' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  empty: { padding: 48, alignItems: 'center' },
+  safe: { flex: 1 },
+  container: { flex: 1 },
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: spacing.xxl,
+  },
+  empty: {
+    padding: spacing.xxxl,
+    alignItems: "center",
+  },
   emptyList: { flexGrow: 1 },
-  emptyEmoji: { fontSize: 48, marginBottom: 16 },
-  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#333', textAlign: 'center' },
-  emptySub: { fontSize: 14, color: '#666', marginTop: 8 },
-  emptyText: { fontSize: 16, color: '#666' },
-  link: { marginTop: 16, color: '#2196F3', fontSize: 16, fontWeight: '500' },
+  emptyEmoji: { fontSize: 48, marginBottom: spacing.lg },
+  emptyTitle: {
+    ...typography.subtitle,
+    color: colors.textPrimary,
+    textAlign: "center",
+  },
+  emptySub: { ...typography.bodyMuted, marginTop: spacing.sm },
+  emptyText: { ...typography.body },
+  link: {
+    marginTop: spacing.lg,
+    color: colors.primary,
+    ...typography.body,
+    fontWeight: "700",
+  },
   dogSelector: {
-    backgroundColor: '#FFF',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    backgroundColor: colors.surface,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: colors.border,
   },
   dogSelectorScroll: {
-    flexDirection: 'row',
-    gap: 8,
+    flexDirection: "row",
+    gap: spacing.sm,
   },
   dogChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 20,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   dogChipSelected: {
-    backgroundColor: '#2563EB',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
-  dogChipText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-  },
-  dogChipTextSelected: {
-    color: '#FFF',
-  },
+  dogChipText: { ...typography.bodyMuted, fontWeight: "700" },
+  dogChipTextSelected: { color: "#FFFFFF" },
+  heroSection: { paddingHorizontal: spacing.lg, marginTop: spacing.lg, marginBottom: spacing.sm },
+  tabsSection: { paddingHorizontal: spacing.lg, marginTop: -spacing.xs, marginBottom: spacing.sm },
+  cardWrap: { paddingHorizontal: spacing.lg, marginBottom: spacing.lg },
+  listContent: { paddingBottom: spacing.xxxl },
 });

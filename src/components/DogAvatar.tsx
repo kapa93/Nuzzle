@@ -30,13 +30,13 @@ export function DogAvatar({ imageUrl, name, size = 40 }: DogAvatarProps) {
 const styles = StyleSheet.create({
   container: {
     overflow: 'hidden',
-    backgroundColor: '#E8E8E8',
+    backgroundColor: '#F2EFE8',
   },
   image: {
-    backgroundColor: '#E8E8E8',
+    backgroundColor: '#F2EFE8',
   },
   placeholder: {
-    backgroundColor: '#D4A574',
+    backgroundColor: '#2E8B57',
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -1,10 +1,11 @@
 import 'react-native-url-polyfill/auto';
 import React, { useEffect } from 'react';
-import { Linking } from 'react-native';
+import { Linking, View, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from '@/navigation/RootNavigator';
+import { colors } from '@/theme';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { AUTH_CALLBACK_URL } from '@/api/auth';
@@ -55,9 +56,15 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
-        <RootNavigator />
+        <View style={styles.root}>
+          <RootNavigator />
+        </View>
         <StatusBar style="auto" />
       </SafeAreaProvider>
     </QueryClientProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.background },
+});
