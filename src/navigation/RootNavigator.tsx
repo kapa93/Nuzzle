@@ -74,7 +74,7 @@ function CreateTab() {
         name="CreatePost"
         component={CreatePostScreen}
         initialParams={{ breed: 'GOLDEN_RETRIEVER' }}
-        options={{ title: 'Ask' }}
+        options={{ title: 'Pawst' }}
       />
     </Stack.Navigator>
   );

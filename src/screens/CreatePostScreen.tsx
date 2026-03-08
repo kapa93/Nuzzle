@@ -18,7 +18,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { BREED_LABELS, POST_TYPE_LABELS, POST_TAG_LABELS } from '@/utils/breed';
 import { postSchema } from '@/utils/validation';
-import { shadow } from '@/theme';
+import { colors, shadow, spacing } from '@/theme';
 import type { BreedEnum, PostTypeEnum, PostTagEnum } from '@/types';
 
 type CreatePostRoute = {
@@ -132,10 +132,10 @@ export function CreatePostScreen() {
 
       <Text style={styles.label}>Tag</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tagScroll}>
-        {(['TRAINING', 'BEHAVIOR', 'HEALTH', 'GROOMING', 'FOOD', 'GEAR', 'PUPPY', 'ADOLESCENT', 'ADULT', 'SENIOR', 'PLAYDATE'] as PostTagEnum[]).map((t) => (
+        {(['TRAINING', 'HEALTH', 'PLAYDATE', 'GROOMING', 'BEHAVIOR', 'FOOD', 'GEAR', 'PUPPY', 'ADOLESCENT', 'ADULT', 'SENIOR'] as PostTagEnum[]).map((t) => (
           <TouchableOpacity
             key={t}
-            style={[styles.chip, tag === t && styles.chipSelected]}
+            style={[styles.tagChip, tag === t && styles.tagChipSelected]}
             onPress={() => setTag(t)}
           >
             <Text style={[styles.chipText, tag === t && styles.chipTextSelected]}>
@@ -203,8 +203,26 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     backgroundColor: '#e5e7eb',
     borderRadius: 20,
+    ...shadow.sm,
   },
-  chipSelected: { backgroundColor: '#3b82f6' },
+  chipSelected: {
+    backgroundColor: colors.primary,
+    shadowColor: colors.primaryDark,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  tagChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: '#e5e7eb',
+    borderRadius: 20,
+    marginRight: spacing.xxs,
+  },
+  tagChipSelected: {
+    backgroundColor: colors.primary,
+  },
   chipText: { fontSize: 14, color: '#374151' },
   chipTextSelected: { color: '#FFF' },
   input: {
@@ -215,6 +233,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     minHeight: 120,
     backgroundColor: '#FFF',
+    ...shadow.sm,
   },
   imageRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   thumb: { width: 72, height: 72, borderRadius: 8, overflow: 'hidden', backgroundColor: '#e5e7eb', position: 'relative', ...shadow.sm },
@@ -230,16 +249,21 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
+    ...shadow.sm,
   },
   addImageText: { fontSize: 14, color: '#6b7280' },
   error: { color: '#ef4444', marginTop: 12, fontSize: 14 },
   submit: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: colors.primary,
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 24,
-    ...shadow.sm,
+    shadowColor: colors.primaryDark,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
   },
   submitDisabled: { opacity: 0.7 },
   submitText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
