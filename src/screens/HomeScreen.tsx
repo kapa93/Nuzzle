@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -7,9 +7,9 @@ import {
   RefreshControl,
   ScrollView,
   Pressable,
-  SafeAreaView,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/authStore";
 import { useUIStore } from "@/store/uiStore";
@@ -20,10 +20,10 @@ import { setReaction } from "@/api/reactions";
 import { BreedHero } from "@/ui/BreedHero";
 import { SwipeableBreedBanner } from "@/ui/SwipeableBreedBanner";
 import { SegmentTabs } from "@/ui/SegmentTabs";
-import { QuestionCard } from "@/ui/QuestionCard";
-import { postToQuestionCardData } from "@/utils/postToQuestionCard";
+import { FeedItem } from "@/components/FeedItem";
 import { getBreedHeroImageSource } from "@/utils/breedAssets";
 import { BREED_LABELS } from "@/utils/breed";
+import { useScrollDirection, useScrollDirectionUpdater } from "@/context/ScrollDirectionContext";
 import { colors, radius, spacing, typography } from "@/theme";
 import type { PostWithDetails, ReactionEnum } from "@/types";
 import type { FeedFilter } from "@/store/uiStore";
@@ -47,6 +47,8 @@ export function HomeScreen({
   navigation: { navigate: (s: string, p?: object) => void };
 }) {
   const { user } = useAuthStore();
+  const { onScroll } = useScrollDirectionUpdater();
+  const { scrollDirection } = useScrollDirection();
   const { feedFilter, setFeedFilter } = useUIStore();
   const queryClient = useQueryClient();
   const [selectedDogIndex, setSelectedDogIndex] = useState(0);
@@ -151,74 +153,49 @@ export function HomeScreen({
     },
   });
 
-  const handleEditPost = (postId: string) => {
-    navigation.navigate("EditPost", { postId });
-  };
+  const handlePostPress = useCallback(
+    (postId: string) => navigation.navigate("PostDetail", { postId }),
+    [navigation]
+  );
 
-  const handleDeletePost = (postId: string) => {
-    Alert.alert(
-      "Delete post",
-      "Are you sure you want to delete this post? This cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: () => deleteMutation.mutate(postId) },
-      ]
-    );
-  };
+  const handleEditPost = useCallback(
+    (postId: string) => navigation.navigate("EditPost", { postId }),
+    [navigation]
+  );
 
-  const handleReactionSelect = (post: PostWithDetails) => (reaction: ReactionEnum | null) => {
-    reactionMutation.mutate({
-      postId: post.id,
-      reaction,
-    });
-  };
+  const handleDeletePost = useCallback(
+    (postId: string) => {
+      Alert.alert(
+        "Delete post",
+        "Are you sure you want to delete this post? This cannot be undone.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Delete", style: "destructive", onPress: () => deleteMutation.mutate(postId) },
+        ]
+      );
+    },
+    [deleteMutation]
+  );
+
+  const handleReactionSelect = useCallback(
+    (postId: string, reaction: ReactionEnum | null) => {
+      reactionMutation.mutate({ postId, reaction });
+    },
+    [reactionMutation]
+  );
 
   const tabKey = FILTER_TO_TAB(feedFilter);
 
-  if (!user) {
-    return (
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.center}>
-          <Text style={styles.emptyText}>Sign in to see your feed</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (!dogs || dogs.length === 0) {
-    return (
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.center}>
-          <Text style={styles.emptyText}>Add a dog profile to see your breed's feed</Text>
-          <Text style={styles.link} onPress={() => navigation.navigate("Profile")}>
-            Go to Profile
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  const renderEmpty = () => (
-    <View style={styles.empty}>
-      <Text style={styles.emptyEmoji}>🐕</Text>
-      <Text style={styles.emptyTitle}>No posts yet in {BREED_LABELS[breed]} community</Text>
-      <Text style={styles.emptySub}>Be the first to share!</Text>
-      <Text style={styles.link} onPress={() => navigation.navigate("CreatePost", { breed })}>
-        Ask a question or share
-      </Text>
-    </View>
-  );
-
-  const renderHeader = () => (
+  const renderHeader = useMemo(() => (
     <>
-      {joinedBreeds.length < 1 && dogs.length > 1 && (
+      {joinedBreeds.length < 1 && (dogs?.length ?? 0) > 1 && (
         <View style={styles.dogSelector}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.dogSelectorScroll}
           >
-            {dogs.map((dog, idx) => (
+            {(dogs ?? []).map((dog, idx) => (
               <Pressable
                 key={dog.id}
                 style={[
@@ -265,32 +242,66 @@ export function HomeScreen({
         <SegmentTabs
           tabs={[...TABS]}
           activeTab={tabKey}
-          onChange={(t) => setFeedFilter(TAB_TO_FILTER[t])}
+          onChange={(tab) => setFeedFilter(TAB_TO_FILTER[tab as TabKey])}
         />
       </View>
     </>
+  ), [joinedBreeds, dogs, selectedDogIndex, selectedBreedIndex, breed, isJoined, tabKey, handleJoinPress, handleJoinPressForBreed, setFeedFilter]);
+
+  if (!user) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.center}>
+          <Text style={styles.emptyText}>Sign in to see your feed</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!dogs || dogs.length === 0) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.center}>
+          <Text style={styles.emptyText}>Add a dog profile to see your breed's feed</Text>
+          <Text style={styles.link} onPress={() => navigation.navigate("Profile")}>
+            Go to Profile
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const renderEmpty = () => (
+    <View style={styles.empty}>
+      <Text style={styles.emptyEmoji}>🐕</Text>
+      <Text style={styles.emptyTitle}>No posts yet in {BREED_LABELS[breed]} community</Text>
+      <Text style={styles.emptySub}>Be the first to share!</Text>
+      <Text style={styles.link} onPress={() => navigation.navigate("CreatePost", { breed })}>
+        Ask a question or share
+      </Text>
+    </View>
   );
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["left", "right"]}>
       <View style={styles.container}>
         <FlatList
           data={posts ?? []}
           keyExtractor={(item) => item.id}
           ListHeaderComponent={renderHeader}
           scrollEnabled={!reactionMenuOpen}
+          initialNumToRender={8}
+          maxToRenderPerBatch={8}
           renderItem={({ item }) => (
-            <View style={styles.cardWrap}>
-              <QuestionCard
-                data={postToQuestionCardData(item)}
-                onPress={() => navigation.navigate("PostDetail", { postId: item.id })}
-                onReactionSelect={handleReactionSelect(item)}
-                onReactionMenuOpenChange={setReactionMenuOpen}
-                currentUserId={user?.id}
-                onEdit={handleEditPost}
-                onDelete={handleDeletePost}
-              />
-            </View>
+            <FeedItem
+              item={item}
+              onPostPress={handlePostPress}
+              onReactionSelect={handleReactionSelect}
+              onReactionMenuOpenChange={setReactionMenuOpen}
+              currentUserId={user?.id}
+              onEdit={handleEditPost}
+              onDelete={handleDeletePost}
+            />
           )}
           ListEmptyComponent={!isLoading ? renderEmpty : null}
           refreshControl={
@@ -300,9 +311,12 @@ export function HomeScreen({
               tintColor={colors.primary}
             />
           }
+          onScroll={onScroll}
+          scrollEventThrottle={16}
           contentContainerStyle={[
             styles.listContent,
             (!posts || posts.length === 0) && styles.emptyList,
+            scrollDirection === "down" && styles.listContentBarHidden,
           ]}
           showsVerticalScrollIndicator={false}
         />
@@ -391,4 +405,5 @@ const styles = StyleSheet.create({
   tabsSection: { paddingLeft: spacing.lg, paddingRight: 0, marginTop: -spacing.xs, marginBottom: spacing.sm },
   cardWrap: { paddingHorizontal: spacing.lg, marginBottom: spacing.sm },
   listContent: { paddingBottom: spacing.xxxl },
+  listContentBarHidden: { paddingBottom: spacing.sm },
 });

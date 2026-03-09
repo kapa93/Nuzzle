@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from '@/navigation/RootNavigator';
+import { ScrollDirectionProvider } from '@/context/ScrollDirectionContext';
 import { colors } from '@/theme';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
@@ -56,9 +57,11 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
-        <View style={styles.root}>
-          <RootNavigator />
-        </View>
+        <ScrollDirectionProvider>
+          <View style={styles.root}>
+            <RootNavigator />
+          </View>
+        </ScrollDirectionProvider>
         <StatusBar style="auto" />
       </SafeAreaProvider>
     </QueryClientProvider>

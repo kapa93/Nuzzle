@@ -1,13 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   RefreshControl,
-  SafeAreaView,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { getFeed, deletePost } from "@/api/posts";
@@ -18,10 +18,10 @@ import { useUIStore } from "@/store/uiStore";
 import { BreedHero } from "@/ui/BreedHero";
 import { SwipeableBreedBanner } from "@/ui/SwipeableBreedBanner";
 import { SegmentTabs } from "@/ui/SegmentTabs";
-import { QuestionCard } from "@/ui/QuestionCard";
-import { postToQuestionCardData } from "@/utils/postToQuestionCard";
+import { FeedItem } from "@/components/FeedItem";
 import { getBreedHeroImageSource } from "@/utils/breedAssets";
 import { BREED_LABELS } from "@/utils/breed";
+import { useScrollDirection, useScrollDirectionUpdater } from "@/context/ScrollDirectionContext";
 import { colors, radius, spacing, typography } from "@/theme";
 import type { PostWithDetails, BreedEnum, ReactionEnum } from "@/types";
 import type { FeedFilter } from "@/store/uiStore";
@@ -41,6 +41,8 @@ const FILTER_TO_TAB = (f: FeedFilter): TabKey =>
 
 export function BreedFeedScreen() {
   const route = useRoute();
+  const { onScroll } = useScrollDirectionUpdater();
+  const { scrollDirection } = useScrollDirection();
   const breedParam = (route.params as { breed?: BreedEnum })?.breed;
   const navigation = useNavigation<{ navigate: (s: string, p?: object) => void }>();
   const { user } = useAuthStore();
@@ -135,27 +137,36 @@ export function BreedFeedScreen() {
     },
   });
 
-  const handleEditPost = (postId: string) => {
-    navigation.navigate("EditPost", { postId });
-  };
+  const handlePostPress = useCallback(
+    (postId: string) => navigation.navigate("PostDetail", { postId }),
+    [navigation]
+  );
 
-  const handleDeletePost = (postId: string) => {
-    Alert.alert(
-      "Delete post",
-      "Are you sure you want to delete this post? This cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: () => deleteMutation.mutate(postId) },
-      ]
-    );
-  };
+  const handleEditPost = useCallback(
+    (postId: string) => navigation.navigate("EditPost", { postId }),
+    [navigation]
+  );
 
-  const handleReactionSelect = (post: PostWithDetails) => (reaction: ReactionEnum | null) => {
-    reactionMutation.mutate({
-      postId: post.id,
-      reaction,
-    });
-  };
+  const handleDeletePost = useCallback(
+    (postId: string) => {
+      Alert.alert(
+        "Delete post",
+        "Are you sure you want to delete this post? This cannot be undone.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Delete", style: "destructive", onPress: () => deleteMutation.mutate(postId) },
+        ]
+      );
+    },
+    [deleteMutation]
+  );
+
+  const handleReactionSelect = useCallback(
+    (postId: string, reaction: ReactionEnum | null) => {
+      reactionMutation.mutate({ postId, reaction });
+    },
+    [reactionMutation]
+  );
 
   const renderEmpty = () => (
     <View style={styles.empty}>
@@ -176,7 +187,7 @@ export function BreedFeedScreen() {
   const showSwipeable =
     user && joinedBreeds.length >= 1 && joinedBreeds.includes(breed);
 
-  const renderHeader = () => (
+  const renderHeader = useMemo(() => (
     <>
       <View style={styles.heroSection}>
         {showSwipeable ? (
@@ -204,28 +215,30 @@ export function BreedFeedScreen() {
         />
       </View>
     </>
-  );
+  ), [showSwipeable, joinedBreeds, breed, isJoined, tabKey, handleJoinPress, handleJoinPressForBreed, setFeedFilter]);
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["left", "right"]}>
       <View style={styles.container}>
         <FlatList
           data={posts ?? []}
           keyExtractor={(item) => item.id}
           ListHeaderComponent={renderHeader}
           scrollEnabled={!reactionMenuOpen}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+          initialNumToRender={8}
+          maxToRenderPerBatch={8}
           renderItem={({ item }) => (
-            <View style={styles.cardWrap}>
-              <QuestionCard
-                data={postToQuestionCardData(item)}
-                onPress={() => navigation.navigate("PostDetail", { postId: item.id })}
-                onReactionSelect={handleReactionSelect(item)}
-                onReactionMenuOpenChange={setReactionMenuOpen}
-                currentUserId={user?.id}
-                onEdit={handleEditPost}
-                onDelete={handleDeletePost}
-              />
-            </View>
+            <FeedItem
+              item={item}
+              onPostPress={handlePostPress}
+              onReactionSelect={handleReactionSelect}
+              onReactionMenuOpenChange={setReactionMenuOpen}
+              currentUserId={user?.id}
+              onEdit={handleEditPost}
+              onDelete={handleDeletePost}
+            />
           )}
           ListEmptyComponent={!isLoading ? renderEmpty : null}
           refreshControl={
@@ -238,6 +251,7 @@ export function BreedFeedScreen() {
           contentContainerStyle={[
             styles.listContent,
             (!posts || posts.length === 0) && styles.emptyList,
+            scrollDirection === "down" && styles.listContentBarHidden,
           ]}
           showsVerticalScrollIndicator={false}
         />
@@ -253,6 +267,7 @@ const styles = StyleSheet.create({
   tabsSection: { paddingLeft: spacing.lg, paddingRight: 0, marginTop: -spacing.xs, marginBottom: spacing.sm },
   cardWrap: { paddingHorizontal: spacing.lg, marginBottom: spacing.sm },
   listContent: { paddingBottom: spacing.xxxl },
+  listContentBarHidden: { paddingBottom: spacing.sm },
   emptyList: { flexGrow: 1 },
   empty: {
     padding: spacing.xxxl,

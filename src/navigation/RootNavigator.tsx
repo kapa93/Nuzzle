@@ -20,6 +20,7 @@ import { EditProfileScreen } from '@/screens/EditProfileScreen';
 import { EditDogScreen } from '@/screens/EditDogScreen';
 import { BreedBuddyTabBar } from './BreedBuddyTabBar';
 import { SearchScreen } from '@/screens/SearchScreen';
+import { useScrollDirection } from '@/context/ScrollDirectionContext';
 import { colors } from '@/theme';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -98,11 +99,24 @@ function ProfileTab() {
 }
 
 function MainTabs() {
+  const { scrollDirection } = useScrollDirection();
+  const tabBarStyle = React.useMemo(
+    () => ({
+      position: "absolute" as const,
+      bottom: 0,
+      left: 0,
+      right: 0,
+      borderTopWidth: 0,
+      elevation: 0,
+    }),
+    []
+  );
   return (
     <Tab.Navigator
       tabBar={(props) => <BreedBuddyTabBar {...props} />}
       screenOptions={{
         headerShown: false,
+        tabBarStyle,
       }}
     >
       <Tab.Screen name="Home" component={HomeTab} />

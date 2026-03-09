@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
   wrap: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", backgroundColor: colors.surface, borderTopWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.md },
   item: { alignItems: "center", flex: 1 },
   centerWrap: { alignItems: "center", flex: 1, marginTop: -spacing.xl },
-  centerButton: { width: 60, height: 60, borderRadius: 30, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", borderWidth: 6, borderColor: colors.background, ...shadow.sm },
+  centerButton: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", ...shadow.sm },
   centerIcon: { color: "#FFFFFF", fontSize: 22, fontWeight: "800" },
   centerText: { ...typography.caption, marginTop: spacing.xs, color: colors.textPrimary, fontWeight: "700" },
   icon: { fontSize: 22, color: colors.textMuted },

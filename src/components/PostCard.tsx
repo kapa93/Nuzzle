@@ -72,9 +72,11 @@ export function PostCard({ post, onPress, onReactionSelect }: PostCardProps) {
           userReaction={post.user_reaction}
           onSelect={onReactionSelect}
         />
-        <Text style={styles.commentCount}>
-          {post.comment_count ?? 0} comments
-        </Text>
+        <View style={styles.commentPill}>
+          <Text style={styles.commentCount}>
+            {post.comment_count ?? 0} comments
+          </Text>
+        </View>
       </View>
 
       <Text style={styles.timestamp}>
@@ -113,6 +115,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: spacing.xs,
+  },
+  commentPill: {
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   commentCount: { ...typography.bodyMuted, fontSize: 13 },
   timestamp: { ...typography.caption },

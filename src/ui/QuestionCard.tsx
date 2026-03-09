@@ -23,7 +23,7 @@ function getBarksText(count: number) {
   return count === 1 ? "1 Bark" : `${count} Barks`;
 }
 
-export function QuestionCard({ data, onPress, onReactionSelect, onReactionMenuOpenChange, currentUserId, onEdit, onDelete }: Props) {
+const QuestionCardInner = ({ data, onPress, onReactionSelect, onReactionMenuOpenChange, currentUserId, onEdit, onDelete }: Props) => {
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuLayout, setMenuLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const menuBtnRef = useRef<View>(null);
@@ -145,7 +145,9 @@ export function QuestionCard({ data, onPress, onReactionSelect, onReactionMenuOp
     );
   }
   return content;
-}
+};
+
+export const QuestionCard = React.memo(QuestionCardInner);
 
 const styles = StyleSheet.create({
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, marginBottom: spacing.sm, ...shadow.sm },

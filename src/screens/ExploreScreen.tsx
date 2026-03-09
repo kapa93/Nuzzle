@@ -5,12 +5,13 @@ import {
   StyleSheet,
   ScrollView,
   useWindowDimensions,
-  SafeAreaView,
   Pressable,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { PackCard } from "@/ui/PackCard";
 import { getPackItems } from "@/utils/breedAssets";
+import { useScrollDirectionUpdater } from "@/context/ScrollDirectionContext";
 import { colors, spacing, typography } from "@/theme";
 
 const CARD_GAP = spacing.md;
@@ -23,11 +24,12 @@ export function ExploreScreen({
   navigation: { navigate: (s: string, p?: object) => void };
 }) {
   const { width } = useWindowDimensions();
+  const { onScroll } = useScrollDirectionUpdater();
   const cardWidth = (width - H_PADDING * 2 - CARD_GAP * (NUM_COLUMNS - 1)) / NUM_COLUMNS;
   const packItems = getPackItems();
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["left", "right"]}>
       <View style={styles.topBar}>
         <Text style={styles.title}>Choose Your Pack</Text>
         <Pressable
@@ -42,6 +44,8 @@ export function ExploreScreen({
         style={styles.container}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
       >
         <Text style={styles.subtitle}>Pick a breed community to explore</Text>
 
