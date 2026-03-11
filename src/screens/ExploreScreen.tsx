@@ -12,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { getPackItems } from "@/utils/breedAssets";
 import { useScrollDirectionUpdater } from "@/context/ScrollDirectionContext";
+import { useStackHeaderHeight } from "@/hooks/useStackHeaderHeight";
 import { ScreenWithWallpaper } from "@/components/ScreenWithWallpaper";
 import { colors, radius, spacing, typography } from "@/theme";
 
@@ -26,6 +27,7 @@ export function ExploreScreen({
 }) {
   const { width } = useWindowDimensions();
   const { onScroll } = useScrollDirectionUpdater();
+  const headerHeight = useStackHeaderHeight();
   const cardWidth = (width - H_PADDING * 2 - CARD_GAP * (NUM_COLUMNS - 1)) / NUM_COLUMNS;
   const packItems = getPackItems();
 
@@ -34,7 +36,7 @@ export function ExploreScreen({
       <SafeAreaView style={styles.safe} edges={["left", "right"]}>
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingTop: headerHeight }]}
         showsVerticalScrollIndicator={false}
         onScroll={onScroll}
         scrollEventThrottle={16}

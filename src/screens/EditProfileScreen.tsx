@@ -16,6 +16,7 @@ import { updateProfile, getProfile } from '@/api/auth';
 import { uploadProfileImage, pickImages } from '@/lib/imageUpload';
 import { useAuthStore } from '@/store/authStore';
 import { ScreenWithWallpaper } from '@/components/ScreenWithWallpaper';
+import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
 import { shadow } from '@/theme';
 import { profileSchema } from '@/utils/validation';
 
@@ -23,6 +24,7 @@ export function EditProfileScreen() {
   const navigation = useNavigation();
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
+  const headerHeight = useStackHeaderHeight();
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
@@ -88,7 +90,7 @@ export function EditProfileScreen() {
 
   return (
     <ScreenWithWallpaper>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: headerHeight }]}>
       <Text style={styles.label}>Profile photo</Text>
       <TouchableOpacity style={styles.imagePicker} onPress={handlePickImage}>
         {imageUri ? (

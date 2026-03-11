@@ -34,6 +34,7 @@ import { BREED_LABELS, POST_TYPE_LABELS, POST_TAG_LABELS } from "@/utils/breed";
 import { commentSchema } from "@/utils/validation";
 import { ScreenWithWallpaper } from "@/components/ScreenWithWallpaper";
 import { useScrollDirection } from "@/context/ScrollDirectionContext";
+import { useStackHeaderHeight } from "@/hooks/useStackHeaderHeight";
 import { colors, radius, shadow, spacing, typography } from "@/theme";
 import type { ReactionEnum } from "@/types";
 
@@ -48,6 +49,7 @@ export function PostDetailScreen() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const { setScrollDirection } = useScrollDirection();
+  const headerHeight = useStackHeaderHeight();
   const [commentText, setCommentText] = useState("");
   const [menuVisible, setMenuVisible] = useState(false);
 
@@ -178,7 +180,7 @@ export function PostDetailScreen() {
       >
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingTop: headerHeight - 60 }]}
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.card}>

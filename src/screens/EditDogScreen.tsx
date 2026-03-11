@@ -26,6 +26,7 @@ import {
 } from '@/utils/breed';
 import type { BreedEnum, AgeGroupEnum, EnergyLevelEnum } from '@/types';
 import { ScreenWithWallpaper } from '@/components/ScreenWithWallpaper';
+import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
 import { shadow } from '@/theme';
 import type { ProfileStackParamList } from '@/navigation/types';
 
@@ -35,6 +36,7 @@ export function EditDogScreen() {
   const dogId = route.params?.dogId;
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
+  const headerHeight = useStackHeaderHeight();
   const [name, setName] = useState('');
   const [breed, setBreed] = useState<BreedEnum>('GOLDEN_RETRIEVER');
   const [ageGroup, setAgeGroup] = useState<AgeGroupEnum>('ADULT');
@@ -138,7 +140,7 @@ export function EditDogScreen() {
 
   return (
     <ScreenWithWallpaper>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: headerHeight }]}>
       <Text style={styles.label}>Dog photo</Text>
       <TouchableOpacity style={styles.imagePicker} onPress={handlePickImage}>
         {imageUri ? (

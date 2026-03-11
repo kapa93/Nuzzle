@@ -16,6 +16,7 @@ import { getDogsByOwner, deleteDog } from '@/api/dogs';
 import { signOut } from '@/api/auth';
 import { uploadProfileImage, pickImages } from '@/lib/imageUpload';
 import { DogAvatar } from '@/components/DogAvatar';
+import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
 import { ScreenWithWallpaper } from '@/components/ScreenWithWallpaper';
 import { shadow } from '@/theme';
 import { BREED_LABELS } from '@/utils/breed';
@@ -29,6 +30,7 @@ export function ProfileScreen({ navigation }: { navigation: ProfileNav }) {
   const { user, signOut: clearSession } = useAuthStore();
   const userId = user?.id ?? '';
   const queryClient = useQueryClient();
+  const headerHeight = useStackHeaderHeight();
 
   const { data: profile } = useQuery({
     queryKey: ['profile', userId],
@@ -101,7 +103,7 @@ export function ProfileScreen({ navigation }: { navigation: ProfileNav }) {
 
   return (
     <ScreenWithWallpaper>
-      <ScrollView style={styles.container}>
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingTop: headerHeight }}>
       <View style={styles.header}>
         <TouchableOpacity
           onPress={handleChangePhoto}

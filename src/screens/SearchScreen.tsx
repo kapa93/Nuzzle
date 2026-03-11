@@ -24,6 +24,7 @@ import {
   POST_TYPE_LABELS,
 } from '@/utils/breed';
 import { ScreenWithWallpaper } from '@/components/ScreenWithWallpaper';
+import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
 import type { PostWithDetails } from '@/types';
 import type { BreedEnum, PostTagEnum, PostTypeEnum, ReactionEnum } from '@/types';
 
@@ -36,6 +37,7 @@ export function SearchScreen() {
   const [type, setType] = useState<PostTypeEnum | ''>('');
   const [searchTrigger, setSearchTrigger] = useState(0);
   const queryClient = useQueryClient();
+  const headerHeight = useStackHeaderHeight();
   const reactionMutation = useMutation({
     mutationFn: ({ postId, reaction }: { postId: string; reaction: import('@/types').ReactionEnum | null }) =>
       setReaction(postId, user!.id, reaction),
@@ -70,7 +72,7 @@ export function SearchScreen() {
 
   return (
     <ScreenWithWallpaper>
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingTop: headerHeight }]}>
       <View style={styles.searchRow}>
         <TextInput
           style={styles.input}

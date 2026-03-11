@@ -20,6 +20,7 @@ import { EditProfileScreen } from '@/screens/EditProfileScreen';
 import { EditDogScreen } from '@/screens/EditDogScreen';
 import { BreedBuddyTabBar } from './BreedBuddyTabBar';
 import { SearchScreen } from '@/screens/SearchScreen';
+import { AnimatedStackHeader } from '@/components/AnimatedStackHeader';
 import { useScrollDirection } from '@/context/ScrollDirectionContext';
 import { colors } from '@/theme';
 
@@ -44,7 +45,13 @@ function AuthNavigator() {
 function HomeTab() {
   const Stack = createNativeStackNavigator();
   return (
-    <Stack.Navigator screenOptions={{ contentStyle: { backgroundColor: colors.background } }}>
+    <Stack.Navigator
+      screenOptions={{
+        contentStyle: { backgroundColor: colors.background },
+        headerTransparent: true,
+        header: (props) => <AnimatedStackHeader {...props} animateOnScroll />,
+      }}
+    >
       <Stack.Screen name="HomeFeed" component={HomeScreen} options={{ title: 'BreedBuddy' }} />
       <Stack.Screen name="PostDetail" component={PostDetailScreen} options={{ title: 'Post' }} />
       <Stack.Screen name="CreatePost" component={CreatePostScreen} options={{ title: 'Create Post' }} />
@@ -56,7 +63,13 @@ function HomeTab() {
 function ExploreTab() {
   const Stack = createNativeStackNavigator();
   return (
-    <Stack.Navigator screenOptions={{ contentStyle: { backgroundColor: colors.background } }}>
+    <Stack.Navigator
+      screenOptions={{
+        contentStyle: { backgroundColor: colors.background },
+        headerTransparent: true,
+        header: (props) => <AnimatedStackHeader {...props} animateOnScroll={false} />,
+      }}
+    >
       <Stack.Screen name="ExploreList" component={ExploreScreen} options={{ title: 'Explore' }} />
       <Stack.Screen name="BreedFeed" component={BreedFeedScreen} options={({ route }: { route: { params?: { breed?: string } } }) => ({ title: (route.params?.breed ?? 'Feed').replace(/_/g, ' ') })} />
       <Stack.Screen name="SearchMain" component={SearchScreen} options={{ title: 'Search' }} />
@@ -70,7 +83,13 @@ function ExploreTab() {
 function CreateTab() {
   const Stack = createNativeStackNavigator();
   return (
-    <Stack.Navigator screenOptions={{ contentStyle: { backgroundColor: colors.background } }}>
+    <Stack.Navigator
+      screenOptions={{
+        contentStyle: { backgroundColor: colors.background },
+        headerTransparent: true,
+        header: (props) => <AnimatedStackHeader {...props} animateOnScroll />,
+      }}
+    >
       <Stack.Screen
         name="CreatePost"
         component={CreatePostScreen}
@@ -84,7 +103,13 @@ function CreateTab() {
 function ProfileTab() {
   const Stack = createNativeStackNavigator();
   return (
-    <Stack.Navigator screenOptions={{ contentStyle: { backgroundColor: colors.background } }}>
+    <Stack.Navigator
+      screenOptions={{
+        contentStyle: { backgroundColor: colors.background },
+        headerTransparent: true,
+        header: (props) => <AnimatedStackHeader {...props} animateOnScroll />,
+      }}
+    >
       <Stack.Screen name="ProfileMain" component={ProfileScreen} options={{ title: 'Profile' }} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ title: 'Edit Profile' }} />
       <Stack.Screen

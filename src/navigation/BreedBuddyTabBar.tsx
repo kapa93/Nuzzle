@@ -4,6 +4,7 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  interpolate,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
@@ -22,6 +23,7 @@ const TAB_CONFIG = [
 
 const INDICATOR_ANIMATION = { duration: 60 };
 const WRAP_PADDING_H = spacing.md;
+const TAB_BAR_HIDE_OFFSET = 120;
 
 export function BreedBuddyTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
@@ -34,14 +36,22 @@ export function BreedBuddyTabBar({ state, navigation }: BottomTabBarProps) {
   const isExplore = state.routeNames[state.index] === "Explore";
   useEffect(() => {
     const shouldHide = !isExplore && scrollDirection === "down";
-    translateY.value = withTiming(shouldHide ? 120 : 0, {
+    translateY.value = withTiming(shouldHide ? TAB_BAR_HIDE_OFFSET : 0, {
       duration: 220,
     });
   }, [scrollDirection, isExplore]);
 
-  const animatedBarStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-  }));
+  const animatedBarStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      translateY.value,
+      [0, TAB_BAR_HIDE_OFFSET],
+      [1, 0]
+    );
+    return {
+      opacity,
+      transform: [{ translateY: translateY.value }],
+    };
+  });
 
   useEffect(() => {
     setScrollDirection("up");

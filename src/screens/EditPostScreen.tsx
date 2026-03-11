@@ -15,6 +15,7 @@ import { getPostById, updatePost } from '@/api/posts';
 import { useAuthStore } from '@/store/authStore';
 import { BREED_LABELS, POST_TYPE_LABELS, POST_TAG_LABELS } from '@/utils/breed';
 import { colors, shadow } from '@/theme';
+import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
 import { postSchema } from '@/utils/validation';
 import type { PostTypeEnum, PostTagEnum } from '@/types';
 
@@ -28,7 +29,9 @@ export function EditPostScreen() {
   const postId = route.params?.postId ?? '';
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
+  const headerHeight = useStackHeaderHeight();
 
+  const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [type, setType] = useState<PostTypeEnum>('UPDATE_STORY');
   const [tag, setTag] = useState<PostTagEnum>('TRAINING');
@@ -42,6 +45,7 @@ export function EditPostScreen() {
 
   useEffect(() => {
     if (post) {
+      setTitle(post.title ?? '');
       setContent(post.content_text);
       setType(post.type);
       setTag(post.tag);
@@ -54,6 +58,7 @@ export function EditPostScreen() {
       const parsed = postSchema.parse({ content_text: content, type, tag, breed: post!.breed });
       return updatePost(postId, user.id, {
         content_text: parsed.content_text,
+        title: title.trim() || null,
         type: parsed.type as PostTypeEnum,
         tag: parsed.tag as PostTagEnum,
       });
@@ -82,7 +87,7 @@ export function EditPostScreen() {
   if (isLoading || !post) {
     return (
       <View style={[styles.centered, styles.background]}>
-        <ActivityIndicator size="large" color="#3b82f6" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -97,9 +102,18 @@ export function EditPostScreen() {
 
   return (
     <View style={styles.background}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: headerHeight }]}>
       <Text style={styles.label}>Breed</Text>
       <Text style={styles.breedValue}>{BREED_LABELS[breed]}</Text>
+
+      <Text style={styles.label}>Title</Text>
+      <TextInput
+        style={styles.titleInput}
+        placeholder="Add a title (optional)"
+        placeholderTextColor="#9ca3af"
+        value={title}
+        onChangeText={setTitle}
+      />
 
       <Text style={styles.label}>Type</Text>
       <View style={styles.chipRow}>
@@ -168,6 +182,16 @@ const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8, marginTop: 16 },
   breedValue: { fontSize: 16, color: '#1f2937', marginBottom: 8 },
+  titleInput: {
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: '#FFF',
+    marginBottom: 8,
+    ...shadow.sm,
+  },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tagScroll: { marginBottom: 8, maxHeight: 44 },
   chip: {
@@ -176,7 +200,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#e5e7eb',
     borderRadius: 20,
   },
-  chipSelected: { backgroundColor: '#3b82f6' },
+  chipSelected: { backgroundColor: colors.primary },
   chipText: { fontSize: 14, color: '#374151' },
   chipTextSelected: { color: '#FFF' },
   input: {
@@ -191,7 +215,7 @@ const styles = StyleSheet.create({
   },
   error: { color: '#ef4444', marginTop: 12, fontSize: 14 },
   submit: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: colors.primary,
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',

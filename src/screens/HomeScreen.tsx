@@ -24,6 +24,7 @@ import { FeedItem } from "@/components/FeedItem";
 import { getBreedHeroImageSource } from "@/utils/breedAssets";
 import { BREED_LABELS } from "@/utils/breed";
 import { useScrollDirection, useScrollDirectionUpdater } from "@/context/ScrollDirectionContext";
+import { useStackHeaderHeight } from "@/hooks/useStackHeaderHeight";
 import { ScreenWithWallpaper } from "@/components/ScreenWithWallpaper";
 import { colors, radius, spacing, typography } from "@/theme";
 import type { PostWithDetails, ReactionEnum } from "@/types";
@@ -50,6 +51,7 @@ export function HomeScreen({
   const { user } = useAuthStore();
   const { onScroll } = useScrollDirectionUpdater();
   const { scrollDirection } = useScrollDirection();
+  const headerHeight = useStackHeaderHeight();
   const { feedFilter, setFeedFilter } = useUIStore();
   const queryClient = useQueryClient();
   const [selectedDogIndex, setSelectedDogIndex] = useState(0);
@@ -321,6 +323,7 @@ export function HomeScreen({
           scrollEventThrottle={16}
           contentContainerStyle={[
             styles.listContent,
+            { paddingTop: headerHeight },
             (!posts || posts.length === 0) && styles.emptyList,
             scrollDirection === "down" && styles.listContentBarHidden,
           ]}

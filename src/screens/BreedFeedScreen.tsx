@@ -22,6 +22,7 @@ import { FeedItem } from "@/components/FeedItem";
 import { getBreedHeroImageSource } from "@/utils/breedAssets";
 import { BREED_LABELS } from "@/utils/breed";
 import { useScrollDirection, useScrollDirectionUpdater } from "@/context/ScrollDirectionContext";
+import { useStackHeaderHeight } from "@/hooks/useStackHeaderHeight";
 import { ScreenWithWallpaper } from "@/components/ScreenWithWallpaper";
 import { colors, radius, spacing, typography } from "@/theme";
 import type { PostWithDetails, BreedEnum, ReactionEnum } from "@/types";
@@ -44,6 +45,7 @@ export function BreedFeedScreen() {
   const route = useRoute();
   const { onScroll } = useScrollDirectionUpdater();
   const { scrollDirection } = useScrollDirection();
+  const headerHeight = useStackHeaderHeight();
   const breedParam = (route.params as { breed?: BreedEnum })?.breed;
   const navigation = useNavigation<{ navigate: (s: string, p?: object) => void }>();
   const { user } = useAuthStore();
@@ -252,6 +254,7 @@ export function BreedFeedScreen() {
           }
           contentContainerStyle={[
             styles.listContent,
+            { paddingTop: headerHeight },
             (!posts || posts.length === 0) && styles.emptyList,
             scrollDirection === "down" && styles.listContentBarHidden,
           ]}

@@ -19,6 +19,7 @@ import { useAuthStore } from '@/store/authStore';
 import { BREED_LABELS, POST_TYPE_LABELS, POST_TAG_LABELS } from '@/utils/breed';
 import { postSchema } from '@/utils/validation';
 import { ScreenWithWallpaper } from '@/components/ScreenWithWallpaper';
+import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
 import { colors, shadow, spacing } from '@/theme';
 import type { BreedEnum, PostTypeEnum, PostTagEnum } from '@/types';
 
@@ -31,6 +32,7 @@ export function CreatePostScreen() {
   const route = useRoute<RouteProp<CreatePostRoute, 'CreatePost'>>();
   const breed = route.params?.breed ?? 'GOLDEN_RETRIEVER';
   const { user } = useAuthStore();
+  const headerHeight = useStackHeaderHeight();
   const queryClient = useQueryClient();
 
   const [content, setContent] = useState('');
@@ -113,7 +115,7 @@ export function CreatePostScreen() {
 
   return (
     <ScreenWithWallpaper>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: headerHeight }]}>
       <Text style={styles.label}>Breed</Text>
       <Text style={styles.breedValue}>{BREED_LABELS[breed]}</Text>
 
