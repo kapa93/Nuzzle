@@ -1,7 +1,9 @@
-import type { BreedEnum, PostTypeEnum, PostTagEnum, ReactionEnum } from '../types';
+import type { BreedEnum, PostTypeEnum, PostTagEnum, ReactionEnum, MeetupKind } from '../types';
 import {
   BREED_LABELS,
   BREEDS,
+  MEETUP_KIND_LABELS,
+  MEETUP_KINDS,
   POST_TAG_LABELS,
   POST_TAGS,
   POST_TYPE_LABELS,
@@ -9,7 +11,8 @@ import {
   REACTIONS,
 } from '../types';
 
-export { BREED_LABELS, BREEDS, POST_TAG_LABELS, POST_TAGS, POST_TYPE_LABELS, POST_TYPES, REACTIONS };
+export { BREED_LABELS, BREEDS, MEETUP_KIND_LABELS, MEETUP_KINDS, POST_TAG_LABELS, POST_TAGS, POST_TYPE_LABELS, POST_TYPES, REACTIONS };
+export type { MeetupKind };
 
 export const REACTION_EMOJI: Record<ReactionEnum, string> = {
   LIKE: '👍',
@@ -19,6 +22,13 @@ export const REACTION_EMOJI: Record<ReactionEnum, string> = {
   SAD: '😢',
   ANGRY: '😡',
 };
+
+export function formatAuthorDisplay(authorName: string, dogName: string | null | undefined): string {
+  if (dogName?.trim()) {
+    return `${authorName} & ${dogName}`;
+  }
+  return authorName;
+}
 
 export function formatRelativeTime(dateStr: string): string {
   const date = new Date(dateStr);

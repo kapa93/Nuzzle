@@ -1,7 +1,7 @@
 import type { PostWithDetails } from "@/types";
 import type { QuestionCardData } from "@/ui/types";
 import { BREED_TO_COLOR } from "./breedAssets";
-import { formatRelativeTime } from "./breed";
+import { formatAuthorDisplay, formatRelativeTime } from "./breed";
 import { POST_TAG_LABELS } from "@/utils/breed";
 import type { PostTypeEnum } from "@/types";
 
@@ -9,12 +9,13 @@ const typeTone: Record<PostTypeEnum, "question" | "tip" | "story"> = {
   QUESTION: "question",
   TIP: "tip",
   UPDATE_STORY: "story",
+  MEETUP: "story", // fallback for any edge case; MeetupCard used for MEETUP posts
 };
 
 export function postToQuestionCardData(post: PostWithDetails): QuestionCardData {
   return {
     id: post.id,
-    author: post.author_name,
+    author: formatAuthorDisplay(post.author_name, post.author_dog_name),
     authorId: post.author_id,
     authorMeta: `${POST_TAG_LABELS[post.tag]} • ${formatRelativeTime(post.created_at)}`,
     authorAvatarUri: post.author_dog_image_url,

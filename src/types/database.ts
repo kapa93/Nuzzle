@@ -105,6 +105,38 @@ export interface Database {
           updated_at?: string;
         };
       };
+      dog_location_checkins: {
+        Row: {
+          id: string;
+          user_id: string;
+          dog_id: string;
+          location_key: string;
+          location_name: string;
+          created_at: string;
+          expires_at: string;
+          ended_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          dog_id: string;
+          location_key: string;
+          location_name: string;
+          created_at?: string;
+          expires_at: string;
+          ended_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          dog_id?: string;
+          location_key?: string;
+          location_name?: string;
+          created_at?: string;
+          expires_at?: string;
+          ended_at?: string | null;
+        };
+      };
       posts: {
         Row: {
           id: string;

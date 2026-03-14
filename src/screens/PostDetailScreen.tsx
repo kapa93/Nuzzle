@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getPostById, deletePost } from "@/api/posts";
+import { rsvpMeetup, unrsvpMeetup } from "@/api/meetups";
 import { getCommentsByPost } from "@/api/comments";
 import { createCommentWithNotification } from "@/api/comments";
 import { createReport } from "@/api/reports";
@@ -29,8 +30,8 @@ import { ReactionBar } from "@/components/ReactionBar";
 import { HealthDisclaimer } from "@/components/HealthDisclaimer";
 import { AnswerCard } from "@/ui/AnswerCard";
 import { PrimaryButton } from "@/ui/PrimaryButton";
-import { formatRelativeTime } from "@/utils/breed";
-import { BREED_LABELS, POST_TYPE_LABELS, POST_TAG_LABELS } from "@/utils/breed";
+import { formatAuthorDisplay, formatRelativeTime } from "@/utils/breed";
+import { BREED_LABELS, POST_TYPE_LABELS, POST_TAG_LABELS, MEETUP_KIND_LABELS } from "@/utils/breed";
 import { commentSchema } from "@/utils/validation";
 import { ScreenWithWallpaper } from "@/components/ScreenWithWallpaper";
 import { useScrollDirection } from "@/context/ScrollDirectionContext";
@@ -72,6 +73,14 @@ export function PostDetailScreen() {
   });
 
   const reactionMutation = useReactionMutation();
+
+  const rsvpMutation = useMutation({
+    mutationFn: (rsvped: boolean) =>
+      rsvped ? unrsvpMeetup(postId, user!.id) : rsvpMeetup(postId, user!.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["post", postId] });
+    },
+  });
   const commentMutation = useMutation({
     mutationFn: () =>
       createCommentWithNotification(
@@ -191,7 +200,7 @@ export function PostDetailScreen() {
                 size={48}
               />
               <View style={styles.headerText}>
-                <Text style={styles.authorName}>{post.author_name}</Text>
+                <Text style={styles.authorName}>{formatAuthorDisplay(post.author_name, post.author_dog_name)}</Text>
                 <Text style={styles.meta}>
                   {breedLabel} · {typeLabel} · {tagLabel}
                 </Text>
@@ -250,6 +259,52 @@ export function PostDetailScreen() {
               </View>
             ) : null}
 
+            {post.type === "MEETUP" && post.meetup_details ? (
+              <View style={styles.meetupBlock}>
+                <View style={styles.meetupDetailRow}>
+                  <Ionicons name="location" size={20} color={colors.primary} />
+                  <Text style={styles.meetupDetailText}>{post.meetup_details.location_name}</Text>
+                </View>
+                <View style={styles.meetupDetailRow}>
+                  <Ionicons name="calendar" size={20} color={colors.primary} />
+                  <Text style={styles.meetupDetailText}>
+                    {new Date(post.meetup_details.start_time).toLocaleString(undefined, {
+                      weekday: "long",
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </Text>
+                </View>
+                {post.meetup_details.end_time && (
+                  <View style={styles.meetupDetailRow}>
+                    <Ionicons name="time" size={20} color={colors.primary} />
+                    <Text style={styles.meetupDetailText}>
+                      Until {new Date(post.meetup_details.end_time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                    </Text>
+                  </View>
+                )}
+                {post.meetup_details.meetup_kind && (
+                  <View style={styles.meetupDetailRow}>
+                    <Ionicons name="paw" size={20} color={colors.primary} />
+                    <Text style={styles.meetupDetailText}>{MEETUP_KIND_LABELS[post.meetup_details.meetup_kind]}</Text>
+                  </View>
+                )}
+                {user && user.id !== post.author_id && (
+                  <Pressable
+                    style={[styles.rsvpBtn, post.user_rsvped && styles.rsvpBtnJoined]}
+                    onPress={() => rsvpMutation.mutate(post.user_rsvped ?? false)}
+                    disabled={rsvpMutation.isPending}
+                  >
+                    <Text style={styles.rsvpBtnText}>
+                      {post.user_rsvped ? "Joined" : "Join"} ({post.attendee_count ?? 0} going)
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
+            ) : null}
+
             <View style={styles.footer}>
               <ReactionBar
                 reactions={post.reaction_counts}
@@ -279,7 +334,7 @@ export function PostDetailScreen() {
             {(comments ?? []).map((c) => (
               <AnswerCard
                 key={c.id}
-                author={c.author_name}
+                author={formatAuthorDisplay(c.author_name, c.author_dog_name ?? undefined)}
                 body={c.content_text}
                 avatarUri={c.author_dog_image_url}
                 timestamp={formatRelativeTime(c.created_at)}
@@ -371,6 +426,31 @@ const styles = StyleSheet.create({
   title: { ...typography.titleMD, marginBottom: spacing.sm },
   content: { ...typography.body, marginBottom: spacing.md },
   images: { marginBottom: spacing.md },
+  meetupBlock: {
+    marginBottom: spacing.md,
+    padding: spacing.md,
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.md,
+    gap: spacing.sm,
+  },
+  meetupDetailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  meetupDetailText: { ...typography.body, fontSize: 15 },
+  rsvpBtn: {
+    marginTop: spacing.sm,
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.pill,
+    alignSelf: "flex-start",
+  },
+  rsvpBtnJoined: {
+    backgroundColor: colors.primaryDark,
+  },
+  rsvpBtnText: { ...typography.body, fontWeight: "700", color: "#FFF" },
   footer: {
     flexDirection: "row",
     alignItems: "center",

@@ -10,7 +10,7 @@ import { PostWithDetails } from '../types';
 import { DogAvatar } from './DogAvatar';
 import { ImageGrid } from './ImageGrid';
 import { ReactionBar } from './ReactionBar';
-import { formatRelativeTime } from '../utils/breed';
+import { formatAuthorDisplay, formatRelativeTime } from '../utils/breed';
 import { BREED_LABELS, POST_TYPE_LABELS, POST_TAG_LABELS } from '../utils/breed';
 import { colors, radius, shadow, spacing, typography } from '@/theme';
 
@@ -42,7 +42,7 @@ export function PostCard({ post, onPress, onReactionSelect }: PostCardProps) {
         />
         <View style={styles.headerText}>
           <Text style={styles.authorName} numberOfLines={1}>
-            {post.author_name}
+            {formatAuthorDisplay(post.author_name, post.author_dog_name)}
           </Text>
           <Text style={styles.meta}>
             {breedLabel} · {typeLabel} · {tagLabel}

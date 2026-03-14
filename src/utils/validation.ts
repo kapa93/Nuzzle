@@ -1,5 +1,14 @@
 import { z } from 'zod';
-import { BREEDS, POST_TAGS, POST_TYPES } from './breed';
+import { BREEDS, MEETUP_KINDS, POST_TAGS, POST_TYPES } from './breed';
+
+export const meetupDetailsSchema = z.object({
+  location_name: z.string().min(1, 'Location is required').max(200),
+  start_time: z.string().min(1, 'Start time is required'),
+  end_time: z.string().optional().nullable(),
+  meetup_kind: z.enum(MEETUP_KINDS as unknown as [string, ...string[]]).optional().nullable(),
+  spots_available: z.number().int().positive().optional().nullable(),
+  host_notes: z.string().max(500).optional().nullable(),
+});
 
 export const signUpSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -28,7 +37,15 @@ export const postSchema = z.object({
   type: z.enum(POST_TYPES as unknown as [string, ...string[]]),
   tag: z.enum(POST_TAGS as unknown as [string, ...string[]]),
   breed: z.enum(BREEDS as unknown as [string, ...string[]]),
-});
+  title: z.string().optional(),
+  meetup_details: meetupDetailsSchema.optional(),
+}).refine(
+  (data) => {
+    if (data.type !== 'MEETUP') return true;
+    return data.meetup_details != null;
+  },
+  { message: 'Meetup posts require location and date/time', path: ['meetup_details'] }
+);
 
 export const commentSchema = z.object({
   content: z.string().min(1, 'Comment cannot be empty').max(2000),

@@ -11,6 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { getFeed, deletePost } from "@/api/posts";
+import { rsvpMeetup, unrsvpMeetup } from "@/api/meetups";
 import { getJoinedBreeds, joinBreedFeed, leaveBreedFeed } from "@/api/breedJoins";
 import { setReaction } from "@/api/reactions";
 import { useAuthStore } from "@/store/authStore";
@@ -28,18 +29,19 @@ import { colors, radius, spacing, typography } from "@/theme";
 import type { PostWithDetails, BreedEnum, ReactionEnum } from "@/types";
 import type { FeedFilter } from "@/store/uiStore";
 
-const TABS = ["All", "Tips", "Questions", "Update/Story"] as const;
+const TABS = ["All", "Questions", "Meetups", "Tips", "Update/Story"] as const;
 type TabKey = (typeof TABS)[number];
 
 const TAB_TO_FILTER: Record<TabKey, FeedFilter> = {
   All: "all",
-  Tips: "TIP",
   Questions: "QUESTION",
+  Meetups: "MEETUP",
+  Tips: "TIP",
   "Update/Story": "UPDATE_STORY",
 };
 
 const FILTER_TO_TAB = (f: FeedFilter): TabKey =>
-  f === "all" ? "All" : f === "TIP" ? "Tips" : f === "QUESTION" ? "Questions" : "Update/Story";
+  f === "all" ? "All" : f === "TIP" ? "Tips" : f === "QUESTION" ? "Questions" : f === "MEETUP" ? "Meetups" : "Update/Story";
 
 export function BreedFeedScreen() {
   const route = useRoute();
@@ -94,7 +96,7 @@ export function BreedFeedScreen() {
   };
 
   const sort = "newest";
-  const typeFilter = feedFilter === "QUESTION" || feedFilter === "UPDATE_STORY" || feedFilter === "TIP" ? feedFilter : null;
+  const typeFilter = feedFilter === "QUESTION" || feedFilter === "UPDATE_STORY" || feedFilter === "TIP" || feedFilter === "MEETUP" ? feedFilter : null;
 
   const tabKey = FILTER_TO_TAB(feedFilter);
 
@@ -140,6 +142,35 @@ export function BreedFeedScreen() {
     },
   });
 
+  const rsvpMutation = useMutation({
+    mutationFn: ({ postId, rsvped }: { postId: string; rsvped: boolean }) =>
+      rsvped ? unrsvpMeetup(postId, user!.id) : rsvpMeetup(postId, user!.id),
+    onMutate: async ({ postId, rsvped }) => {
+      await queryClient.cancelQueries({ queryKey: feedQueryKey });
+      const prev = queryClient.getQueryData<PostWithDetails[]>(feedQueryKey);
+      queryClient.setQueryData<PostWithDetails[]>(feedQueryKey, (old) => {
+        if (!old) return old;
+        return old.map((p) => {
+          if (p.id !== postId || p.type !== "MEETUP") return p;
+          const wasRsvped = p.user_rsvped ?? false;
+          const delta = rsvped ? -1 : 1;
+          return {
+            ...p,
+            user_rsvped: !wasRsvped,
+            attendee_count: Math.max(0, (p.attendee_count ?? 0) + delta),
+          };
+        });
+      });
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(feedQueryKey, ctx.prev);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: feedQueryKey });
+    },
+  });
+
   const handlePostPress = useCallback(
     (postId: string) => navigation.navigate("PostDetail", { postId }),
     [navigation]
@@ -169,6 +200,37 @@ export function BreedFeedScreen() {
       reactionMutation.mutate({ postId, reaction });
     },
     [reactionMutation]
+  );
+
+  const handleRsvpToggle = useCallback(
+    (postId: string, rsvped: boolean) => {
+      rsvpMutation.mutate({ postId, rsvped });
+    },
+    [rsvpMutation]
+  );
+
+  const renderFeedItem = useCallback(
+    ({ item }: { item: PostWithDetails }) => (
+      <FeedItem
+        item={item}
+        onPostPress={handlePostPress}
+        onReactionSelect={handleReactionSelect}
+        onReactionMenuOpenChange={setReactionMenuOpen}
+        onRsvpToggle={handleRsvpToggle}
+        currentUserId={user?.id}
+        onEdit={handleEditPost}
+        onDelete={handleDeletePost}
+      />
+    ),
+    [
+      handlePostPress,
+      handleReactionSelect,
+      setReactionMenuOpen,
+      handleRsvpToggle,
+      handleEditPost,
+      handleDeletePost,
+      user?.id,
+    ]
   );
 
   const renderEmpty = () => (
@@ -214,7 +276,7 @@ export function BreedFeedScreen() {
         <SegmentTabs
           tabs={[...TABS]}
           activeTab={tabKey}
-          onChange={(t) => setFeedFilter(TAB_TO_FILTER[t])}
+          onChange={(t) => setFeedFilter(TAB_TO_FILTER[t as TabKey])}
         />
       </View>
     </>
@@ -233,17 +295,8 @@ export function BreedFeedScreen() {
           scrollEventThrottle={16}
           initialNumToRender={8}
           maxToRenderPerBatch={8}
-          renderItem={({ item }) => (
-            <FeedItem
-              item={item}
-              onPostPress={handlePostPress}
-              onReactionSelect={handleReactionSelect}
-              onReactionMenuOpenChange={setReactionMenuOpen}
-              currentUserId={user?.id}
-              onEdit={handleEditPost}
-              onDelete={handleDeletePost}
-            />
-          )}
+          windowSize={11}
+          renderItem={renderFeedItem}
           ListEmptyComponent={!isLoading ? renderEmpty : null}
           refreshControl={
             <RefreshControl

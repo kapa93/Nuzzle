@@ -20,6 +20,7 @@ export type MainTabParamList = {
 
 export type HomeStackParamList = {
   HomeFeed: undefined;
+  DogBeachNow: undefined;
   PostDetail: { postId: string };
   CreatePost: { breed: BreedEnum };
   EditPost: { postId: string };

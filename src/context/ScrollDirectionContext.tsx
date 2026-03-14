@@ -24,7 +24,7 @@ export function useScrollDirection() {
   return ctx;
 }
 
-const SCROLL_THRESHOLD = 5;
+const SCROLL_THRESHOLD = 3;
 const AT_TOP_THRESHOLD = 10; // Near top - ignore "down" to prevent bounce from hiding nav/header
 const AT_BOTTOM_THRESHOLD = 10; // Near bottom - ignore "up" to prevent bounce from showing nav/header
 

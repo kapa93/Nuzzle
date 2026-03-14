@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,38 +10,52 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as Location from 'expo-location';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useAuthStore } from "@/store/authStore";
 import { useUIStore } from "@/store/uiStore";
 import { getFeed, deletePost } from "@/api/posts";
+import { rsvpMeetup, unrsvpMeetup } from "@/api/meetups";
 import { getDogsByOwner } from "@/api/dogs";
 import { getJoinedBreeds, joinBreedFeed, leaveBreedFeed } from "@/api/breedJoins";
+import {
+  createDogBeachCheckin,
+  getActiveDogBeachCheckins,
+  getMyActiveDogBeachCheckin,
+} from '@/api/locationCheckins';
 import { setReaction } from "@/api/reactions";
 import { BreedHero } from "@/ui/BreedHero";
 import { SwipeableBreedBanner } from "@/ui/SwipeableBreedBanner";
 import { SegmentTabs } from "@/ui/SegmentTabs";
 import { FeedItem } from "@/components/FeedItem";
+import { DogBeachNearbyAlert } from '@/components/DogBeachNearbyAlert';
+import { DogBeachNowAlert } from '@/components/DogBeachNowAlert';
 import { getBreedHeroImageSource } from "@/utils/breedAssets";
 import { BREED_LABELS } from "@/utils/breed";
+import { DOG_BEACH } from '@/config/dogBeach';
+import { getDistanceMeters } from '@/utils/location';
 import { useScrollDirection, useScrollDirectionUpdater } from "@/context/ScrollDirectionContext";
 import { useStackHeaderHeight } from "@/hooks/useStackHeaderHeight";
-import { ScreenWithWallpaper } from "@/components/ScreenWithWallpaper";
 import { colors, radius, spacing, typography } from "@/theme";
 import type { PostWithDetails, ReactionEnum } from "@/types";
 import type { FeedFilter } from "@/store/uiStore";
 
-const TABS = ["All", "Tips", "Questions", "Update/Story"] as const;
+const TABS = ["All", "Questions", "Meetups", "Tips", "Update/Story"] as const;
 type TabKey = (typeof TABS)[number];
 
 const TAB_TO_FILTER: Record<TabKey, FeedFilter> = {
   All: "all",
-  Tips: "TIP",
   Questions: "QUESTION",
+  Meetups: "MEETUP",
+  Tips: "TIP",
   "Update/Story": "UPDATE_STORY",
 };
 
 const FILTER_TO_TAB = (f: FeedFilter): TabKey =>
-  f === "all" ? "All" : f === "TIP" ? "Tips" : f === "QUESTION" ? "Questions" : "Update/Story";
+  f === "all" ? "All" : f === "TIP" ? "Tips" : f === "QUESTION" ? "Questions" : f === "MEETUP" ? "Meetups" : "Update/Story";
+
+const ALERT_ANIM_DURATION = 220;
 
 export function HomeScreen({
   navigation,
@@ -57,6 +71,10 @@ export function HomeScreen({
   const [selectedDogIndex, setSelectedDogIndex] = useState(0);
   const [selectedBreedIndex, setSelectedBreedIndex] = useState(0);
   const [reactionMenuOpen, setReactionMenuOpen] = useState(false);
+  const [isNearDogBeach, setIsNearDogBeach] = useState(false);
+  const [locationChecked, setLocationChecked] = useState(false);
+  const forceNearby = __DEV__ && DOG_BEACH.debugForceNearby;
+  const dogBeachAlertTranslateY = useSharedValue(0);
 
   const { data: dogs } = useQuery({
     queryKey: ["dogs", user?.id],
@@ -70,6 +88,20 @@ export function HomeScreen({
     enabled: !!user?.id,
   });
 
+  const { data: activeDogBeachCheckins = [] } = useQuery({
+    queryKey: ['dogBeachActiveCheckins'],
+    queryFn: getActiveDogBeachCheckins,
+    enabled: !!user?.id,
+    refetchInterval: 60_000,
+  });
+
+  const { data: myDogBeachCheckin } = useQuery({
+    queryKey: ['dogBeachMyCheckin', user?.id],
+    queryFn: () => getMyActiveDogBeachCheckin(user!.id),
+    enabled: !!user?.id,
+    refetchInterval: 60_000,
+  });
+
   const selectedDog = dogs?.[selectedDogIndex];
   const defaultBreed = selectedDog?.breed ?? "GOLDEN_RETRIEVER";
   const breed =
@@ -78,6 +110,7 @@ export function HomeScreen({
       : defaultBreed;
 
   const isJoined = joinedBreeds.includes(breed);
+  const showNearbyCheckinCard = locationChecked && isNearDogBeach && !myDogBeachCheckin;
 
   const joinMutation = useMutation({
     mutationFn: (b: import("@/types").BreedEnum) => joinBreedFeed(user!.id, b),
@@ -91,6 +124,78 @@ export function HomeScreen({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["joinedBreeds", user?.id] });
     },
+  });
+
+  const checkinMutation = useMutation({
+    mutationFn: (dogId: string) => createDogBeachCheckin(user!.id, dogId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dogBeachActiveCheckins'] });
+      queryClient.invalidateQueries({ queryKey: ['dogBeachMyCheckin', user?.id] });
+    },
+    onError: () => {
+      Alert.alert('Could not check in', 'Please try again in a moment.');
+    },
+  });
+
+  useEffect(() => {
+    if (!user?.id) return;
+    let isCancelled = false;
+
+    const checkProximity = async () => {
+      try {
+        const permission = await Location.getForegroundPermissionsAsync();
+        let status = permission.status;
+        if (status === 'undetermined' && permission.canAskAgain) {
+          const requested = await Location.requestForegroundPermissionsAsync();
+          status = requested.status;
+        }
+        if (status !== 'granted') {
+          if (!isCancelled) {
+            setIsNearDogBeach(false);
+            setLocationChecked(true);
+          }
+          return;
+        }
+
+        const position = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        const distanceMeters = getDistanceMeters(
+          position.coords.latitude,
+          position.coords.longitude,
+          DOG_BEACH.latitude,
+          DOG_BEACH.longitude
+        );
+        if (!isCancelled) {
+          setIsNearDogBeach(forceNearby || distanceMeters <= DOG_BEACH.radiusMeters);
+          setLocationChecked(true);
+        }
+      } catch {
+        if (!isCancelled) {
+          setIsNearDogBeach(forceNearby);
+          setLocationChecked(true);
+        }
+      }
+    };
+
+    checkProximity();
+    const intervalId = setInterval(checkProximity, 5 * 60_000);
+    return () => {
+      isCancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [user?.id, forceNearby]);
+
+  useEffect(() => {
+    dogBeachAlertTranslateY.value = withTiming(scrollDirection === 'down' ? -(headerHeight - 48) : 0, {
+      duration: ALERT_ANIM_DURATION,
+    });
+  }, [scrollDirection, headerHeight, dogBeachAlertTranslateY]);
+
+  const dogBeachAlertAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateY: dogBeachAlertTranslateY.value }],
+    };
   });
 
   const handleJoinPress = () => {
@@ -110,8 +215,30 @@ export function HomeScreen({
     }
   };
 
+  const handleDogBeachCheckIn = useCallback(() => {
+    if (!dogs || dogs.length === 0) {
+      Alert.alert('No dog profile', 'Add a dog profile before checking in.');
+      return;
+    }
+    if (dogs.length === 1) {
+      checkinMutation.mutate(dogs[0].id);
+      return;
+    }
+    Alert.alert(
+      'Choose a dog',
+      'Which dog is at the beach right now?',
+      [
+        ...dogs.map((dog) => ({
+          text: dog.name,
+          onPress: () => checkinMutation.mutate(dog.id),
+        })),
+        { text: 'Cancel', style: 'cancel' as const },
+      ]
+    );
+  }, [dogs, checkinMutation]);
+
   const sort = "newest";
-  const typeFilter = feedFilter === "QUESTION" || feedFilter === "UPDATE_STORY" || feedFilter === "TIP" ? feedFilter : null;
+  const typeFilter = feedFilter === "QUESTION" || feedFilter === "UPDATE_STORY" || feedFilter === "TIP" || feedFilter === "MEETUP" ? feedFilter : null;
 
   const { data: posts, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ["feed", breed, feedFilter, user?.id],
@@ -156,6 +283,35 @@ export function HomeScreen({
     },
   });
 
+  const rsvpMutation = useMutation({
+    mutationFn: ({ postId, rsvped }: { postId: string; rsvped: boolean }) =>
+      rsvped ? unrsvpMeetup(postId, user!.id) : rsvpMeetup(postId, user!.id),
+    onMutate: async ({ postId, rsvped }) => {
+      await queryClient.cancelQueries({ queryKey: feedQueryKey });
+      const prev = queryClient.getQueryData<PostWithDetails[]>(feedQueryKey);
+      queryClient.setQueryData<PostWithDetails[]>(feedQueryKey, (old) => {
+        if (!old) return old;
+        return old.map((p) => {
+          if (p.id !== postId || p.type !== "MEETUP") return p;
+          const wasRsvped = p.user_rsvped ?? false;
+          const delta = rsvped ? -1 : 1;
+          return {
+            ...p,
+            user_rsvped: !wasRsvped,
+            attendee_count: Math.max(0, (p.attendee_count ?? 0) + delta),
+          };
+        });
+      });
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(feedQueryKey, ctx.prev);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: feedQueryKey });
+    },
+  });
+
   const handlePostPress = useCallback(
     (postId: string) => navigation.navigate("PostDetail", { postId }),
     [navigation]
@@ -185,6 +341,37 @@ export function HomeScreen({
       reactionMutation.mutate({ postId, reaction });
     },
     [reactionMutation]
+  );
+
+  const handleRsvpToggle = useCallback(
+    (postId: string, rsvped: boolean) => {
+      rsvpMutation.mutate({ postId, rsvped });
+    },
+    [rsvpMutation]
+  );
+
+  const renderFeedItem = useCallback(
+    ({ item }: { item: PostWithDetails }) => (
+      <FeedItem
+        item={item}
+        onPostPress={handlePostPress}
+        onReactionSelect={handleReactionSelect}
+        onReactionMenuOpenChange={setReactionMenuOpen}
+        onRsvpToggle={handleRsvpToggle}
+        currentUserId={user?.id}
+        onEdit={handleEditPost}
+        onDelete={handleDeletePost}
+      />
+    ),
+    [
+      handlePostPress,
+      handleReactionSelect,
+      setReactionMenuOpen,
+      handleRsvpToggle,
+      handleEditPost,
+      handleDeletePost,
+      user?.id,
+    ]
   );
 
   const tabKey = FILTER_TO_TAB(feedFilter);
@@ -249,23 +436,34 @@ export function HomeScreen({
         />
       </View>
     </>
-  ), [joinedBreeds, dogs, selectedDogIndex, selectedBreedIndex, breed, isJoined, tabKey, handleJoinPress, handleJoinPressForBreed, setFeedFilter]);
+  ), [
+    joinedBreeds,
+    dogs,
+    selectedDogIndex,
+    selectedBreedIndex,
+    breed,
+    isJoined,
+    tabKey,
+    handleJoinPress,
+    handleJoinPressForBreed,
+    setFeedFilter,
+  ]);
 
   if (!user) {
     return (
-      <ScreenWithWallpaper showOverlay>
+      <View style={styles.screen}>
         <SafeAreaView style={styles.safe}>
           <View style={styles.center}>
             <Text style={styles.emptyText}>Sign in to see your feed</Text>
           </View>
         </SafeAreaView>
-      </ScreenWithWallpaper>
+      </View>
     );
   }
 
   if (!dogs || dogs.length === 0) {
     return (
-      <ScreenWithWallpaper showOverlay>
+      <View style={styles.screen}>
         <SafeAreaView style={styles.safe}>
           <View style={styles.center}>
             <Text style={styles.emptyText}>Add a dog profile to see your breed's feed</Text>
@@ -274,7 +472,7 @@ export function HomeScreen({
             </Text>
           </View>
         </SafeAreaView>
-      </ScreenWithWallpaper>
+      </View>
     );
   }
 
@@ -290,9 +488,24 @@ export function HomeScreen({
   );
 
   return (
-    <ScreenWithWallpaper showOverlay>
+    <View style={styles.screen}>
       <SafeAreaView style={styles.safe} edges={["left", "right"]}>
         <View style={styles.container}>
+          {(showNearbyCheckinCard || activeDogBeachCheckins.length > 0) ? (
+            <Animated.View style={[styles.dogBeachAlertOverlay, { top: headerHeight + 12 }, dogBeachAlertAnimatedStyle]}>
+              {showNearbyCheckinCard ? (
+                <DogBeachNearbyAlert onCheckIn={handleDogBeachCheckIn} disabled={checkinMutation.isPending} />
+              ) : null}
+              {activeDogBeachCheckins.length > 0 ? (
+                <View style={showNearbyCheckinCard ? styles.secondaryAlert : undefined}>
+                  <DogBeachNowAlert
+                    activeCount={activeDogBeachCheckins.length}
+                    onPressView={() => navigation.navigate('DogBeachNow')}
+                  />
+                </View>
+              ) : null}
+            </Animated.View>
+          ) : null}
           <FlatList
           data={posts ?? []}
           keyExtractor={(item) => item.id}
@@ -300,17 +513,8 @@ export function HomeScreen({
           scrollEnabled={!reactionMenuOpen}
           initialNumToRender={8}
           maxToRenderPerBatch={8}
-          renderItem={({ item }) => (
-            <FeedItem
-              item={item}
-              onPostPress={handlePostPress}
-              onReactionSelect={handleReactionSelect}
-              onReactionMenuOpenChange={setReactionMenuOpen}
-              currentUserId={user?.id}
-              onEdit={handleEditPost}
-              onDelete={handleDeletePost}
-            />
-          )}
+          windowSize={11}
+          renderItem={renderFeedItem}
           ListEmptyComponent={!isLoading ? renderEmpty : null}
           refreshControl={
             <RefreshControl
@@ -331,13 +535,24 @@ export function HomeScreen({
         />
         </View>
       </SafeAreaView>
-    </ScreenWithWallpaper>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: colors.background },
   safe: { flex: 1 },
   container: { flex: 1 },
+  dogBeachAlertOverlay: {
+    position: 'absolute',
+    left: spacing.lg,
+    right: spacing.lg,
+    zIndex: 20,
+    elevation: 20,
+  },
+  secondaryAlert: {
+    marginTop: spacing.sm,
+  },
   center: {
     flex: 1,
     justifyContent: "center",
@@ -413,7 +628,6 @@ const styles = StyleSheet.create({
   breedChipTextSelected: { color: "#FFFFFF" },
   heroSection: { paddingHorizontal: spacing.lg, marginTop: spacing.lg, marginBottom: spacing.sm },
   tabsSection: { paddingLeft: spacing.lg, paddingRight: 0, marginTop: -spacing.xs, marginBottom: spacing.sm },
-  cardWrap: { paddingHorizontal: spacing.lg, marginBottom: spacing.sm },
   listContent: { paddingBottom: spacing.xxxl },
   listContentBarHidden: { paddingBottom: spacing.sm },
 });

@@ -26,6 +26,15 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "@react-native-community/datetimepicker",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "BreedBuddy uses your location to let you check in when you are near Ocean Beach Dog Beach."
+        }
+      ]
+    ]
   }
 }

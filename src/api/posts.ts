@@ -6,6 +6,8 @@ import type {
   PostTypeEnum,
   PostTagEnum,
   ReactionEnum,
+  MeetupDetails,
+  MeetupKind,
 } from '@/types';
 
 export type FeedSort = 'newest' | 'trending';
@@ -16,9 +18,15 @@ async function enrichPosts(rawPosts: RawPostRow[], userId: string | null): Promi
   if (rawPosts.length === 0) return [];
 
   const authorIds = [...new Set(rawPosts.map((p) => p.author_id))];
+  const meetupPostIds = rawPosts.filter((p) => p.type === 'MEETUP').map((p) => p.id);
 
-  // Fetch profiles and dogs for all authors
-  const [profilesRes, dogsRes, commentCountsRes] = await Promise.all([
+  const [
+    profilesRes,
+    dogsRes,
+    commentCountsRes,
+    meetupDetailsRes,
+    meetupRsvpsRes,
+  ] = await Promise.all([
     supabase.from('profiles').select('id, name').in('id', authorIds),
     supabase.from('dogs').select('owner_id, name, dog_image_url').in('owner_id', authorIds).order('created_at', { ascending: true }),
     Promise.all(
@@ -26,6 +34,12 @@ async function enrichPosts(rawPosts: RawPostRow[], userId: string | null): Promi
         supabase.from('comments').select('*', { count: 'exact', head: true }).eq('post_id', p.id)
       )
     ),
+    meetupPostIds.length > 0
+      ? supabase.from('meetup_details').select('*').in('post_id', meetupPostIds)
+      : Promise.resolve({ data: [] as MeetupDetails[] }),
+    meetupPostIds.length > 0 && userId
+      ? supabase.from('meetup_rsvps').select('meetup_post_id').eq('user_id', userId).in('meetup_post_id', meetupPostIds)
+      : Promise.resolve({ data: [] as { meetup_post_id: string }[] }),
   ]);
 
   const profilesMap = new Map(
@@ -34,6 +48,31 @@ async function enrichPosts(rawPosts: RawPostRow[], userId: string | null): Promi
   const dogsMap = new Map<string, { owner_id: string; name: string; dog_image_url: string | null }>();
   for (const d of dogsRes.data ?? []) {
     if (!dogsMap.has(d.owner_id)) dogsMap.set(d.owner_id, d);
+  }
+  const meetupDetailsMap = new Map<string, MeetupDetails>();
+  for (const md of meetupDetailsRes.data ?? []) {
+    meetupDetailsMap.set(md.post_id, {
+      ...md,
+      meetup_kind: (md.meetup_kind as MeetupKind) ?? null,
+    } as MeetupDetails);
+  }
+  const userRsvpedPostIds = new Set((meetupRsvpsRes.data ?? []).map((r: { meetup_post_id: string }) => r.meetup_post_id));
+
+  // Batch fetch attendee counts for all meetup posts
+  const attendeeCountMap = new Map<string, number>();
+  if (meetupPostIds.length > 0) {
+    const rsvpsRes = await supabase
+      .from('meetup_rsvps')
+      .select('meetup_post_id')
+      .in('meetup_post_id', meetupPostIds);
+    const rsvps = (rsvpsRes.data ?? []) as { meetup_post_id: string }[];
+    const counts = new Map<string, number>();
+    for (const r of rsvps) {
+      counts.set(r.meetup_post_id, (counts.get(r.meetup_post_id) ?? 0) + 1);
+    }
+    for (const pid of meetupPostIds) {
+      attendeeCountMap.set(pid, counts.get(pid) ?? 0);
+    }
   }
 
   return rawPosts.map((post, idx) => {
@@ -56,6 +95,10 @@ async function enrichPosts(rawPosts: RawPostRow[], userId: string | null): Promi
       .sort((a, b) => a.sort_order - b.sort_order)
       .map((pi) => pi.image_url);
 
+    const meetup_details = meetupDetailsMap.get(post.id);
+    const attendee_count = post.type === 'MEETUP' ? attendeeCountMap.get(post.id) ?? 0 : undefined;
+    const user_rsvped = post.type === 'MEETUP' && userId ? userRsvpedPostIds.has(post.id) : undefined;
+
     return {
       ...post,
       author_name: profile?.name ?? 'Unknown',
@@ -65,6 +108,9 @@ async function enrichPosts(rawPosts: RawPostRow[], userId: string | null): Promi
       reaction_counts,
       user_reaction,
       comment_count: typeof commentCount === 'number' ? commentCount : 0,
+      meetup_details: meetup_details ?? undefined,
+      attendee_count,
+      user_rsvped,
     } as PostWithDetails;
   });
 }
@@ -151,6 +197,16 @@ export async function getPostById(
   return enriched[0] ?? null;
 }
 
+export type CreateMeetupDetails = {
+  location_name: string;
+  start_time: string; // ISO datetime string
+  end_time?: string | null;
+  meetup_kind?: string | null;
+  spots_available?: number | null;
+  host_notes?: string | null;
+  is_recurring_seeded?: boolean;
+};
+
 export async function createPost(
   authorId: string,
   post: {
@@ -159,20 +215,36 @@ export async function createPost(
     tag: PostTagEnum;
     content_text: string;
     title?: string | null;
+    meetup_details?: CreateMeetupDetails;
   },
   imageUrls: string[] = []
 ) {
-  const { data: postData, error: postError } = await supabase
+  const { meetup_details, ...postData } = post;
+  const { data: insertedPost, error: postError } = await supabase
     .from('posts')
     .insert({
       author_id: authorId,
-      ...post,
+      ...postData,
     })
     .select()
     .single();
 
   if (postError) throw postError;
-  const newPost = postData as Post;
+  const newPost = insertedPost as Post;
+
+  if (post.type === 'MEETUP' && meetup_details) {
+    const { error: mdError } = await supabase.from('meetup_details').insert({
+      post_id: newPost.id,
+      location_name: meetup_details.location_name,
+      start_time: meetup_details.start_time,
+      end_time: meetup_details.end_time ?? null,
+      meetup_kind: meetup_details.meetup_kind ?? null,
+      spots_available: meetup_details.spots_available ?? null,
+      host_notes: meetup_details.host_notes ?? null,
+      is_recurring_seeded: meetup_details.is_recurring_seeded ?? false,
+    });
+    if (mdError) throw mdError;
+  }
 
   if (imageUrls.length > 0) {
     const inserts = imageUrls.map((url, i) => ({
