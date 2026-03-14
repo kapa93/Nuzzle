@@ -1,9 +1,21 @@
-import type { BreedEnum, PostTypeEnum, PostTagEnum, ReactionEnum, MeetupKind } from '../types';
+import type {
+  BreedEnum,
+  PostTypeEnum,
+  PostTagEnum,
+  ReactionEnum,
+  MeetupKind,
+  PlayStyleEnum,
+  CompatibilityAnswerEnum,
+} from '../types';
 import {
   BREED_LABELS,
   BREEDS,
+  COMPATIBILITY_ANSWERS,
+  COMPATIBILITY_ANSWER_LABELS,
   MEETUP_KIND_LABELS,
   MEETUP_KINDS,
+  PLAY_STYLES,
+  PLAY_STYLE_LABELS,
   POST_TAG_LABELS,
   POST_TAGS,
   POST_TYPE_LABELS,
@@ -11,8 +23,23 @@ import {
   REACTIONS,
 } from '../types';
 
-export { BREED_LABELS, BREEDS, MEETUP_KIND_LABELS, MEETUP_KINDS, POST_TAG_LABELS, POST_TAGS, POST_TYPE_LABELS, POST_TYPES, REACTIONS };
+export {
+  BREED_LABELS,
+  BREEDS,
+  COMPATIBILITY_ANSWERS,
+  COMPATIBILITY_ANSWER_LABELS,
+  MEETUP_KIND_LABELS,
+  MEETUP_KINDS,
+  PLAY_STYLES,
+  PLAY_STYLE_LABELS,
+  POST_TAG_LABELS,
+  POST_TAGS,
+  POST_TYPE_LABELS,
+  POST_TYPES,
+  REACTIONS,
+};
 export type { MeetupKind };
+export type { PlayStyleEnum, CompatibilityAnswerEnum };
 
 export const REACTION_EMOJI: Record<ReactionEnum, string> = {
   LIKE: '👍',

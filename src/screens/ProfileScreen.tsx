@@ -19,8 +19,13 @@ import { DogAvatar } from '@/components/DogAvatar';
 import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
 import { ScreenWithWallpaper } from '@/components/ScreenWithWallpaper';
 import { shadow } from '@/theme';
-import { BREED_LABELS } from '@/utils/breed';
-import { AGE_GROUP_LABELS, ENERGY_LEVEL_LABELS } from '@/utils/breed';
+import {
+  AGE_GROUP_LABELS,
+  BREED_LABELS,
+  COMPATIBILITY_ANSWER_LABELS,
+  ENERGY_LEVEL_LABELS,
+  PLAY_STYLE_LABELS,
+} from '@/utils/breed';
 import type { ProfileStackParamList } from '@/navigation/types';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -103,7 +108,7 @@ export function ProfileScreen({ navigation }: { navigation: ProfileNav }) {
 
   return (
     <ScreenWithWallpaper>
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingTop: headerHeight }}>
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: 55 }}>
       <View style={styles.header}>
         <TouchableOpacity
           onPress={handleChangePhoto}
@@ -157,6 +162,52 @@ export function ProfileScreen({ navigation }: { navigation: ProfileNav }) {
                   <Text style={styles.dogMeta}>
                     {AGE_GROUP_LABELS[dog.age_group]} · {ENERGY_LEVEL_LABELS[dog.energy_level]}
                   </Text>
+                  {(dog.dog_friendliness != null ||
+                    dog.play_style ||
+                    dog.good_with_puppies ||
+                    dog.good_with_large_dogs ||
+                    dog.good_with_small_dogs ||
+                    dog.temperament_notes) ? (
+                    <View style={styles.personalitySection}>
+                      <Text style={styles.personalityTitle}>Play & Personality</Text>
+                      <View style={styles.personalityChips}>
+                        {dog.dog_friendliness != null ? (
+                          <View style={styles.personalityChip}>
+                            <Text style={styles.personalityChipText}>Friendliness {dog.dog_friendliness}/5</Text>
+                          </View>
+                        ) : null}
+                        {dog.play_style ? (
+                          <View style={styles.personalityChip}>
+                            <Text style={styles.personalityChipText}>Play style: {PLAY_STYLE_LABELS[dog.play_style]}</Text>
+                          </View>
+                        ) : null}
+                        {dog.good_with_puppies ? (
+                          <View style={styles.personalityChip}>
+                            <Text style={styles.personalityChipText}>
+                              Puppies: {COMPATIBILITY_ANSWER_LABELS[dog.good_with_puppies]}
+                            </Text>
+                          </View>
+                        ) : null}
+                        {dog.good_with_large_dogs ? (
+                          <View style={styles.personalityChip}>
+                            <Text style={styles.personalityChipText}>
+                              Large dogs: {COMPATIBILITY_ANSWER_LABELS[dog.good_with_large_dogs]}
+                            </Text>
+                          </View>
+                        ) : null}
+                        {dog.good_with_small_dogs ? (
+                          <View style={styles.personalityChip}>
+                            <Text style={styles.personalityChipText}>
+                              Small dogs: {COMPATIBILITY_ANSWER_LABELS[dog.good_with_small_dogs]}
+                            </Text>
+                          </View>
+                        ) : null}
+                      </View>
+                      {dog.temperament_notes ? (
+                        <Text style={styles.personalityNotes}>{dog.temperament_notes}</Text>
+                      ) : null}
+                    </View>
+                  ) : null}
                 </View>
               </View>
               <View style={styles.dogCardActions}>
@@ -192,7 +243,7 @@ export function ProfileScreen({ navigation }: { navigation: ProfileNav }) {
 
       <TouchableOpacity
         style={styles.btn}
-        onPress={() => navigation.navigate('EditDog')}
+        onPress={() => navigation.navigate('EditDog', {})}
       >
         <Text style={styles.btnText}>Add Dog</Text>
       </TouchableOpacity>
@@ -307,6 +358,37 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     marginTop: 2,
   },
+  personalitySection: {
+    marginTop: 8,
+    gap: 6,
+  },
+  personalityTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#4b5563',
+    textTransform: 'uppercase',
+  },
+  personalityChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  personalityChip: {
+    backgroundColor: '#eef2ff',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  personalityChipText: {
+    fontSize: 12,
+    color: '#3730a3',
+    fontWeight: '600',
+  },
+  personalityNotes: {
+    fontSize: 12,
+    color: '#4b5563',
+    lineHeight: 18,
+  },
   dogCardActions: {
     flexDirection: 'row',
     gap: 4,
@@ -345,33 +427,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#EF4444',
-  },
-  avatarTouchable: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 92,
-    height: 92,
-  },
-  avatarBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

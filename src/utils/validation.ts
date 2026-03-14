@@ -30,6 +30,12 @@ export const dogSchema = z.object({
   breed: z.enum(BREEDS as unknown as [string, ...string[]]),
   age_group: z.enum(['PUPPY', 'ADOLESCENT', 'ADULT', 'SENIOR']),
   energy_level: z.enum(['LOW', 'MED', 'HIGH']),
+  dog_friendliness: z.number().int().min(1).max(5).optional().nullable(),
+  play_style: z.enum(['gentle', 'chase', 'wrestle', 'independent', 'mixed']).optional().nullable(),
+  good_with_puppies: z.enum(['yes', 'no', 'unsure']).optional().nullable(),
+  good_with_large_dogs: z.enum(['yes', 'no', 'unsure']).optional().nullable(),
+  good_with_small_dogs: z.enum(['yes', 'no', 'unsure']).optional().nullable(),
+  temperament_notes: z.string().max(240).optional().nullable(),
 });
 
 export const postSchema = z.object({

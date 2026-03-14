@@ -12,9 +12,10 @@ import {
   Platform,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { createPost } from '@/api/posts';
+import { getDogsByOwner } from '@/api/dogs';
 import { uploadPostImage, pickImages } from '@/lib/imageUpload';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
@@ -26,7 +27,7 @@ import type { BreedEnum, PostTypeEnum, PostTagEnum, MeetupKind } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 
 type CreatePostRoute = {
-  CreatePost: { breed: BreedEnum };
+  CreatePost: { breed?: BreedEnum };
 };
 
 function formatDateTime(d: Date): string {
@@ -46,14 +47,21 @@ function formatDateTimeDisplay(d: Date): string {
 export function CreatePostScreen() {
   const navigation = useNavigation();
   const route = useRoute<RouteProp<CreatePostRoute, 'CreatePost'>>();
-  const breed = route.params?.breed ?? 'GOLDEN_RETRIEVER';
   const { user } = useAuthStore();
+
+  const { data: dogs } = useQuery({
+    queryKey: ['dogs', user?.id],
+    queryFn: () => getDogsByOwner(user!.id),
+    enabled: !!user?.id && route.params?.breed == null,
+  });
+
+  const breed = route.params?.breed ?? dogs?.[0]?.breed ?? 'GOLDEN_RETRIEVER';
   const headerHeight = useStackHeaderHeight();
   const queryClient = useQueryClient();
 
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
-  const [type, setType] = useState<PostTypeEnum>('UPDATE_STORY');
+  const [type, setType] = useState<PostTypeEnum>('QUESTION');
   const [tag, setTag] = useState<PostTagEnum>('TRAINING');
   const [imageUris, setImageUris] = useState<Array<{ uri: string; base64?: string }>>([]);
   const [error, setError] = useState('');
@@ -190,7 +198,7 @@ export function CreatePostScreen() {
 
         <Text style={styles.label}>Type</Text>
         <View style={styles.chipRow}>
-          {(['QUESTION', 'UPDATE_STORY', 'TIP', 'MEETUP'] as PostTypeEnum[]).map((t) => (
+          {(['QUESTION', 'UPDATE_STORY', 'MEETUP', 'TIP'] as PostTypeEnum[]).map((t) => (
             <TouchableOpacity
               key={t}
               style={[styles.chip, type === t && styles.chipSelected]}

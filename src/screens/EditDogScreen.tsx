@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,9 +9,12 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  Keyboard,
+  Platform,
 } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createDog, updateDog, getDogById } from '@/api/dogs';
 import { uploadDogImage, pickImages } from '@/lib/imageUpload';
 import { useAuthStore } from '@/store/authStore';
@@ -21,13 +24,22 @@ import {
   BREED_LABELS,
   AGE_GROUPS,
   AGE_GROUP_LABELS,
+  COMPATIBILITY_ANSWERS,
+  COMPATIBILITY_ANSWER_LABELS,
   ENERGY_LEVELS,
   ENERGY_LEVEL_LABELS,
+  PLAY_STYLES,
+  PLAY_STYLE_LABELS,
 } from '@/utils/breed';
-import type { BreedEnum, AgeGroupEnum, EnergyLevelEnum } from '@/types';
-import { ScreenWithWallpaper } from '@/components/ScreenWithWallpaper';
+import type {
+  BreedEnum,
+  AgeGroupEnum,
+  EnergyLevelEnum,
+  CompatibilityAnswerEnum,
+  PlayStyleEnum,
+} from '@/types';
 import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
-import { shadow } from '@/theme';
+import { colors, shadow } from '@/theme';
 import type { ProfileStackParamList } from '@/navigation/types';
 
 export function EditDogScreen() {
@@ -37,13 +49,23 @@ export function EditDogScreen() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const headerHeight = useStackHeaderHeight();
+  const insets = useSafeAreaInsets();
   const [name, setName] = useState('');
   const [breed, setBreed] = useState<BreedEnum>('GOLDEN_RETRIEVER');
   const [ageGroup, setAgeGroup] = useState<AgeGroupEnum>('ADULT');
   const [energyLevel, setEnergyLevel] = useState<EnergyLevelEnum>('MED');
+  const [dogFriendliness, setDogFriendliness] = useState<number | null>(null);
+  const [playStyle, setPlayStyle] = useState<PlayStyleEnum | null>(null);
+  const [goodWithPuppies, setGoodWithPuppies] = useState<CompatibilityAnswerEnum | null>(null);
+  const [goodWithLargeDogs, setGoodWithLargeDogs] = useState<CompatibilityAnswerEnum | null>(null);
+  const [goodWithSmallDogs, setGoodWithSmallDogs] = useState<CompatibilityAnswerEnum | null>(null);
+  const [temperamentNotes, setTemperamentNotes] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const scrollViewRef = useRef<ScrollView | null>(null);
+  const shouldScrollToNotesRef = useRef(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   const { data: existingDog } = useQuery({
     queryKey: ['dog', dogId],
@@ -57,21 +79,70 @@ export function EditDogScreen() {
       setBreed(existingDog.breed);
       setAgeGroup(existingDog.age_group);
       setEnergyLevel(existingDog.energy_level);
+      setDogFriendliness(existingDog.dog_friendliness);
+      setPlayStyle(existingDog.play_style);
+      setGoodWithPuppies(existingDog.good_with_puppies);
+      setGoodWithLargeDogs(existingDog.good_with_large_dogs);
+      setGoodWithSmallDogs(existingDog.good_with_small_dogs);
+      setTemperamentNotes(existingDog.temperament_notes ?? '');
       setImageUri(existingDog.dog_image_url);
     } else if (!dogId) {
       setName('');
       setBreed('GOLDEN_RETRIEVER');
       setAgeGroup('ADULT');
       setEnergyLevel('MED');
+      setDogFriendliness(null);
+      setPlayStyle(null);
+      setGoodWithPuppies(null);
+      setGoodWithLargeDogs(null);
+      setGoodWithSmallDogs(null);
+      setTemperamentNotes('');
       setImageUri(null);
       setImageBase64(null);
     }
   }, [existingDog, dogId]);
 
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSubscription = Keyboard.addListener(showEvent, () => {
+      setIsKeyboardVisible(true);
+      if (shouldScrollToNotesRef.current) {
+        requestAnimationFrame(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+          shouldScrollToNotesRef.current = false;
+        });
+      }
+    });
+
+    const hideSubscription = Keyboard.addListener(hideEvent, () => {
+      setIsKeyboardVisible(false);
+      shouldScrollToNotesRef.current = false;
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
   const mutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error('Not authenticated');
-      const parsed = dogSchema.parse({ name, breed, age_group: ageGroup, energy_level: energyLevel });
+      const trimmedNotes = temperamentNotes.trim();
+      const parsed = dogSchema.parse({
+        name,
+        breed,
+        age_group: ageGroup,
+        energy_level: energyLevel,
+        dog_friendliness: dogFriendliness,
+        play_style: playStyle,
+        good_with_puppies: goodWithPuppies,
+        good_with_large_dogs: goodWithLargeDogs,
+        good_with_small_dogs: goodWithSmallDogs,
+        temperament_notes: trimmedNotes || null,
+      });
 
       if (existingDog) {
         let dogImageUrl = existingDog.dog_image_url;
@@ -83,6 +154,12 @@ export function EditDogScreen() {
           breed: parsed.breed as BreedEnum,
           age_group: parsed.age_group,
           energy_level: parsed.energy_level,
+          dog_friendliness: parsed.dog_friendliness ?? null,
+          play_style: parsed.play_style ?? null,
+          good_with_puppies: parsed.good_with_puppies ?? null,
+          good_with_large_dogs: parsed.good_with_large_dogs ?? null,
+          good_with_small_dogs: parsed.good_with_small_dogs ?? null,
+          temperament_notes: parsed.temperament_notes ?? null,
           dog_image_url: dogImageUrl,
         });
       } else {
@@ -91,6 +168,12 @@ export function EditDogScreen() {
           breed: parsed.breed as BreedEnum,
           age_group: parsed.age_group,
           energy_level: parsed.energy_level,
+          dog_friendliness: parsed.dog_friendliness ?? null,
+          play_style: parsed.play_style ?? null,
+          good_with_puppies: parsed.good_with_puppies ?? null,
+          good_with_large_dogs: parsed.good_with_large_dogs ?? null,
+          good_with_small_dogs: parsed.good_with_small_dogs ?? null,
+          temperament_notes: parsed.temperament_notes ?? null,
           dog_image_url: null,
         });
         if (imageBase64) {
@@ -128,6 +211,12 @@ export function EditDogScreen() {
       breed,
       age_group: ageGroup,
       energy_level: energyLevel,
+      dog_friendliness: dogFriendliness,
+      play_style: playStyle,
+      good_with_puppies: goodWithPuppies,
+      good_with_large_dogs: goodWithLargeDogs,
+      good_with_small_dogs: goodWithSmallDogs,
+      temperament_notes: temperamentNotes.trim() || null,
     });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? 'Invalid input');
@@ -136,12 +225,39 @@ export function EditDogScreen() {
     mutation.mutate();
   };
 
+  const handleTemperamentFocus = () => {
+    // Try immediately so it feels responsive; keyboard event will do a second nudge if needed.
+    requestAnimationFrame(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    });
+
+    // If keyboard is already open, scroll immediately; otherwise defer until it opens.
+    if (isKeyboardVisible) {
+      requestAnimationFrame(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      });
+      return;
+    }
+    shouldScrollToNotesRef.current = true;
+  };
+
   if (!user) return null;
 
   return (
-    <ScreenWithWallpaper>
-      <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: headerHeight }]}>
-      <Text style={styles.label}>Dog photo</Text>
+    <View style={styles.screen}>
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.container}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: headerHeight + 20,
+            paddingBottom: insets.bottom + (isKeyboardVisible ? -15 : 59),
+          },
+        ]}
+      >
       <TouchableOpacity style={styles.imagePicker} onPress={handlePickImage}>
         {imageUri ? (
           <Image source={{ uri: imageUri }} style={styles.dogImage} resizeMode="cover" />
@@ -160,7 +276,12 @@ export function EditDogScreen() {
       />
 
       <Text style={styles.label}>Breed</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.chipScroll}
+        contentContainerStyle={styles.chipRow}
+      >
         {BREEDS.map((b) => (
           <TouchableOpacity
             key={b}
@@ -204,6 +325,98 @@ export function EditDogScreen() {
         ))}
       </View>
 
+      <Text style={styles.sectionTitle}>Play & Personality</Text>
+      <Text style={styles.helperText}>
+        Optional details that help others choose good meetup and playdate matches.
+      </Text>
+
+      <Text style={styles.label}>Dog friendliness (1-5)</Text>
+      <View style={styles.chipRow}>
+        {[1, 2, 3, 4, 5].map((score) => (
+          <TouchableOpacity
+            key={score}
+            style={[styles.chip, dogFriendliness === score && styles.chipSelected]}
+            onPress={() => setDogFriendliness(dogFriendliness === score ? null : score)}
+          >
+            <Text style={[styles.chipText, dogFriendliness === score && styles.chipTextSelected]}>
+              {score}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <Text style={styles.label}>Play style</Text>
+      <View style={styles.chipRow}>
+        {PLAY_STYLES.map((style) => (
+          <TouchableOpacity
+            key={style}
+            style={[styles.chip, playStyle === style && styles.chipSelected]}
+            onPress={() => setPlayStyle(playStyle === style ? null : style)}
+          >
+            <Text style={[styles.chipText, playStyle === style && styles.chipTextSelected]}>
+              {PLAY_STYLE_LABELS[style]}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <Text style={styles.label}>Good with puppies?</Text>
+      <View style={styles.chipRow}>
+        {COMPATIBILITY_ANSWERS.map((answer) => (
+          <TouchableOpacity
+            key={answer}
+            style={[styles.chip, goodWithPuppies === answer && styles.chipSelected]}
+            onPress={() => setGoodWithPuppies(goodWithPuppies === answer ? null : answer)}
+          >
+            <Text style={[styles.chipText, goodWithPuppies === answer && styles.chipTextSelected]}>
+              {COMPATIBILITY_ANSWER_LABELS[answer]}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <Text style={styles.label}>Good with large dogs?</Text>
+      <View style={styles.chipRow}>
+        {COMPATIBILITY_ANSWERS.map((answer) => (
+          <TouchableOpacity
+            key={answer}
+            style={[styles.chip, goodWithLargeDogs === answer && styles.chipSelected]}
+            onPress={() => setGoodWithLargeDogs(goodWithLargeDogs === answer ? null : answer)}
+          >
+            <Text style={[styles.chipText, goodWithLargeDogs === answer && styles.chipTextSelected]}>
+              {COMPATIBILITY_ANSWER_LABELS[answer]}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <Text style={styles.label}>Good with small dogs?</Text>
+      <View style={styles.chipRow}>
+        {COMPATIBILITY_ANSWERS.map((answer) => (
+          <TouchableOpacity
+            key={answer}
+            style={[styles.chip, goodWithSmallDogs === answer && styles.chipSelected]}
+            onPress={() => setGoodWithSmallDogs(goodWithSmallDogs === answer ? null : answer)}
+          >
+            <Text style={[styles.chipText, goodWithSmallDogs === answer && styles.chipTextSelected]}>
+              {COMPATIBILITY_ANSWER_LABELS[answer]}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <Text style={styles.label}>Temperament notes (optional)</Text>
+      <TextInput
+        style={[styles.input, styles.notesInput]}
+        placeholder="Anything useful for playdates? (e.g. needs slow intros)"
+        placeholderTextColor="#9ca3af"
+        value={temperamentNotes}
+        onChangeText={setTemperamentNotes}
+        onFocus={handleTemperamentFocus}
+        multiline
+        maxLength={240}
+      />
+
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <TouchableOpacity
@@ -218,17 +431,21 @@ export function EditDogScreen() {
         )}
       </TouchableOpacity>
     </ScrollView>
-    </ScreenWithWallpaper>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: '#f9fafb' },
   container: { flex: 1 },
   content: { padding: 16 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1f2937', marginTop: 24, marginBottom: 4 },
+  helperText: { fontSize: 13, color: '#6b7280', marginBottom: 6 },
   label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8, marginTop: 16 },
   imagePicker: {
     width: 120,
     height: 120,
+    alignSelf: 'center',
     borderRadius: 60,
     backgroundColor: '#e5e7eb',
     alignItems: 'center',
@@ -247,6 +464,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     ...shadow.sm,
   },
+  notesInput: { minHeight: 84, textAlignVertical: 'top' },
   chipScroll: { marginBottom: 8, maxHeight: 44 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
@@ -255,12 +473,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#e5e7eb',
     borderRadius: 20,
   },
-  chipSelected: { backgroundColor: '#3b82f6' },
+  chipSelected: { backgroundColor: colors.primary },
   chipText: { fontSize: 14, color: '#374151' },
   chipTextSelected: { color: '#FFF' },
   error: { color: '#ef4444', marginTop: 12, fontSize: 14 },
   submit: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: colors.primary,
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',

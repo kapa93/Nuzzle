@@ -22,7 +22,7 @@ export async function getActiveDogBeachCheckins(): Promise<ActiveDogBeachCheckin
   const [dogsRes, ownersRes] = await Promise.all([
     supabase
       .from('dogs')
-      .select('id, name, breed, dog_image_url')
+      .select('id, name, breed, play_style, dog_image_url')
       .in('id', dogIds),
     supabase
       .from('profiles')
@@ -39,6 +39,7 @@ export async function getActiveDogBeachCheckins(): Promise<ActiveDogBeachCheckin
       {
         name: dog.name,
         breed: dog.breed as BreedEnum,
+        play_style: dog.play_style,
         dog_image_url: dog.dog_image_url,
       },
     ])
@@ -53,6 +54,7 @@ export async function getActiveDogBeachCheckins(): Promise<ActiveDogBeachCheckin
         ...row,
         dog_name: dog.name,
         dog_breed: dog.breed,
+        dog_play_style: dog.play_style,
         dog_image_url: dog.dog_image_url,
         owner_name: ownerMap.get(row.user_id) ?? null,
       } satisfies ActiveDogBeachCheckin;

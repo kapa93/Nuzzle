@@ -7,13 +7,15 @@ import {
   TextInput,
   Alert,
   KeyboardAvoidingView,
+  Keyboard,
   Platform,
   Pressable,
   Modal,
   TouchableOpacity,
   Dimensions,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -51,12 +53,26 @@ export function PostDetailScreen() {
   const queryClient = useQueryClient();
   const { setScrollDirection } = useScrollDirection();
   const headerHeight = useStackHeaderHeight();
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   const [commentText, setCommentText] = useState("");
   const [menuVisible, setMenuVisible] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   useEffect(() => {
     setScrollDirection("up");
   }, [setScrollDirection]);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showSub = Keyboard.addListener(showEvent, () => setIsKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setIsKeyboardVisible(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
   const [menuLayout, setMenuLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const menuBtnRef = useRef<View>(null);
 
@@ -185,7 +201,7 @@ export function PostDetailScreen() {
         <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={60}
+        keyboardVerticalOffset={0}
       >
         <ScrollView
           style={styles.scroll}
@@ -343,7 +359,12 @@ export function PostDetailScreen() {
           </View>
         </ScrollView>
 
-        <View style={[styles.inputRow, { marginBottom: 38 }]}>
+        <View
+          style={[
+            styles.inputRow,
+            { marginBottom: isKeyboardVisible ? 0 : Math.max(0, tabBarHeight - insets.bottom - 8) },
+          ]}
+        >
           <TextInput
             style={styles.input}
             placeholder="Add an answer..."

@@ -35,6 +35,12 @@ export async function createDog(
     breed: Dog['breed'];
     age_group: Dog['age_group'];
     energy_level: Dog['energy_level'];
+    dog_friendliness?: Dog['dog_friendliness'];
+    play_style?: Dog['play_style'];
+    good_with_puppies?: Dog['good_with_puppies'];
+    good_with_large_dogs?: Dog['good_with_large_dogs'];
+    good_with_small_dogs?: Dog['good_with_small_dogs'];
+    temperament_notes?: Dog['temperament_notes'];
     dog_image_url?: string | null;
   }
 ) {
@@ -54,7 +60,22 @@ export async function createDog(
 export async function updateDog(
   dogId: string,
   ownerId: string,
-  updates: Partial<Pick<Dog, 'name' | 'breed' | 'age_group' | 'energy_level' | 'dog_image_url'>>
+  updates: Partial<
+    Pick<
+      Dog,
+      | 'name'
+      | 'breed'
+      | 'age_group'
+      | 'energy_level'
+      | 'dog_friendliness'
+      | 'play_style'
+      | 'good_with_puppies'
+      | 'good_with_large_dogs'
+      | 'good_with_small_dogs'
+      | 'temperament_notes'
+      | 'dog_image_url'
+    >
+  >
 ) {
   const { data, error } = await supabase
     .from('dogs')

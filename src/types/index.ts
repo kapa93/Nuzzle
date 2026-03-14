@@ -26,6 +26,10 @@ export type AgeGroupEnum = 'PUPPY' | 'ADOLESCENT' | 'ADULT' | 'SENIOR';
 
 export type EnergyLevelEnum = 'LOW' | 'MED' | 'HIGH';
 
+export type PlayStyleEnum = 'gentle' | 'chase' | 'wrestle' | 'independent' | 'mixed';
+
+export type CompatibilityAnswerEnum = 'yes' | 'no' | 'unsure';
+
 export type ReactionEnum =
   | 'LIKE'
   | 'LOVE'
@@ -68,6 +72,10 @@ export const AGE_GROUPS: AgeGroupEnum[] = [
 
 export const ENERGY_LEVELS: EnergyLevelEnum[] = ['LOW', 'MED', 'HIGH'];
 
+export const PLAY_STYLES: PlayStyleEnum[] = ['gentle', 'chase', 'wrestle', 'independent', 'mixed'];
+
+export const COMPATIBILITY_ANSWERS: CompatibilityAnswerEnum[] = ['yes', 'no', 'unsure'];
+
 export const REACTIONS: { type: ReactionEnum; emoji: string }[] = [
   { type: 'LIKE', emoji: '👍' },
   { type: 'LOVE', emoji: '❤️' },
@@ -95,6 +103,12 @@ export interface Dog {
   breed: BreedEnum;
   age_group: AgeGroupEnum;
   energy_level: EnergyLevelEnum;
+  dog_friendliness: number | null;
+  play_style: PlayStyleEnum | null;
+  good_with_puppies: CompatibilityAnswerEnum | null;
+  good_with_large_dogs: CompatibilityAnswerEnum | null;
+  good_with_small_dogs: CompatibilityAnswerEnum | null;
+  temperament_notes: string | null;
   dog_image_url: string | null;
   created_at: string;
   updated_at: string;
@@ -114,6 +128,7 @@ export interface DogLocationCheckin {
 export interface ActiveDogBeachCheckin extends DogLocationCheckin {
   dog_name: string;
   dog_breed: BreedEnum;
+  dog_play_style: PlayStyleEnum | null;
   dog_image_url: string | null;
   owner_name: string | null;
 }
@@ -272,4 +287,18 @@ export const POST_TAG_LABELS: Record<PostTagEnum, string> = {
   ADULT: 'Adult',
   SENIOR: 'Senior',
   PLAYDATE: 'Playdate',
+};
+
+export const PLAY_STYLE_LABELS: Record<PlayStyleEnum, string> = {
+  gentle: 'Gentle',
+  chase: 'Chase',
+  wrestle: 'Wrestle',
+  independent: 'Independent',
+  mixed: 'Mixed',
+};
+
+export const COMPATIBILITY_ANSWER_LABELS: Record<CompatibilityAnswerEnum, string> = {
+  yes: 'Yes',
+  no: 'No',
+  unsure: 'Unsure',
 };

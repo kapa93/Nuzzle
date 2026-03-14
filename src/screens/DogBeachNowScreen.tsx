@@ -14,7 +14,7 @@ import {
   getMyActiveDogBeachCheckin,
 } from '@/api/locationCheckins';
 import { useAuthStore } from '@/store/authStore';
-import { BREED_LABELS, formatRelativeTime } from '@/utils/breed';
+import { BREED_LABELS, formatRelativeTime, PLAY_STYLE_LABELS } from '@/utils/breed';
 import { colors, radius, shadow, spacing, typography } from '@/theme';
 
 export function DogBeachNowScreen() {
@@ -159,7 +159,14 @@ export function DogBeachNowScreen() {
                 <View style={styles.row}>
                   <DogAvatar imageUrl={item.dog_image_url} name={item.dog_name} size={44} />
                   <View style={styles.rowText}>
-                    <Text style={styles.dogName}>{item.dog_name}</Text>
+                    <View style={styles.nameRow}>
+                      <Text style={styles.dogName}>{item.dog_name}</Text>
+                      {item.dog_play_style ? (
+                        <View style={styles.playStyleChip}>
+                          <Text style={styles.playStyleChipText}>{PLAY_STYLE_LABELS[item.dog_play_style]}</Text>
+                        </View>
+                      ) : null}
+                    </View>
                     <Text style={styles.rowMeta}>
                       {BREED_LABELS[item.dog_breed]}
                       {item.owner_name ? ` • ${item.owner_name}` : ''}
@@ -245,7 +252,24 @@ const styles = StyleSheet.create({
     ...shadow.sm,
   },
   rowText: { flex: 1, marginLeft: spacing.md },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    flexWrap: 'wrap',
+  },
   dogName: { ...typography.subtitle },
+  playStyleChip: {
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+  playStyleChipText: {
+    ...typography.caption,
+    color: colors.primaryDark,
+    fontWeight: '700',
+  },
   rowMeta: { ...typography.caption, marginTop: spacing.xxs },
-  rowTime: { ...typography.caption },
+  rowTime: { ...typography.caption, alignSelf: 'flex-start', marginTop: 2, marginRight: 5 },
 });

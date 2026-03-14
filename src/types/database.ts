@@ -33,6 +33,10 @@ export type AgeGroupEnum = 'PUPPY' | 'ADOLESCENT' | 'ADULT' | 'SENIOR';
 
 export type EnergyLevelEnum = 'LOW' | 'MED' | 'HIGH';
 
+export type PlayStyleEnum = 'gentle' | 'chase' | 'wrestle' | 'independent' | 'mixed';
+
+export type CompatibilityAnswerEnum = 'yes' | 'no' | 'unsure';
+
 export type ReactionEnum =
   | 'LIKE'
   | 'LOVE'
@@ -78,6 +82,12 @@ export interface Database {
           breed: BreedEnum;
           age_group: AgeGroupEnum;
           energy_level: EnergyLevelEnum;
+          dog_friendliness: number | null;
+          play_style: PlayStyleEnum | null;
+          good_with_puppies: CompatibilityAnswerEnum | null;
+          good_with_large_dogs: CompatibilityAnswerEnum | null;
+          good_with_small_dogs: CompatibilityAnswerEnum | null;
+          temperament_notes: string | null;
           dog_image_url: string | null;
           created_at: string;
           updated_at: string;
@@ -89,6 +99,12 @@ export interface Database {
           breed: BreedEnum;
           age_group: AgeGroupEnum;
           energy_level: EnergyLevelEnum;
+          dog_friendliness?: number | null;
+          play_style?: PlayStyleEnum | null;
+          good_with_puppies?: CompatibilityAnswerEnum | null;
+          good_with_large_dogs?: CompatibilityAnswerEnum | null;
+          good_with_small_dogs?: CompatibilityAnswerEnum | null;
+          temperament_notes?: string | null;
           dog_image_url?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -100,6 +116,12 @@ export interface Database {
           breed?: BreedEnum;
           age_group?: AgeGroupEnum;
           energy_level?: EnergyLevelEnum;
+          dog_friendliness?: number | null;
+          play_style?: PlayStyleEnum | null;
+          good_with_puppies?: CompatibilityAnswerEnum | null;
+          good_with_large_dogs?: CompatibilityAnswerEnum | null;
+          good_with_small_dogs?: CompatibilityAnswerEnum | null;
+          temperament_notes?: string | null;
           dog_image_url?: string | null;
           created_at?: string;
           updated_at?: string;
