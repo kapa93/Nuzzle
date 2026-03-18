@@ -2,11 +2,24 @@ jest.mock('@/hooks/useDogInteractionMutation', () => ({
   useDogInteractionMutation: jest.fn(),
 }));
 
+jest.mock('@/hooks/useRecentDogMeetingStatus', () => ({
+  useRecentDogMeetingStatus: jest.fn(),
+}));
+
+jest.mock('@expo/vector-icons', () => ({
+  Ionicons: ({ name }: { name: string }) => {
+    const React = require('react');
+    const { Text } = require('react-native');
+    return <Text>{`icon:${name}`}</Text>;
+  },
+}));
+
 import React from 'react';
 import { Alert } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { MetThisDogButton } from '@/components/MetThisDogButton';
 import { useDogInteractionMutation } from '@/hooks/useDogInteractionMutation';
+import { useRecentDogMeetingStatus } from '@/hooks/useRecentDogMeetingStatus';
 import type { Dog } from '@/types';
 
 function makeDog(overrides: Partial<Dog> = {}): Dog {
@@ -35,6 +48,10 @@ describe('MetThisDogButton', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (useRecentDogMeetingStatus as jest.Mock).mockReturnValue({
+      data: [],
+      isLoading: false,
+    });
     (useDogInteractionMutation as jest.Mock).mockReturnValue({
       mutate,
       isPending: false,
@@ -93,7 +110,9 @@ describe('MetThisDogButton', () => {
       createdByUserId: 'user-1',
       sourceType: 'dog_beach',
       locationName: 'Ocean Beach Dog Beach',
-    });
+    }, expect.objectContaining({
+      onSuccess: expect.any(Function),
+    }));
   });
 
   it('prompts for which dog when the viewer has multiple dogs', () => {
@@ -125,6 +144,52 @@ describe('MetThisDogButton', () => {
       createdByUserId: 'user-1',
       sourceType: 'manual',
       locationName: null,
+    }, expect.objectContaining({
+      onSuccess: expect.any(Function),
+    }));
+  });
+
+  it('shows a completed state when all available dogs met the target recently', () => {
+    (useRecentDogMeetingStatus as jest.Mock).mockReturnValue({
+      data: ['dog-mochi', 'dog-poppy'],
+      isLoading: false,
     });
+
+    render(
+      <MetThisDogButton
+        viewerUserId="user-1"
+        viewerDogs={[
+          makeDog({ id: 'dog-mochi', name: 'Mochi' }),
+          makeDog({ id: 'dog-poppy', name: 'Poppy' }),
+        ]}
+        targetDog={{ id: 'dog-scout', name: 'Scout' }}
+      />
+    );
+
+    expect(screen.getByLabelText('Already met')).toBeTruthy();
+    expect(screen.getByText('icon:checkmark')).toBeTruthy();
+    expect(screen.queryByText('Met this dog')).toBeNull();
+  });
+
+  it('shows a checkmark after a successful interaction save', () => {
+    (useDogInteractionMutation as jest.Mock).mockReturnValue({
+      mutate: (_variables: unknown, options?: { onSuccess?: () => void }) => {
+        options?.onSuccess?.();
+      },
+      isPending: false,
+    });
+
+    render(
+      <MetThisDogButton
+        viewerUserId="user-1"
+        viewerDogs={[makeDog({ id: 'dog-mochi', name: 'Mochi' })]}
+        targetDog={{ id: 'dog-scout', name: 'Scout' }}
+      />
+    );
+
+    fireEvent.press(screen.getByText('Met this dog'));
+
+    expect(screen.getByLabelText('Interaction saved')).toBeTruthy();
+    expect(screen.getByText('icon:checkmark')).toBeTruthy();
   });
 });

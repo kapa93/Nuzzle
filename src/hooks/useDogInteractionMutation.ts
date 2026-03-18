@@ -8,6 +8,7 @@ export function useDogInteractionMutation() {
     mutationFn: createDogInteractions,
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['dogsMet'] });
+      queryClient.invalidateQueries({ queryKey: ['recentDogMeetings'] });
       variables.dogIds.forEach((dogId) => {
         queryClient.invalidateQueries({ queryKey: ['dog', dogId] });
       });

@@ -1,6 +1,8 @@
 import React from 'react';
-import { Alert, Pressable, StyleSheet, Text } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useDogInteractionMutation } from '@/hooks/useDogInteractionMutation';
+import { useRecentDogMeetingStatus } from '@/hooks/useRecentDogMeetingStatus';
 import { colors, radius, spacing, typography } from '@/theme';
 import type { Dog, DogInteractionSourceType } from '@/types';
 
@@ -11,6 +13,7 @@ type Props = {
   sourceType?: DogInteractionSourceType;
   locationName?: string | null;
   compact?: boolean;
+  alignRight?: boolean;
 };
 
 export function MetThisDogButton({
@@ -20,11 +23,27 @@ export function MetThisDogButton({
   sourceType = 'manual',
   locationName = null,
   compact = false,
+  alignRight = false,
 }: Props) {
   const mutation = useDogInteractionMutation();
 
   const availableViewerDogs = viewerDogs.filter((dog) => dog.id !== targetDog.id);
-  const allDogsLabel = availableViewerDogs.length === 2 ? 'Both dogs' : 'All my dogs';
+  const [showSuccessState, setShowSuccessState] = React.useState(false);
+  const { data: recentlyMetDogIds = [] } = useRecentDogMeetingStatus({
+    dogIds: availableViewerDogs.map((dog) => dog.id),
+    targetDogId: targetDog.id,
+  });
+
+  const selectableViewerDogs = availableViewerDogs.filter((dog) => !recentlyMetDogIds.includes(dog.id));
+  const allDogsLabel = selectableViewerDogs.length === 2 ? 'Both dogs' : 'All my dogs';
+  const isFullyMet = availableViewerDogs.length > 0 && selectableViewerDogs.length === 0;
+
+  React.useEffect(() => {
+    if (!showSuccessState) return;
+
+    const timeout = setTimeout(() => setShowSuccessState(false), 1400);
+    return () => clearTimeout(timeout);
+  }, [showSuccessState]);
 
   const handleCreate = (dogIds: string[]) => {
     if (!viewerUserId) {
@@ -38,17 +57,21 @@ export function MetThisDogButton({
       createdByUserId: viewerUserId,
       sourceType,
       locationName,
+    }, {
+      onSuccess: () => {
+        setShowSuccessState(true);
+      },
     });
   };
 
   const handlePress = () => {
-    if (availableViewerDogs.length === 0) {
+    if (selectableViewerDogs.length === 0) {
       Alert.alert('No dog profile', 'Add a dog profile before tracking dogs met.');
       return;
     }
 
-    if (availableViewerDogs.length === 1) {
-      handleCreate([availableViewerDogs[0].id]);
+    if (selectableViewerDogs.length === 1) {
+      handleCreate([selectableViewerDogs[0].id]);
       return;
     }
 
@@ -58,9 +81,9 @@ export function MetThisDogButton({
       [
         {
           text: allDogsLabel,
-          onPress: () => handleCreate(availableViewerDogs.map((dog) => dog.id)),
+          onPress: () => handleCreate(selectableViewerDogs.map((dog) => dog.id)),
         },
-        ...availableViewerDogs.map((dog) => ({
+        ...selectableViewerDogs.map((dog) => ({
           text: dog.name,
           onPress: () => handleCreate([dog.id]),
         })),
@@ -73,11 +96,41 @@ export function MetThisDogButton({
     return null;
   }
 
+  if (showSuccessState) {
+    return (
+      <View
+        style={[
+          compact ? styles.compactCompleteChip : styles.completeChip,
+          alignRight ? styles.alignRight : styles.alignLeft,
+          styles.successChip,
+        ]}
+        accessibilityLabel="Interaction saved"
+      >
+        <Ionicons name="checkmark-sharp" size={compact ? 16 : 18} color={colors.primaryDark} />
+      </View>
+    );
+  }
+
+  if (isFullyMet) {
+    return (
+      <View
+        style={[
+          compact ? styles.compactCompleteChip : styles.completeChip,
+          alignRight ? styles.alignRight : styles.alignLeft,
+        ]}
+        accessibilityLabel="Already met"
+      >
+        <Ionicons name="checkmark-sharp" size={compact ? 16 : 18} color={colors.primaryDark} />
+      </View>
+    );
+  }
+
   return (
     <Pressable
       onPress={mutation.isPending ? undefined : handlePress}
       style={({ pressed }) => [
         compact ? styles.compactButton : styles.button,
+        alignRight ? styles.alignRight : styles.alignLeft,
         pressed && styles.pressed,
         mutation.isPending && styles.disabled,
       ]}
@@ -90,28 +143,57 @@ export function MetThisDogButton({
 }
 
 const styles = StyleSheet.create({
-  button: {
+  alignLeft: {
     alignSelf: 'flex-start',
-    minHeight: 42,
+  },
+  alignRight: {
+    alignSelf: 'flex-end',
+  },
+  button: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 30,
     borderRadius: radius.pill,
     backgroundColor: colors.primarySoft,
     borderWidth: 1,
     borderColor: colors.primary,
+    paddingVertical: 4,
     paddingHorizontal: spacing.lg,
-    justifyContent: 'center',
   },
   compactButton: {
-    alignSelf: 'flex-start',
-    minHeight: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 30,
     borderRadius: radius.pill,
     backgroundColor: colors.primarySoft,
     borderWidth: 1,
     borderColor: colors.primary,
-    paddingHorizontal: spacing.md,
-    justifyContent: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: spacing.lg,
   },
+  completeChip: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 30,
+    height: 30,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primarySoft,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  compactCompleteChip: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 30,
+    height: 30,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primarySoft,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  successChip: {},
   text: {
-    ...typography.body,
+    ...typography.caption,
     color: colors.primaryDark,
     fontWeight: '700',
   },

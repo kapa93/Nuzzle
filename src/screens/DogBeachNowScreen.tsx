@@ -144,34 +144,38 @@ export function DogBeachNowScreen({ navigation }: Props) {
                     ? 'You currently have 1 dog checked in.'
                     : `You currently have ${myActiveCheckins.length} dogs checked in.`}
                 </Text>
-                {availableDogsToCheckIn.length > 0 ? (
+                <View style={styles.statusActions}>
+                  {availableDogsToCheckIn.length > 0 ? (
+                    <Pressable
+                      onPress={createMutation.isPending ? undefined : handleCheckIn}
+                      style={({ pressed }) => [styles.checkinBtn, pressed && styles.pressed, createMutation.isPending && styles.disabledBtn]}
+                    >
+                      <Text style={styles.checkinBtnText}>
+                        {availableDogsToCheckIn.length === 1 ? 'Check In Another Dog' : `Check In ${allDogsLabel}`}
+                      </Text>
+                    </Pressable>
+                  ) : null}
                   <Pressable
-                    onPress={createMutation.isPending ? undefined : handleCheckIn}
-                    style={({ pressed }) => [styles.checkinBtn, pressed && styles.pressed, createMutation.isPending && styles.disabledBtn]}
+                    onPress={handleEndCheckin}
+                    style={({ pressed }) => [styles.endBtn, pressed && styles.pressed, endMutation.isPending && styles.disabledBtn]}
                   >
-                    <Text style={styles.checkinBtnText}>
-                      {availableDogsToCheckIn.length === 1 ? 'Check In Another Dog' : `Check In ${allDogsLabel}`}
+                    <Text style={styles.endBtnText}>
+                      {myActiveCheckins.length === 1 ? 'End Check-In' : 'End All Check-Ins'}
                     </Text>
                   </Pressable>
-                ) : null}
-                <Pressable
-                  onPress={handleEndCheckin}
-                  style={({ pressed }) => [styles.endBtn, pressed && styles.pressed, endMutation.isPending && styles.disabledBtn]}
-                >
-                  <Text style={styles.endBtnText}>
-                    {myActiveCheckins.length === 1 ? 'End Check-In' : 'End All Check-Ins'}
-                  </Text>
-                </Pressable>
+                </View>
               </>
             ) : (
               <>
                 <Text style={styles.statusText}>You are not currently checked in.</Text>
-                <Pressable
-                  onPress={createMutation.isPending ? undefined : handleCheckIn}
-                  style={({ pressed }) => [styles.checkinBtn, pressed && styles.pressed, createMutation.isPending && styles.disabledBtn]}
-                >
-                  <Text style={styles.checkinBtnText}>Check In</Text>
-                </Pressable>
+                <View style={styles.statusActions}>
+                  <Pressable
+                    onPress={createMutation.isPending ? undefined : handleCheckIn}
+                    style={({ pressed }) => [styles.checkinBtn, pressed && styles.pressed, createMutation.isPending && styles.disabledBtn]}
+                  >
+                    <Text style={styles.checkinBtnText}>Check In</Text>
+                  </Pressable>
+                </View>
               </>
             )}
           </View>
@@ -204,13 +208,15 @@ export function DogBeachNowScreen({ navigation }: Props) {
                   >
                     <DogAvatar imageUrl={item.dog_image_url} name={item.dog_name} size={44} />
                     <View style={styles.rowText}>
-                      <View style={styles.nameRow}>
-                        <Text style={styles.dogName}>{item.dog_name}</Text>
-                        {item.dog_play_style ? (
-                          <View style={styles.playStyleChip}>
-                            <Text style={styles.playStyleChipText}>{PLAY_STYLE_LABELS[item.dog_play_style]}</Text>
-                          </View>
-                        ) : null}
+                      <View style={styles.rowHeader}>
+                        <View style={styles.nameRow}>
+                          <Text style={styles.dogName}>{item.dog_name}</Text>
+                          {item.dog_play_style ? (
+                            <View style={styles.playStyleChip}>
+                              <Text style={styles.playStyleChipText}>{PLAY_STYLE_LABELS[item.dog_play_style]}</Text>
+                            </View>
+                          ) : null}
+                        </View>
                       </View>
                       <Text style={styles.rowMeta}>
                         {BREED_LABELS[item.dog_breed]}
@@ -228,6 +234,7 @@ export function DogBeachNowScreen({ navigation }: Props) {
                       sourceType="dog_beach"
                       locationName={DOG_BEACH.locationName}
                       compact
+                      alignRight
                     />
                     </View>
                 </View>
@@ -264,24 +271,36 @@ const styles = StyleSheet.create({
   },
   statusTitle: { ...typography.subtitle },
   statusText: { ...typography.bodyMuted, marginTop: spacing.xs, marginBottom: spacing.sm },
+  statusActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    alignItems: 'center',
+  },
   checkinBtn: {
     alignSelf: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: radius.pill,
     backgroundColor: colors.primary,
-    paddingVertical: spacing.sm,
+    minHeight: 30,
+    paddingVertical: 4,
     paddingHorizontal: spacing.lg,
   },
-  checkinBtnText: { ...typography.body, color: '#FFFFFF', fontWeight: '700' },
+  checkinBtnText: { ...typography.caption, color: '#FFFFFF', fontWeight: '700' },
   endBtn: {
     alignSelf: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: radius.pill,
     backgroundColor: colors.surfaceMuted,
     borderWidth: 1,
     borderColor: colors.border,
-    paddingVertical: spacing.sm,
+    minHeight: 30,
+    paddingVertical: 4,
     paddingHorizontal: spacing.lg,
   },
-  endBtnText: { ...typography.body, fontWeight: '700' },
+  endBtnText: { ...typography.caption, fontWeight: '700' },
   pressed: { opacity: 0.9 },
   disabledBtn: { opacity: 0.5 },
   centered: { paddingVertical: spacing.xl, alignItems: 'center' },
@@ -299,7 +318,7 @@ const styles = StyleSheet.create({
   listContent: { paddingBottom: spacing.xxxl },
   row: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'stretch',
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
@@ -311,14 +330,19 @@ const styles = StyleSheet.create({
   rowIdentity: {
     flex: 1,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   rowText: { flex: 1, marginLeft: spacing.md },
+  rowHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
     flexWrap: 'wrap',
+    flex: 1,
   },
   dogName: { ...typography.subtitle },
   playStyleChip: {
@@ -334,9 +358,11 @@ const styles = StyleSheet.create({
   },
   rowMeta: { ...typography.caption, marginTop: spacing.xxs },
   rowSide: {
+    alignSelf: 'stretch',
+    justifyContent: 'space-between',
     alignItems: 'flex-end',
-    gap: spacing.xs,
     marginLeft: spacing.sm,
+    marginRight: 5,
   },
-  rowTime: { ...typography.caption, marginTop: 2 },
+  rowTime: { ...typography.caption, flexShrink: 0, textAlign: 'right', marginRight: 5 },
 });

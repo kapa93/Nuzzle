@@ -2,6 +2,36 @@ import { supabase } from '@/lib/supabase';
 import type { Dog, DogInteraction, DogInteractionSourceType, DogMetSummary } from '@/types';
 import { buildDogsMetSummaries, RAPID_DUPLICATE_WINDOW_MS, toCanonicalDogPair } from '@/api/dogInteractions.helpers';
 
+export async function getRecentlyMetDogIds({
+  dogIds,
+  targetDogId,
+}: {
+  dogIds: string[];
+  targetDogId: string;
+}): Promise<string[]> {
+  const uniqueDogIds = Array.from(new Set(dogIds.filter((dogId) => dogId !== targetDogId)));
+  if (uniqueDogIds.length === 0) return [];
+
+  const duplicateCutoff = new Date(Date.now() - RAPID_DUPLICATE_WINDOW_MS).toISOString();
+  const { data, error } = await supabase
+    .from('dog_interactions')
+    .select('dog_id_1, dog_id_2')
+    .or(`dog_id_1.eq.${targetDogId},dog_id_2.eq.${targetDogId}`)
+    .gte('created_at', duplicateCutoff);
+
+  if (error) throw error;
+
+  const recentlyMetDogIds = new Set<string>();
+  for (const interaction of data ?? []) {
+    const otherDogId = interaction.dog_id_1 === targetDogId ? interaction.dog_id_2 : interaction.dog_id_1;
+    if (uniqueDogIds.includes(otherDogId)) {
+      recentlyMetDogIds.add(otherDogId);
+    }
+  }
+
+  return uniqueDogIds.filter((dogId) => recentlyMetDogIds.has(dogId));
+}
+
 export async function createDogInteractions({
   dogIds,
   metDogId,
