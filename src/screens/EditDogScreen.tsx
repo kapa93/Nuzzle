@@ -16,6 +16,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createDog, updateDog, getDogById } from '@/api/dogs';
+import { joinBreedFeed } from '@/api/breedJoins';
 import { uploadDogImage, pickImages } from '@/lib/imageUpload';
 import { useAuthStore } from '@/store/authStore';
 import { dogSchema } from '@/utils/validation';
@@ -189,7 +190,11 @@ export function EditDogScreen() {
       queryClient.invalidateQueries({ queryKey: ['dogs', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['dog', user?.id] });
       if (fromOnboarding) {
-        useAuthStore.getState().setNeedsOnboarding(false);
+        if (user) {
+          joinBreedFeed(user.id, breed as BreedEnum).catch(() => {});
+          queryClient.invalidateQueries({ queryKey: ['joinedBreeds', user.id] });
+        }
+        useAuthStore.getState().completeOnboarding(name, breed);
       } else {
         navigation.goBack();
       }

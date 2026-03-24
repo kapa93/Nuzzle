@@ -1,0 +1,223 @@
+# Progressive Onboarding System – Proposal
+
+## 1. Current State Summary
+
+| Area | Current Setup |
+|------|---------------|
+| **Pre-main onboarding** | `needsOnboarding` in `authStore` → shows `OnboardingWelcome` + `EditDog` stack before Main tabs |
+| **State** | Zustand (authStore, uiStore), TanStack Query |
+| **Feed screens** | `HomeScreen` and `BreedFeedScreen` share similar structure but have duplicated logic |
+| **Persistence** | `needsOnboarding` is in-memory only (reset on sign-out, lost on app restart) |
+
+---
+
+## 2. Where Onboarding State Should Live
+
+Two-phase model:
+
+### Phase 1 – Pre-main (existing concept)
+
+Keep `needsOnboarding` in `authStore` for the initial "Add Dog" flow before Main.
+
+### Phase 2 – Progressive (in-app) steps
+
+Introduce an `onboardingStore` (Zustand), separate from auth:
+
+- **Location:** `src/store/onboardingStore.ts`
+- **Fields:**
+  - `completedStepIds: string[]` – completed steps
+  - `dismissedAtStepId: string | null` – user explicitly dismisses
+  - `lastSeenStepId: string | null` – for "continue" / next-visit logic
+
+- **Persistence:** Use Zustand `persist` with AsyncStorage (same pattern as Supabase session persistence) so steps survive restarts.
+
+- **Why separate from authStore:**  
+  Onboarding concerns "app experience" and progresses independently from auth. Keeping it separate keeps authStore focused and onboarding easy to extend.
+
+- **Optional backend:**  
+  For cross-device sync, add `onboarding_progress` (e.g. JSONB) to `profiles`. Initially, AsyncStorage is enough.
+
+---
+
+## 3. How Onboarding Steps Should Be Defined
+
+Config-driven steps:
+
+- **Location:** `src/config/onboardingSteps.ts`
+- **Shape:**
+
+```ts
+interface OnboardingStep {
+  id: string;
+  order: number;
+  screen: 'HomeFeed' | 'BreedFeed' | 'ExploreList' | 'CreatePost' | ...;
+  /** Optional: only show when on this route */
+  routeParams?: { breed?: BreedEnum };
+  /** Element to highlight (e.g. "breed-banner", "segment-tabs", "first-feed-item") */
+  target: string;
+  /** Position: 'above' | 'below' | 'left' | 'right' | 'overlay' */
+  tooltipPosition?: 'above' | 'below' | 'left' | 'right' | 'overlay';
+  title: string;
+  body: string;
+  ctaLabel?: string;
+  /** Skip button? */
+  skippable?: boolean;
+  /** Condition: e.g. require joinedBreeds.length > 0 before showing "join breed" step */
+  when?: (ctx: OnboardingContext) => boolean;
+}
+```
+
+- **Context for `when`:** `{ dogs, joinedBreeds, feedPosts, currentScreen, routeParams }`
+- **Step ordering:** Sorted by `order`, then filtered by `when` and `completedStepIds`.
+
+---
+
+## 4. Feed Integration
+
+### 4.1 Where to render overlays
+
+- **Option A (recommended):** One `OnboardingOverlayProvider` at the **Main tabs** level (inside `MainTabs`, wrapping each tab screen).
+- **Option B:** Per-screen overlays in `HomeScreen` and `BreedFeedScreen` using shared logic.
+
+Prefer Option A: one provider reads the current step and route, then renders overlays. Screens don't need onboarding-specific code.
+
+### 4.2 How it works
+
+1. Provider subscribes to:
+   - `onboardingStore` (current step, completed steps)
+   - React Navigation state (current route and params)
+2. It picks the next incomplete step for the current screen.
+3. It renders overlays (spotlight, tooltip) and measures layout for the target element.
+4. Targets are identified via `testID` or a stable `onboardingTarget` prop, e.g.:
+
+   - `onboardingTarget="breed-banner"` on `BreedHero` / `SwipeableBreedBanner`
+   - `onboardingTarget="segment-tabs"` on `SegmentTabs`
+   - `onboardingTarget="feed-list"` or `onboardingTarget="first-feed-item"` in the FlatList header or first `FeedItem`
+
+### 4.3 Integration points in HomeScreen / BreedFeedScreen
+
+Only minor changes:
+
+- Add `onboardingTarget` to components you want to highlight.
+- If needed, expose `measureInWindow` / `measureLayout` via refs so the provider can position tooltips.
+- No new onboarding logic inside these screens.
+
+### 4.4 Handling BreedFeed vs HomeFeed
+
+Steps can be scoped by `screen`:
+
+- `screen: 'HomeFeed'` → only show on home feed
+- `screen: 'BreedFeed'` with `routeParams: { breed: 'GOLDEN_RETRIEVER' }` → only when viewing that breed
+
+Both feeds render the same targets (`breed-banner`, `segment-tabs`, etc.), so the same overlay component can be reused.
+
+---
+
+## 5. Component Structure
+
+```
+src/
+├── components/
+│   └── onboarding/
+│       ├── OnboardingOverlayProvider.tsx   # Wraps Main content, renders based on route
+│       ├── OnboardingSpotlight.tsx         # Highlights a region (dimmed backdrop + clear hole)
+│       ├── OnboardingTooltip.tsx           # Callout (title, body, CTA, skip)
+│       └── OnboardingStepRoot.tsx          # Composes Spotlight + Tooltip, handles measure/layout
+├── config/
+│   └── onboardingSteps.ts
+├── store/
+│   └── onboardingStore.ts
+└── hooks/
+    └── useOnboardingStep.ts                # Returns { currentStep, completeStep, dismiss }
+```
+
+- `OnboardingOverlayProvider`: reads store + route, resolves current step, renders `OnboardingStepRoot` when appropriate.
+- `OnboardingStepRoot`: measures target via `onLayout` / ref, renders `OnboardingSpotlight` + `OnboardingTooltip`.
+- `useOnboardingStep`: exposes `currentStep`, `completeStep`, `dismiss`, `isActive` for optional per-screen use.
+
+---
+
+## 6. File Structure
+
+```
+src/
+├── config/
+│   └── onboardingSteps.ts          # Step definitions
+├── store/
+│   ├── authStore.ts                # unchanged; keeps needsOnboarding
+│   └── onboardingStore.ts          # NEW: completedStepIds, persist
+├── hooks/
+│   └── useOnboardingStep.ts        # NEW
+├── components/
+│   └── onboarding/
+│       ├── OnboardingOverlayProvider.tsx
+│       ├── OnboardingSpotlight.tsx
+│       ├── OnboardingTooltip.tsx
+│       └── OnboardingStepRoot.tsx
+├── navigation/
+│   └── RootNavigator.tsx           # Wrap MainTabs children with OnboardingOverlayProvider
+└── screens/
+    ├── HomeScreen.tsx              # Add onboardingTarget to key UI
+    ├── BreedFeedScreen.tsx         # Add onboardingTarget to key UI
+    └── OnboardingScreen.tsx        # Existing; unchanged
+```
+
+---
+
+## 7. Avoiding Duplication
+
+### 7.1 Centralized step config
+
+- All step definitions in `onboardingSteps.ts`.
+- One source of truth for IDs, copy, conditions, and ordering.
+
+### 7.2 Single overlay provider
+
+- One `OnboardingOverlayProvider` at the Main tabs level.
+- No per-screen onboarding branches.
+
+### 7.3 Shared targets across feeds
+
+- Both `HomeScreen` and `BreedFeedScreen` use the same targets: `breed-banner`, `segment-tabs`, etc.
+- No feed-specific overlay components.
+
+### 7.4 Reusable UI primitives
+
+- `OnboardingSpotlight` and `OnboardingTooltip` are generic.
+- New steps only require new config entries.
+
+### 7.5 Existing feed duplication (separate concern)
+
+- `HomeScreen` and `BreedFeedScreen` duplicate TABS, TAB_TO_FILTER, mutations, and render logic.
+- To reduce that:
+  - Introduce `useFeedLogic(breedSource)` that returns feed data + handlers.
+  - Use a shared `FeedContent` component that both screens use.
+- Onboarding design does not depend on this refactor; overlays work with current structure.
+
+---
+
+## 8. Flow Overview
+
+```
+User completes pre-main onboarding (Add Dog) → enters Main
+    → OnboardingOverlayProvider mounts
+    → Reads onboardingStore.completedStepIds (from AsyncStorage)
+    → Resolves next step for current route
+    → If step exists and when() passes:
+        → Renders OnboardingStepRoot
+        → Measures target, positions spotlight + tooltip
+    → User taps CTA → completeStep(stepId) → next step or done
+    → User taps Skip → dismiss(stepId) → can hide all or mark as skipped
+```
+
+---
+
+## 9. Edge Cases / Extensions
+
+| Topic | Recommendation |
+|-------|----------------|
+| Step requires dogs/breeds | Use `when` and `OnboardingContext` (e.g. dogs, joinedBreeds) |
+| User never finishes | Allow "Skip all" and store `dismissedAtStepId` |
+| Re-enable onboarding | Add `resetOnboarding()` in onboardingStore for settings |
+| A/B tests | Add `variant` to steps and branch logic in the provider |
+| Analytics | Fire events in `completeStep` / `dismiss` |

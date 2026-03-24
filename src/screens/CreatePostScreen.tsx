@@ -27,7 +27,7 @@ import type { BreedEnum, PostTypeEnum, PostTagEnum, MeetupKind } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 
 type CreatePostRoute = {
-  CreatePost: { breed?: BreedEnum };
+  CreatePost: { breed?: BreedEnum; initialType?: PostTypeEnum };
 };
 
 function formatDateTime(d: Date): string {
@@ -61,7 +61,7 @@ export function CreatePostScreen() {
 
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
-  const [type, setType] = useState<PostTypeEnum>('QUESTION');
+  const [type, setType] = useState<PostTypeEnum>(route.params?.initialType ?? 'QUESTION');
   const [tag, setTag] = useState<PostTagEnum>('TRAINING');
   const [imageUris, setImageUris] = useState<Array<{ uri: string; base64?: string }>>([]);
   const [error, setError] = useState('');

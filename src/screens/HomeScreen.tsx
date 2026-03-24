@@ -14,6 +14,9 @@ import * as Location from 'expo-location';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useAuthStore } from "@/store/authStore";
+import { OnboardingCompleteCard } from "@/components/OnboardingCompleteCard";
+import { CreatePostPromptCard } from "@/components/CreatePostPromptCard";
+import { MeetupPromptCard } from "@/components/MeetupPromptCard";
 import { useUIStore } from "@/store/uiStore";
 import { getFeed, deletePost } from "@/api/posts";
 import { rsvpMeetup, unrsvpMeetup } from "@/api/meetups";
@@ -62,7 +65,15 @@ export function HomeScreen({
 }: {
   navigation: { navigate: (s: string, p?: object) => void };
 }) {
-  const { user } = useAuthStore();
+  const {
+    user,
+    onboardingDog,
+    dismissOnboardingCard,
+    showPostPrompt,
+    dismissPostPrompt,
+    showMeetupPrompt,
+    dismissMeetupPrompt,
+  } = useAuthStore();
   const { onScroll } = useScrollDirectionUpdater();
   const { scrollDirection } = useScrollDirection();
   const headerHeight = useStackHeaderHeight();
@@ -453,8 +464,35 @@ export function HomeScreen({
           onChange={(tab) => setFeedFilter(TAB_TO_FILTER[tab as TabKey])}
         />
       </View>
+      {showPostPrompt ? (
+        <CreatePostPromptCard
+          breed={breed}
+          onCreatePost={() => {
+            dismissPostPrompt();
+            navigation.navigate('CreatePost', { breed });
+          }}
+          onDismiss={dismissPostPrompt}
+        />
+      ) : null}
+      {showMeetupPrompt ? (
+        <MeetupPromptCard
+          onCreateMeetup={() => {
+            dismissMeetupPrompt();
+            navigation.navigate('CreatePost', { breed, initialType: 'MEETUP' });
+          }}
+          onExploreMeetups={() => {
+            dismissMeetupPrompt();
+            setFeedFilter('MEETUP');
+          }}
+        />
+      ) : null}
     </>
   ), [
+    showPostPrompt,
+    dismissPostPrompt,
+    showMeetupPrompt,
+    dismissMeetupPrompt,
+    navigation,
     joinedBreeds,
     dogs,
     selectedDogIndex,
@@ -479,7 +517,7 @@ export function HomeScreen({
     );
   }
 
-  if (!dogs || dogs.length === 0) {
+  if ((!dogs || dogs.length === 0) && !onboardingDog) {
     return (
       <View style={styles.screen}>
         <SafeAreaView style={styles.safe}>
@@ -507,6 +545,16 @@ export function HomeScreen({
 
   return (
     <View style={styles.screen}>
+      <OnboardingCompleteCard
+        visible={!!onboardingDog}
+        dogName={onboardingDog?.name ?? ''}
+        breed={onboardingDog?.breed ?? ''}
+        onGoToFeed={dismissOnboardingCard}
+        onExplore={() => {
+          dismissOnboardingCard();
+          navigation.navigate('Explore');
+        }}
+      />
       <SafeAreaView style={styles.safe} edges={["left", "right"]}>
         <View style={styles.container}>
           {(showNearbyCheckinCard || activeDogBeachCheckins.length > 0) ? (

@@ -194,7 +194,7 @@ function MainTabs() {
 }
 
 export function RootNavigator() {
-  const { session, setSession, user, needsOnboarding } = useAuthStore();
+  const { session, setSession, user, needsOnboarding, onboardingDog } = useAuthStore();
   const [loading, setLoading] = React.useState(true);
 
   useEffect(() => {
@@ -236,7 +236,11 @@ export function RootNavigator() {
           needsOnboarding ? (
             <RootStack.Screen name="Onboarding" component={OnboardingNavigator} />
           ) : (
-            <RootStack.Screen name="Main" component={MainTabs} />
+            <RootStack.Screen
+              name="Main"
+              component={MainTabs}
+              options={{ animation: onboardingDog ? 'none' : 'default' }}
+            />
           )
         ) : (
           <RootStack.Screen name="Auth" component={AuthNavigator} />

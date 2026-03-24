@@ -38,18 +38,21 @@ export function SignUpScreen() {
     }
 
     setLoading(true);
+    // Flag must be set before the API call so that when Supabase fires
+    // onAuthStateChange internally (before the promise resolves), the root
+    // navigator already sees needsOnboarding: true and skips Main entirely.
+    useAuthStore.getState().setNeedsOnboarding(true);
     try {
       const authData = await signUp(email, password, name.trim(), city.trim() || undefined);
-      useAuthStore.getState().setSession(authData.session ?? null);
-      if (authData.session) {
-        useAuthStore.getState().setNeedsOnboarding(true);
-      } else {
+      if (!authData.session) {
+        useAuthStore.getState().setNeedsOnboarding(false);
         setError('');
         (navigation as any).navigate('SignIn', {
           message: 'Account created. Sign in to continue.',
         });
       }
     } catch (err: unknown) {
+      useAuthStore.getState().setNeedsOnboarding(false);
       setError(err instanceof Error ? err.message : 'Sign up failed');
     } finally {
       setLoading(false);

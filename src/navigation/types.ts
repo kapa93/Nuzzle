@@ -1,4 +1,4 @@
-import type { BreedEnum } from '@/types';
+import type { BreedEnum, PostTypeEnum } from '@/types';
 
 export type RootStackParamList = {
   Auth: undefined;
@@ -29,7 +29,7 @@ export type HomeStackParamList = {
   DogBeachNow: undefined;
   DogProfile: { dogId: string };
   PostDetail: { postId: string };
-  CreatePost: { breed: BreedEnum };
+  CreatePost: { breed: BreedEnum; initialType?: PostTypeEnum };
   EditPost: { postId: string };
   UserProfile: { userId: string };
 };
