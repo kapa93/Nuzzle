@@ -36,7 +36,7 @@ describe('OnboardingScreen', () => {
   it('renders the welcome heading and supporting copy', () => {
     render(<OnboardingScreen />);
 
-    expect(screen.getByText('Welcome to BreedBuddy!')).toBeTruthy();
+    expect(screen.getByText('Welcome to Nuzzle!')).toBeTruthy();
     expect(screen.getByText(/Connect with dogs of the same breed/)).toBeTruthy();
   });
 

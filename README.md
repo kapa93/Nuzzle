@@ -1,4 +1,4 @@
-# BreedBuddy
+# Nuzzle
 
 A social community app for dog breed enthusiasts—like a Facebook Group + Q&A centered around dog breeds.
 
@@ -40,7 +40,7 @@ npm install
 
 3. Enable Email auth in **Authentication → Providers** (Email is on by default)
 
-4. **Email confirmation redirect** (for mobile): Go to **Authentication → URL Configuration** and add `breedbuddy://auth/callback` to **Redirect URLs**. This lets the email confirmation link open your app instead of a 404.
+4. **Email confirmation redirect** (for mobile): Go to **Authentication → URL Configuration** and add `nuzzle://auth/callback` to **Redirect URLs**. This lets the email confirmation link open your app instead of a 404.
 
 ### 3. Environment variables
 

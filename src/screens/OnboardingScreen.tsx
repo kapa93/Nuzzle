@@ -30,7 +30,7 @@ export function OnboardingScreen() {
       <View style={styles.container}>
         <View style={styles.card}>
           <Text style={styles.paw}>🐾</Text>
-          <Text style={styles.title}>Welcome to BreedBuddy!</Text>
+          <Text style={styles.title}>Welcome to Nuzzle!</Text>
           <Text style={styles.subtitle}>
             Connect with dogs of the same breed in your area. Start by adding your dog's profile so
             others can find and meet your pup.

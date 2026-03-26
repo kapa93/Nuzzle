@@ -22,7 +22,7 @@ import { EditDogScreen } from '@/screens/EditDogScreen';
 import { OnboardingScreen } from '@/screens/OnboardingScreen';
 import { DogProfileScreen } from '@/screens/DogProfileScreen';
 import { UserProfileScreen } from '@/screens/UserProfileScreen';
-import { BreedBuddyTabBar } from './BreedBuddyTabBar';
+import { NuzzleTabBar } from './NuzzleTabBar';
 import { SearchScreen } from '@/screens/SearchScreen';
 import { AnimatedStackHeader } from '@/components/AnimatedStackHeader';
 import { useScrollDirection } from '@/context/ScrollDirectionContext';
@@ -62,7 +62,7 @@ function HomeTab() {
         header: (props) => <AnimatedStackHeader {...props} animateOnScroll />,
       }}
     >
-      <Stack.Screen name="HomeFeed" component={HomeScreen} options={{ title: 'BreedBuddy' }} />
+      <Stack.Screen name="HomeFeed" component={HomeScreen} options={{ title: 'Nuzzle' }} />
       <Stack.Screen name="DogBeachNow" component={DogBeachNowScreen} options={{ title: 'Dog Beach Now' }} />
       <Stack.Screen name="DogProfile" component={DogProfileScreen} options={{ title: 'Dog' }} />
       <Stack.Screen name="PostDetail" component={PostDetailScreen} options={{ title: 'Post' }} />
@@ -178,7 +178,7 @@ function MainTabs() {
   );
   return (
     <Tab.Navigator
-      tabBar={(props) => <BreedBuddyTabBar {...props} />}
+      tabBar={(props) => <NuzzleTabBar {...props} />}
       screenOptions={{
         headerShown: false,
         tabBarStyle,

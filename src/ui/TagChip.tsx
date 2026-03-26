@@ -7,7 +7,7 @@ type Tone = "neutral" | "question" | "tip" | "story";
 const toneStyles: Record<Tone, { bg: string; text: string }> = {
   neutral: { bg: colors.chipNeutral, text: colors.chipText },
   question: { bg: "#F9E5B3", text: "#7A5A12" },
-  tip: { bg: "#DDF3E6", text: colors.primaryDark },
+  tip: { bg: colors.primarySoft, text: colors.primaryDark },
   story: { bg: "#EEE8FF", text: "#57418A" },
 };
 

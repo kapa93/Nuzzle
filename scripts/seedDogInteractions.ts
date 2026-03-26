@@ -41,7 +41,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
 const seedUsers: SeedUser[] = [
   {
     email: 'alice.dogtester@example.com',
-    password: 'BreedBuddy123!',
+    password: 'Nuzzle123!',
     name: 'Alice Dogtester',
     city: 'San Francisco',
     dogs: [
@@ -67,7 +67,7 @@ const seedUsers: SeedUser[] = [
   },
   {
     email: 'ben.dogtester@example.com',
-    password: 'BreedBuddy123!',
+    password: 'Nuzzle123!',
     name: 'Ben Dogtester',
     city: 'San Francisco',
     dogs: [

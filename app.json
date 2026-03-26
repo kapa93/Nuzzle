@@ -1,8 +1,8 @@
 {
   "expo": {
-    "scheme": "breedbuddy",
-    "name": "BreedBuddy",
-    "slug": "BreedBuddy",
+    "scheme": "nuzzle",
+    "name": "Nuzzle",
+    "slug": "nuzzle",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -32,7 +32,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "BreedBuddy uses your location to let you check in when you are near Ocean Beach Dog Beach."
+          "locationWhenInUsePermission": "Nuzzle uses your location to let you check in when you are near Ocean Beach Dog Beach."
         }
       ]
     ]

@@ -6,5 +6,5 @@ export const DOG_BEACH = {
   radiusMeters: 400,
   defaultCheckInDurationMinutes: 60,
   // Dev helper: set true to force "nearby" check-in card.
-  debugForceNearby: true,
+  debugForceNearby: false,
 } as const;

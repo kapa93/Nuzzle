@@ -1,4 +1,4 @@
--- BreedBuddy v1 - Initial Schema
+-- Nuzzle v1 - Initial Schema
 -- Run this in Supabase SQL Editor
 
 -- ============================================

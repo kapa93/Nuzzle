@@ -37,8 +37,8 @@ npm run seed:dog-interactions:reset
 
 ## Seeded Test Accounts
 
-- `alice.dogtester@example.com` / `BreedBuddy123!`
-- `ben.dogtester@example.com` / `BreedBuddy123!`
+- `alice.dogtester@example.com` / `Nuzzle123!`
+- `ben.dogtester@example.com` / `Nuzzle123!`
 
 ## Seeded Dogs
 

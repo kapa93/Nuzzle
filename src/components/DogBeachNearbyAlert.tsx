@@ -70,7 +70,7 @@ export function DogBeachNearbyAlert({ onCheckIn, disabled }: Props) {
 
 const styles = StyleSheet.create({
   banner: {
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.primary,
     borderRadius: radius.lg,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,

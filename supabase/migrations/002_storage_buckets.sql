@@ -1,4 +1,4 @@
--- BreedBuddy - Storage buckets
+-- Nuzzle - Storage buckets
 -- Run in Supabase SQL Editor or use Supabase Dashboard > Storage to create buckets
 
 -- Create dog-images bucket (public for profile avatars)

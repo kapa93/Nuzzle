@@ -25,7 +25,7 @@ const INDICATOR_ANIMATION = { duration: 60 };
 const WRAP_PADDING_H = spacing.md;
 const TAB_BAR_HIDE_OFFSET = 120;
 
-export function BreedBuddyTabBar({ state, navigation }: BottomTabBarProps) {
+export function NuzzleTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { scrollDirection, setScrollDirection } = useScrollDirection();
   const [wrapWidth, setWrapWidth] = useState(0);

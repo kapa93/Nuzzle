@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Image, Text, StyleSheet } from 'react-native';
+import { colors } from '@/theme';
 
 interface DogAvatarProps {
   imageUrl?: string | null;
@@ -38,7 +39,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F2EFE8',
   },
   placeholder: {
-    backgroundColor: '#2E8B57',
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },

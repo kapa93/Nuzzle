@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet, Pressable } from 'react-native';
 import { REACTIONS, REACTION_EMOJI } from '../utils/breed';
 import type { ReactionEnum } from '../types';
+import { colors } from '@/theme';
 
 interface ReactionPickerProps {
   visible: boolean;
@@ -74,9 +75,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#F2EFE8',
   },
   selected: {
-    backgroundColor: '#DDF3E6',
+    backgroundColor: colors.primarySoft,
     borderWidth: 2,
-    borderColor: '#2E8B57',
+    borderColor: colors.primary,
   },
   emoji: {
     fontSize: 28,

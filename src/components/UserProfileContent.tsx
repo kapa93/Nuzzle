@@ -281,7 +281,7 @@ export function UserProfileContent({
               </Text>
               <Text style={styles.emptySectionText}>
                 {canManageProfile
-                  ? 'Dog profiles power identity across BreedBuddy, from feeds to meetups.'
+                  ? 'Dog profiles power identity across Nuzzle, from feeds to meetups.'
                   : 'This member hasn&apos;t added any dog details yet.'}
               </Text>
               {canManageProfile && onAddDog ? (

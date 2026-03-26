@@ -42,12 +42,15 @@ export function DogBeachNowCard({ activeCount, breedCounts, onPressView }: Props
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.primary,
     borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderWidth: 0,
     padding: spacing.lg,
     ...shadow.sm,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 8,
   },
   row: {
     flexDirection: 'row',
@@ -60,15 +63,18 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.subtitle,
-    color: colors.textPrimary,
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   count: {
     ...typography.body,
     marginTop: spacing.xxs,
+    color: '#F3F4F6',
   },
   summary: {
     ...typography.caption,
     marginTop: spacing.xxs,
+    color: '#E8F5EE',
   },
   viewBtn: {
     flexDirection: 'row',

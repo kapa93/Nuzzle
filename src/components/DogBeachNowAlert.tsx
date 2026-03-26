@@ -27,7 +27,7 @@ export function DogBeachNowAlert({ activeCount, onPressView }: Props) {
 
 const styles = StyleSheet.create({
   banner: {
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.primary,
     borderRadius: radius.lg,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
   },
   viewText: {
     ...typography.body,
-    color: colors.primaryDark,
+    color: colors.primary,
     fontWeight: '700',
   },
 });
