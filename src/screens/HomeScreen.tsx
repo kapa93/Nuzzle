@@ -82,6 +82,7 @@ export function HomeScreen({
   const [selectedDogIndex, setSelectedDogIndex] = useState(0);
   const [selectedBreedIndex, setSelectedBreedIndex] = useState(0);
   const [reactionMenuOpen, setReactionMenuOpen] = useState(false);
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false);
   const [isNearDogBeach, setIsNearDogBeach] = useState(false);
   const [locationChecked, setLocationChecked] = useState(false);
   const forceNearby = __DEV__ && DOG_BEACH.debugForceNearby;
@@ -262,11 +263,20 @@ export function HomeScreen({
   const sort = "newest";
   const typeFilter = feedFilter === "QUESTION" || feedFilter === "UPDATE_STORY" || feedFilter === "TIP" || feedFilter === "MEETUP" ? feedFilter : null;
 
-  const { data: posts, isLoading, refetch, isRefetching } = useQuery({
+  const { data: posts, isLoading, refetch } = useQuery({
     queryKey: ["feed", breed, feedFilter, user?.id],
     queryFn: () => getFeed(breed, sort, 20, 0, user?.id ?? null, typeFilter),
     enabled: !!user?.id,
   });
+
+  const handleRefresh = useCallback(async () => {
+    setIsPullRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setIsPullRefreshing(false);
+    }
+  }, [refetch]);
 
   const feedQueryKey = ["feed", breed, feedFilter, user?.id] as const;
   const reactionMutation = useMutation({
@@ -584,8 +594,8 @@ export function HomeScreen({
           ListEmptyComponent={!isLoading ? renderEmpty : null}
           refreshControl={
             <RefreshControl
-              refreshing={!!isRefetching}
-              onRefresh={refetch}
+              refreshing={isPullRefreshing}
+              onRefresh={handleRefresh}
               tintColor={colors.primary}
             />
           }

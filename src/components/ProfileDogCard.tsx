@@ -1,6 +1,12 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { DogAvatar } from '@/components/DogAvatar';
 import { colors, radius, shadow, spacing, typography } from '@/theme';
 import type { Dog } from '@/types';
@@ -20,6 +26,45 @@ type Props = {
   onPress?: () => void;
   footer?: React.ReactNode;
 };
+
+const BUTTON_PRESS_ANIMATION = { duration: 180 };
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+function IconActionButton({
+  onPress,
+  iconName,
+  iconColor,
+}: {
+  onPress: () => void;
+  iconName: React.ComponentProps<typeof Ionicons>['name'];
+  iconColor: string;
+}) {
+  const pressed = useSharedValue(0);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 - pressed.value * 0.06 }],
+    backgroundColor: interpolateColor(
+      pressed.value,
+      [0, 1],
+      [colors.surfaceMuted, colors.border]
+    ),
+  }));
+
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      hitSlop={10}
+      onPressIn={() => {
+        pressed.value = withTiming(1, BUTTON_PRESS_ANIMATION);
+      }}
+      onPressOut={() => {
+        pressed.value = withTiming(0, BUTTON_PRESS_ANIMATION);
+      }}
+      style={[styles.iconButton, animatedStyle]}
+    >
+      <Ionicons name={iconName} size={18} color={iconColor} />
+    </AnimatedPressable>
+  );
+}
 
 function DetailChip({ label }: { label: string }) {
   return (
@@ -55,14 +100,18 @@ export function ProfileDogCard({ dog, showDetails = true, onEdit, onDelete, onPr
         {(onEdit || onDelete) ? (
           <View style={styles.actions}>
             {onEdit ? (
-              <Pressable onPress={onEdit} style={styles.iconButton} hitSlop={10}>
-                <Ionicons name="pencil-outline" size={18} color={colors.primary} />
-              </Pressable>
+              <IconActionButton
+                onPress={onEdit}
+                iconName="pencil-outline"
+                iconColor={colors.primary}
+              />
             ) : null}
             {onDelete ? (
-              <Pressable onPress={onDelete} style={styles.iconButton} hitSlop={10}>
-                <Ionicons name="trash-outline" size={18} color="#DC2626" />
-              </Pressable>
+              <IconActionButton
+                onPress={onDelete}
+                iconName="trash-outline"
+                iconColor="#DC2626"
+              />
             ) : null}
           </View>
         ) : null}

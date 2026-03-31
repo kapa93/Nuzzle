@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Pressable, StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  useAnimatedProps,
   withTiming,
   interpolate,
+  interpolateColor,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
@@ -24,12 +26,73 @@ const TAB_CONFIG = [
 const INDICATOR_ANIMATION = { duration: 60 };
 const WRAP_PADDING_H = spacing.md;
 const TAB_BAR_HIDE_OFFSET = 120;
+const CREATE_BUTTON_PRESS_ANIMATION = { duration: 180 };
+const TAB_COLOR_ANIMATION = { duration: 140 };
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const AnimatedFontAwesome6 = Animated.createAnimatedComponent(FontAwesome6);
+
+function TabBarItem({
+  icon,
+  label,
+  isActive,
+  onPress,
+}: {
+  icon: "house" | "compass" | "bell" | "user";
+  label: string;
+  isActive: boolean;
+  onPress: () => void;
+}) {
+  const activeProgress = useSharedValue(isActive ? 1 : 0);
+
+  useEffect(() => {
+    activeProgress.value = withTiming(isActive ? 1 : 0, TAB_COLOR_ANIMATION);
+  }, [isActive, activeProgress]);
+
+  const iconAnimatedProps = useAnimatedProps(() => ({
+    color: interpolateColor(
+      activeProgress.value,
+      [0, 1],
+      [colors.textMuted, colors.primary]
+    ),
+  }));
+
+  const labelAnimatedStyle = useAnimatedStyle(() => ({
+    color: interpolateColor(
+      activeProgress.value,
+      [0, 1],
+      [colors.textMuted, colors.primary]
+    ),
+  }));
+
+  return (
+    <Pressable onPress={onPress} style={styles.item}>
+      <AnimatedFontAwesome6
+        name={icon}
+        size={22}
+        animatedProps={iconAnimatedProps as unknown as object}
+        color={isActive ? colors.primary : colors.textMuted}
+        solid={isActive}
+      />
+      <Animated.Text
+        style={[
+          styles.label,
+          isActive ? styles.labelActive : styles.labelInactive,
+          labelAnimatedStyle,
+        ]}
+      >
+        {label}
+      </Animated.Text>
+    </Pressable>
+  );
+}
 
 export function NuzzleTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { scrollDirection, setScrollDirection } = useScrollDirection();
   const [wrapWidth, setWrapWidth] = useState(0);
   const indicatorLeft = useSharedValue(0);
+  const createButtonPress = useSharedValue(0);
+  const createButtonScale = useSharedValue(1);
   const prevIndexRef = useRef(state.index);
   // Scroll-based hide: animate translateY when scrolling down (always visible on Explore)
   const translateY = useSharedValue(0);
@@ -78,6 +141,15 @@ export function NuzzleTabBar({ state, navigation }: BottomTabBarProps) {
     transform: [{ translateX: indicatorLeft.value }],
   }));
 
+  const centerButtonAnimatedStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      createButtonPress.value,
+      [0, 1],
+      [colors.primary, colors.primaryDark]
+    ),
+    transform: [{ scale: createButtonScale.value }],
+  }));
+
   return (
     <Animated.View
       style={[
@@ -108,37 +180,44 @@ export function NuzzleTabBar({ state, navigation }: BottomTabBarProps) {
           if (isCenter) {
             return (
               <View key={item.key} style={styles.centerWrap}>
-                <Pressable
+                <AnimatedPressable
                   onPress={() => navigation.navigate("Create")}
-                  style={styles.centerButton}
+                  onPressIn={() => {
+                    createButtonPress.value = withTiming(
+                      1,
+                      CREATE_BUTTON_PRESS_ANIMATION
+                    );
+                    createButtonScale.value = withTiming(
+                      0.94,
+                      CREATE_BUTTON_PRESS_ANIMATION
+                    );
+                  }}
+                  onPressOut={() => {
+                    createButtonPress.value = withTiming(
+                      0,
+                      CREATE_BUTTON_PRESS_ANIMATION
+                    );
+                    createButtonScale.value = withTiming(
+                      1,
+                      CREATE_BUTTON_PRESS_ANIMATION
+                    );
+                  }}
+                  style={[styles.centerButton, centerButtonAnimatedStyle]}
                 >
                   <DogPawIcon size={28} color="#FFFFFF" />
-                </Pressable>
+                </AnimatedPressable>
               </View>
             );
           }
 
           return (
-            <Pressable
+            <TabBarItem
               key={item.key}
+              icon={item.icon as "house" | "compass" | "bell" | "user"}
+              label={item.label}
+              isActive={isActive}
               onPress={() => navigation.navigate(item.key)}
-              style={styles.item}
-            >
-              <FontAwesome6
-                name={item.icon}
-                size={22}
-                color={isActive ? colors.primary : colors.textMuted}
-                solid={isActive}
-              />
-              <Text
-                style={[
-                  styles.label,
-                  isActive ? styles.labelActive : styles.labelInactive,
-                ]}
-              >
-                {item.label}
-              </Text>
-            </Pressable>
+            />
           );
         })}
       </View>

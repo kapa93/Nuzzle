@@ -7,6 +7,7 @@ import {
   Dimensions,
   Pressable,
 } from 'react-native';
+import Animated, { interpolateColor, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { PostWithDetails } from '../types';
 import { DogAvatar } from './DogAvatar';
 import { ImageGrid } from './ImageGrid';
@@ -17,6 +18,8 @@ import { colors, radius, shadow, spacing, typography } from '@/theme';
 
 const { width } = Dimensions.get('window');
 const THUMB_SIZE = (width - 48) / 3;
+const COMMENT_PRESS_ANIMATION = { duration: 180 };
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface PostCardProps {
   post: PostWithDetails;
@@ -26,9 +29,19 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, onPress, onReactionSelect, onAuthorPress }: PostCardProps) {
+  const commentButtonPress = useSharedValue(0);
   const breedLabel = BREED_LABELS[post.breed] ?? post.breed;
   const typeLabel = POST_TYPE_LABELS[post.type] ?? post.type;
   const tagLabel = POST_TAG_LABELS[post.tag] ?? post.tag;
+
+  const commentPillAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 - commentButtonPress.value * 0.06 }],
+    backgroundColor: interpolateColor(
+      commentButtonPress.value,
+      [0, 1],
+      [colors.surfaceMuted, colors.border]
+    ),
+  }));
 
   return (
     <TouchableOpacity
@@ -83,11 +96,23 @@ export function PostCard({ post, onPress, onReactionSelect, onAuthorPress }: Pos
           userReaction={post.user_reaction}
           onSelect={onReactionSelect}
         />
-        <View style={styles.commentPill}>
+        <AnimatedPressable
+          onPress={(event) => {
+            event.stopPropagation();
+            onPress();
+          }}
+          onPressIn={() => {
+            commentButtonPress.value = withTiming(1, COMMENT_PRESS_ANIMATION);
+          }}
+          onPressOut={() => {
+            commentButtonPress.value = withTiming(0, COMMENT_PRESS_ANIMATION);
+          }}
+          style={[styles.commentPill, commentPillAnimatedStyle]}
+        >
           <Text style={styles.commentCount}>
             {post.comment_count ?? 0} comments
           </Text>
-        </View>
+        </AnimatedPressable>
       </View>
 
       <Text style={styles.timestamp}>

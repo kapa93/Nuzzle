@@ -58,6 +58,7 @@ export function BreedFeedScreen() {
   const queryClient = useQueryClient();
   const breed = breedParam ?? "GOLDEN_RETRIEVER";
   const [reactionMenuOpen, setReactionMenuOpen] = useState(false);
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false);
 
   const { data: joinedBreeds = [], refetch: refetchJoins } = useQuery({
     queryKey: ["joinedBreeds", user?.id],
@@ -104,10 +105,19 @@ export function BreedFeedScreen() {
   const tabKey = FILTER_TO_TAB(feedFilter);
 
   const feedQueryKey = ["feed", breed, feedFilter, user?.id] as const;
-  const { data: posts, isLoading, refetch, isRefetching } = useQuery({
+  const { data: posts, isLoading, refetch } = useQuery({
     queryKey: feedQueryKey,
     queryFn: () => getFeed(breed, sort, 20, 0, user?.id ?? null, typeFilter),
   });
+
+  const handleRefresh = useCallback(async () => {
+    setIsPullRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setIsPullRefreshing(false);
+    }
+  }, [refetch]);
 
   const reactionMutation = useMutation({
     mutationFn: ({ postId, reaction }: { postId: string; reaction: ReactionEnum | null }) =>
@@ -310,8 +320,8 @@ export function BreedFeedScreen() {
           ListEmptyComponent={!isLoading ? renderEmpty : null}
           refreshControl={
             <RefreshControl
-              refreshing={!!isRefetching}
-              onRefresh={refetch}
+              refreshing={isPullRefreshing}
+              onRefresh={handleRefresh}
               tintColor={colors.primary}
             />
           }

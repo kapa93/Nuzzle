@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { Pressable, StyleSheet, Text, View, Modal, TouchableOpacity, Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import Animated, { interpolateColor, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { colors, radius, shadow, spacing, typography } from "../theme";
 import { Avatar } from "./Avatar";
 import { ImageStrip } from "./ImageStrip";
@@ -20,11 +21,15 @@ type Props = {
   onDelete?: (postId: string) => void;
 };
 
+const COMMENT_PRESS_ANIMATION = { duration: 180 };
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 function getBarksText(count: number) {
   return count === 1 ? "1 Bark" : `${count} Barks`;
 }
 
 const QuestionCardInner = ({ data, onPress, onAuthorPress, onReactionSelect, onReactionMenuOpenChange, currentUserId, onEdit, onDelete }: Props) => {
+  const commentButtonPress = useSharedValue(0);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuLayout, setMenuLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const menuBtnRef = useRef<View>(null);
@@ -47,6 +52,15 @@ const QuestionCardInner = ({ data, onPress, onAuthorPress, onReactionSelect, onR
     setMenuVisible(false);
     onDelete?.(data.id);
   };
+
+  const commentPillAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 - commentButtonPress.value * 0.06 }],
+    backgroundColor: interpolateColor(
+      commentButtonPress.value,
+      [0, 1],
+      [colors.surfaceMuted, colors.border]
+    ),
+  }));
 
   const content = (
     <View style={styles.card}>
@@ -140,9 +154,21 @@ const QuestionCardInner = ({ data, onPress, onAuthorPress, onReactionSelect, onR
             </Text>
           </View>
         )}
-        <View style={styles.answersPill}>
+        <AnimatedPressable
+          onPress={(event) => {
+            event.stopPropagation();
+            onPress?.();
+          }}
+          onPressIn={() => {
+            commentButtonPress.value = withTiming(1, COMMENT_PRESS_ANIMATION);
+          }}
+          onPressOut={() => {
+            commentButtonPress.value = withTiming(0, COMMENT_PRESS_ANIMATION);
+          }}
+          style={[styles.answersPill, commentPillAnimatedStyle]}
+        >
           <Text style={styles.answersText}>💬 {getBarksText(data.answerCount ?? 0)}</Text>
-        </View>
+        </AnimatedPressable>
       </View>
     </View>
   );

@@ -58,6 +58,7 @@ export function PostDetailScreen() {
   const [commentText, setCommentText] = useState("");
   const [menuVisible, setMenuVisible] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const commentInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     setScrollDirection("up");
@@ -105,10 +106,16 @@ export function PostDetailScreen() {
         commentText.trim(),
         post!.author_id
       ),
-    onSuccess: () => {
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ["comments", postId], type: "active" });
+      await queryClient.refetchQueries({ queryKey: ["post", postId], type: "active" });
       setCommentText("");
+      commentInputRef.current?.blur();
+      Keyboard.dismiss();
       queryClient.invalidateQueries({ queryKey: ["comments", postId] });
       queryClient.invalidateQueries({ queryKey: ["post", postId] });
+      queryClient.invalidateQueries({ queryKey: ["feed"] });
+      queryClient.invalidateQueries({ queryKey: ["userPosts"] });
     },
   });
 
@@ -376,6 +383,7 @@ export function PostDetailScreen() {
           ]}
         >
           <TextInput
+            ref={commentInputRef}
             style={styles.input}
             placeholder="Add an answer..."
             placeholderTextColor={colors.textMuted}

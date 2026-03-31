@@ -7,6 +7,12 @@ import {
   Text,
   View,
 } from 'react-native';
+import Animated, {
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { DogsMetSection } from '@/components/DogsMetSection';
 import { MetThisDogButton } from '@/components/MetThisDogButton';
@@ -37,6 +43,51 @@ type Props = {
   onSignOut?: () => void;
   isPhotoUpdating?: boolean;
 };
+
+const BUTTON_PRESS_ANIMATION = { duration: 180 };
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+function TapFeedbackPressable({
+  children,
+  style,
+  onPress,
+  disabled,
+  fromBackgroundColor,
+  toBackgroundColor,
+}: {
+  children: React.ReactNode;
+  style?: object | object[];
+  onPress?: () => void;
+  disabled?: boolean;
+  fromBackgroundColor: string;
+  toBackgroundColor: string;
+}) {
+  const pressed = useSharedValue(0);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 - pressed.value * 0.06 }],
+    backgroundColor: interpolateColor(
+      pressed.value,
+      [0, 1],
+      [fromBackgroundColor, toBackgroundColor]
+    ),
+  }));
+
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      disabled={disabled}
+      onPressIn={() => {
+        pressed.value = withTiming(1, BUTTON_PRESS_ANIMATION);
+      }}
+      onPressOut={() => {
+        pressed.value = withTiming(0, BUTTON_PRESS_ANIMATION);
+      }}
+      style={[style, animatedStyle]}
+    >
+      {children}
+    </AnimatedPressable>
+  );
+}
 
 function formatJoinedDate(createdAt?: string) {
   if (!createdAt) return null;
@@ -139,13 +190,23 @@ export function UserProfileContent({
           <Text style={styles.stateText}>
             {(error as Error).message || 'Please try again in a moment.'}
           </Text>
-          <Pressable style={styles.primaryButton} onPress={() => void refetchAll()}>
+          <TapFeedbackPressable
+            style={styles.primaryButton}
+            onPress={() => void refetchAll()}
+            fromBackgroundColor={colors.primary}
+            toBackgroundColor={colors.primaryDark}
+          >
             <Text style={styles.primaryButtonText}>Try Again</Text>
-          </Pressable>
+          </TapFeedbackPressable>
           {onSignOut && (
-            <Pressable style={styles.signOutButton} onPress={onSignOut}>
+            <TapFeedbackPressable
+              style={styles.signOutButton}
+              onPress={onSignOut}
+              fromBackgroundColor="rgba(220,38,38,0)"
+              toBackgroundColor="rgba(220,38,38,0.08)"
+            >
               <Text style={styles.signOutText}>Sign Out</Text>
-            </Pressable>
+            </TapFeedbackPressable>
           )}
         </View>
       </ScreenWithWallpaper>
@@ -159,9 +220,14 @@ export function UserProfileContent({
           <Text style={styles.stateTitle}>Profile not found</Text>
           <Text style={styles.stateText}>This member profile isn&apos;t available.</Text>
           {onSignOut && (
-            <Pressable style={styles.signOutButton} onPress={onSignOut}>
+            <TapFeedbackPressable
+              style={styles.signOutButton}
+              onPress={onSignOut}
+              fromBackgroundColor="rgba(220,38,38,0)"
+              toBackgroundColor="rgba(220,38,38,0.08)"
+            >
               <Text style={styles.signOutText}>Sign Out</Text>
-            </Pressable>
+            </TapFeedbackPressable>
           )}
         </View>
       </ScreenWithWallpaper>
@@ -216,14 +282,24 @@ export function UserProfileContent({
           {canManageProfile && (onEditProfile || onAddDog) ? (
             <View style={styles.heroActions}>
               {onEditProfile ? (
-                <Pressable style={[styles.primaryButton, styles.heroActionButton]} onPress={onEditProfile}>
+                <TapFeedbackPressable
+                  style={[styles.primaryButton, styles.heroActionButton]}
+                  onPress={onEditProfile}
+                  fromBackgroundColor={colors.primary}
+                  toBackgroundColor={colors.primaryDark}
+                >
                   <Text style={styles.primaryButtonText}>Edit Profile</Text>
-                </Pressable>
+                </TapFeedbackPressable>
               ) : null}
               {onAddDog ? (
-                <Pressable style={[styles.secondaryButton, styles.heroActionButton]} onPress={onAddDog}>
+                <TapFeedbackPressable
+                  style={[styles.secondaryButton, styles.heroActionButton]}
+                  onPress={onAddDog}
+                  fromBackgroundColor={colors.surfaceMuted}
+                  toBackgroundColor={colors.border}
+                >
                   <Text style={styles.secondaryButtonText}>Add Dog</Text>
-                </Pressable>
+                </TapFeedbackPressable>
               ) : null}
             </View>
           ) : null}
@@ -285,9 +361,14 @@ export function UserProfileContent({
                   : 'This member hasn&apos;t added any dog details yet.'}
               </Text>
               {canManageProfile && onAddDog ? (
-                <Pressable style={styles.secondaryButton} onPress={onAddDog}>
+                <TapFeedbackPressable
+                  style={styles.secondaryButton}
+                  onPress={onAddDog}
+                  fromBackgroundColor={colors.surfaceMuted}
+                  toBackgroundColor={colors.border}
+                >
                   <Text style={styles.secondaryButtonText}>Add Dog</Text>
-                </Pressable>
+                </TapFeedbackPressable>
               ) : null}
             </View>
           )}
@@ -363,9 +444,14 @@ export function UserProfileContent({
         </Section>
 
         {showPrivateAccountInfo && onSignOut ? (
-          <Pressable style={styles.signOutButton} onPress={onSignOut}>
+          <TapFeedbackPressable
+            style={styles.signOutButton}
+            onPress={onSignOut}
+            fromBackgroundColor="rgba(220,38,38,0)"
+            toBackgroundColor="rgba(220,38,38,0.08)"
+          >
             <Text style={styles.signOutText}>Sign Out</Text>
-          </Pressable>
+          </TapFeedbackPressable>
         ) : null}
       </ScrollView>
     </ScreenWithWallpaper>
