@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useWindowDimensions } from "react-native";
+import { Image, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getHeaderTitle, Header } from "@react-navigation/elements";
 import Animated, {
@@ -49,8 +49,6 @@ export function AnimatedStackHeader({
     };
   });
 
-  const title = getHeaderTitle(options, route.name);
-
   return (
     <Animated.View
       style={[
@@ -67,17 +65,29 @@ export function AnimatedStackHeader({
     >
       <Header
         layout={{ width, height: screenHeight }}
-        title={title}
-        headerTitle={options.headerTitle}
+        title={getHeaderTitle(options, route.name)}
+        headerTitle={() => (
+          <Image
+            source={require("../../assets/breeds/nuzzle-logo.png")}
+            style={{ width: 166, height: 38, marginTop: 0 }}
+            resizeMode="contain"
+          />
+        )}
         headerLeft={options.headerLeft}
         headerRight={options.headerRight}
         headerTransparent={false}
         headerTintColor={options.headerTintColor}
         headerStyle={[
           options.headerStyle,
-          { backgroundColor: colors.background, height: headerHeight },
+          {
+            backgroundColor: colors.background,
+            height: headerHeight,
+            borderBottomWidth: 0,
+            elevation: 0,
+            shadowOpacity: 0,
+          },
         ]}
-        headerShadowVisible={options.headerShadowVisible}
+        headerShadowVisible={false}
         headerTitleAlign={options.headerTitleAlign}
         back={back}
       />

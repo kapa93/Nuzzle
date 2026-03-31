@@ -6,7 +6,7 @@ import {
   ScrollView,
   useWindowDimensions,
   Pressable,
-  Image,
+  ImageBackground,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -58,13 +58,21 @@ export function ExploreScreen({
               onPress={() => navigation.navigate("BreedFeed", { breed: item.breed })}
             >
               {({ pressed }) => (
-                <View style={[styles.imageWrapper, pressed && styles.pressed]}>
-                  <Image
-                    source={item.image}
-                    style={styles.breedImage}
-                    resizeMode="contain"
-                  />
-                </View>
+                <ImageBackground
+                  style={[styles.card, pressed && styles.pressed]}
+                  imageStyle={[
+                    styles.cardImage,
+                    item.breed === "AUSTRALIAN_SHEPHERD" && styles.aussieCardImage,
+                    item.breed === "HUSKY" && styles.huskyCardImage,
+                  ]}
+                  source={item.image}
+                  resizeMode="cover"
+                >
+                  <View style={styles.overlay} />
+                  <Text style={styles.cardLabel}>
+                    {item.breed === "AUSTRALIAN_SHEPHERD" ? "Aussie" : item.label}
+                  </Text>
+                </ImageBackground>
               )}
             </Pressable>
           ))}
@@ -117,16 +125,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: CARD_GAP / 2,
     marginBottom: spacing.lg,
   },
-  imageWrapper: {
+  card: {
     width: "100%",
     aspectRatio: 1,
     borderRadius: radius.xl,
     overflow: "hidden",
+    justifyContent: "flex-end",
+    padding: spacing.md,
   },
-  breedImage: {
-    width: "100%",
-    height: "100%",
+  cardImage: {
     borderRadius: radius.xl,
+  },
+  aussieCardImage: {
+    transform: [{ scale: 1.3 }, { translateX: 10 }, { translateY: 5 }],
+  },
+  huskyCardImage: {
+    transform: [{ scale: 1.3 }, { translateX: 5 }, { translateY: 15 }],
+  },
+  overlay: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 45,
+    backgroundColor: "rgba(0, 0, 0, 0.25)",
+  },
+  cardLabel: {
+    fontSize: 20,
+    lineHeight: 20,
+    fontWeight: "800",
+    color: colors.surface,
+    textAlign: "right",
+    width: "100%",
+    paddingRight: 5,
+    zIndex: 1,
   },
   pressed: { opacity: 0.92 },
 });
