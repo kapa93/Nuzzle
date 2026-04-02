@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
   },
   aussieCardImage: {
-    transform: [{ scale: 1.15 }, { translateX: 10 }, { translateY: 3 }],
+    transform: [{ scale: 1.18 }, { translateX: 10 }, { translateY: 3 }],
   },
   frenchieCardImage: {
     transform: [{ scale: 1.75 }, { translateX: 11 }, { translateY: -1 }],

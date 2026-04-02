@@ -25,10 +25,16 @@ import { colors } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
 import { signInSchema } from '@/utils/validation';
 import type { AuthStackParamList } from '@/navigation/types';
+import { Lock, Mail } from 'lucide-react-native';
 
-const MARQUEE_WIDTH = 920;
+// Match width to dog-friends.png aspect ratio (2910x720) at 220px height
+// to avoid blank columns between repeated tiles.
+const MARQUEE_WIDTH = 889;
 const MARQUEE_HEIGHT = 220;
-const MARQUEE_DURATION_MS = 42000;
+const MARQUEE_DURATION_MS = 103818;
+
+const INPUT_MUTED = '#9CA3AF';
+const INPUT_BORDER = '#B8C1C8';
 
 export function SignInScreen() {
   const navigation = useNavigation();
@@ -91,7 +97,12 @@ export function SignInScreen() {
       >
       <View style={styles.contentShiftUp}>
         <Image
-          source={require('../../assets/breeds/nuzzle-logo.png')}
+          source={require('../../assets/dog-linear.png')}
+          style={styles.linearDogSilhouette}
+          resizeMode="contain"
+        />
+        <Image
+          source={require('../../assets/green-nuzzle.png')}
           style={styles.logo}
           resizeMode="contain"
         />
@@ -100,23 +111,31 @@ export function SignInScreen() {
           <Text style={styles.successMessage}>{successMessage}</Text>
         ) : null}
 
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          autoComplete="email"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          autoComplete="password"
-        />
+        <View style={styles.inputRow}>
+          <Mail size={20} color={INPUT_MUTED} strokeWidth={2} />
+          <TextInput
+            style={styles.inputField}
+            placeholder="Email"
+            placeholderTextColor={INPUT_MUTED}
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            autoComplete="email"
+          />
+        </View>
+        <View style={styles.inputRow}>
+          <Lock size={20} color={INPUT_MUTED} strokeWidth={2} />
+          <TextInput
+            style={styles.inputField}
+            placeholder="Password"
+            placeholderTextColor={INPUT_MUTED}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoComplete="password"
+          />
+        </View>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -163,21 +182,30 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   contentShiftUp: {
-    transform: [{ translateY: -60 }],
+    transform: [{ translateY: -55 }],
+  },
+  linearDogSilhouette: {
+    width: 80,
+    height: 80,
+    alignSelf: 'center',
+    position: 'relative',
+    display: 'flex',
+    top: -42,
+    right: -6,
+    marginTop: -20,
   },
   logo: {
     width: 320,
     height: 76,
     alignSelf: 'center',
-    marginTop: -10,
-    marginBottom: 16,
-    transform: [{ translateY: -40 }],
+    marginTop: -40,
+    transform: [{ translateY: -35 }],
   },
   marqueeViewport: {
     position: 'absolute',
     left: -24,
     right: -24,
-    bottom: 38,
+    bottom: 45,
     height: 220,
     overflow: 'hidden',
   },
@@ -199,14 +227,24 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     marginBottom: 32,
   },
-  input: {
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
+    borderColor: INPUT_BORDER,
+    borderRadius: 8,
+    paddingLeft: 12,
+    paddingRight: 16,
+    paddingVertical: 16,
     marginBottom: 16,
-    backgroundColor: 'transparent',
+    backgroundColor: '#FFF',
+    gap: 10,
+  },
+  inputField: {
+    flex: 1,
+    fontSize: 16,
+    padding: 0,
+    margin: 0,
   },
   error: {
     color: '#DC2626',
@@ -220,10 +258,16 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: colors.primary,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     alignItems: 'center',
     marginTop: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
   },
   buttonDisabled: {
     opacity: 0.7,
