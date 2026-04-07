@@ -2,10 +2,17 @@ import React, { useState, useRef } from "react";
 import { Pressable, StyleSheet, Text, View, Modal, TouchableOpacity, Dimensions, Platform } from "react-native";
 import { FontAwesome6, Ionicons } from "@expo/vector-icons";
 import Animated, { interpolateColor, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
-import { colors, radius, spacing, typography } from "../theme";
+import {
+  colors,
+  MENU_DOTS_PRESS_IN_MS,
+  MENU_DOTS_PRESS_OUT_MS,
+  radius,
+  spacing,
+  typography,
+} from "@/theme";
 import { Avatar } from "./Avatar";
-import { ImageStrip } from "./ImageStrip";
 import { ReactionBar } from "@/components/ReactionBar";
+import { PostImageCarousel } from "@/components/PostImageCarousel";
 import { TagChip } from "./TagChip";
 import type { QuestionCardData } from "./types";
 import type { ReactionEnum } from "@/types";
@@ -33,6 +40,10 @@ const QuestionCardInner = ({ data, onPress, onAuthorPress, onReactionSelect, onR
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuLayout, setMenuLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const menuBtnRef = useRef<View>(null);
+  const menuBtnPressOverlay = useSharedValue(0);
+  const menuBtnPressOverlayStyle = useAnimatedStyle(() => ({
+    opacity: menuBtnPressOverlay.value,
+  }));
   const isOwnPost = currentUserId && data.authorId === currentUserId;
   const showMenu = isOwnPost && (onEdit || onDelete);
 
@@ -94,8 +105,18 @@ const QuestionCardInner = ({ data, onPress, onAuthorPress, onReactionSelect, onR
             hitSlop={12}
             onPress={openMenu}
             onStartShouldSetResponder={() => true}
+            onPressIn={() => {
+              menuBtnPressOverlay.value = withTiming(1, { duration: MENU_DOTS_PRESS_IN_MS });
+            }}
+            onPressOut={() => {
+              menuBtnPressOverlay.value = withTiming(0, { duration: MENU_DOTS_PRESS_OUT_MS });
+            }}
             style={styles.menuBtn}
           >
+            <Animated.View
+              pointerEvents="none"
+              style={[styles.menuBtnPressOverlay, menuBtnPressOverlayStyle]}
+            />
             <Ionicons name="ellipsis-horizontal" size={20} color={colors.textMuted} />
           </Pressable>
         )}
@@ -133,7 +154,7 @@ const QuestionCardInner = ({ data, onPress, onAuthorPress, onReactionSelect, onR
 
       <Text style={styles.title}>{data.title}</Text>
       {!!data.preview && <Text style={styles.preview}>{data.preview}</Text>}
-      {!!data.images?.length && <ImageStrip images={data.images} />}
+      {!!data.images?.length && <PostImageCarousel images={data.images} imageHeight={220} />}
       <View style={styles.actionRow}>
         {onReactionSelect ? (
           <ReactionBar
@@ -195,7 +216,17 @@ const styles = StyleSheet.create({
   author: { ...typography.subtitle, fontSize: 16, lineHeight: 22 },
   meta: { ...typography.caption },
   headerTag: { flexShrink: 0, justifyContent: "center" },
-  menuBtn: { flexShrink: 0, padding: spacing.xs },
+  menuBtn: {
+    flexShrink: 0,
+    padding: spacing.xs,
+    borderRadius: radius.md,
+    overflow: "hidden",
+  },
+  menuBtnPressOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.07)",
+    borderRadius: radius.md,
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.2)",

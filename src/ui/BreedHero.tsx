@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     lineHeight: 37,
-    letterSpacing: 0.3,
+    letterSpacing: 0.65,
     ...Platform.select({
       ios: { fontFamily: "System", fontWeight: "700" as const },
       android: { fontFamily: "sans-serif", fontWeight: "700" as const },

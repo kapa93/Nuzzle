@@ -22,7 +22,7 @@ export type QuestionCardData = {
   badgeTone?: "neutral" | "question" | "tip" | "story";
   title: string;
   preview?: string;
-  images?: ImageSourcePropType[];
+  images?: string[];
   likeCount?: number;
   loveCount?: number;
   hahaCount?: number;

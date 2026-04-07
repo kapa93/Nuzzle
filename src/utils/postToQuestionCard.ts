@@ -24,7 +24,7 @@ export function postToQuestionCardData(post: PostWithDetails): QuestionCardData 
     badgeTone: typeTone[post.type],
     title: post.title ?? post.content_text.slice(0, 80) + (post.content_text.length > 80 ? "…" : ""),
     preview: post.title ? post.content_text : undefined,
-    images: post.images?.map((uri) => ({ uri })) ?? [],
+    images: post.images ?? [],
     likeCount: post.reaction_counts?.LIKE ?? 0,
     loveCount: post.reaction_counts?.LOVE ?? 0,
     hahaCount: post.reaction_counts?.HAHA ?? 0,

@@ -12,10 +12,19 @@ import {
 import { FontAwesome6, Ionicons } from "@expo/vector-icons";
 import Animated, { interpolateColor, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { Avatar } from "@/ui/Avatar";
+import { PostImageCarousel } from "@/components/PostImageCarousel";
 import { ReactionBar } from "@/components/ReactionBar";
 import { formatAuthorDisplay, formatRelativeTime } from "@/utils/breed";
 import { MEETUP_KIND_LABELS } from "@/utils/breed";
-import { colors, radius, shadow, spacing, typography } from "@/theme";
+import {
+  colors,
+  MENU_DOTS_PRESS_IN_MS,
+  MENU_DOTS_PRESS_OUT_MS,
+  radius,
+  shadow,
+  spacing,
+  typography,
+} from "@/theme";
 import type { PostWithDetails, ReactionEnum } from "@/types";
 
 function formatMeetupDateTime(iso: string): string {
@@ -63,6 +72,10 @@ export function MeetupCard({
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuLayout, setMenuLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const menuBtnRef = useRef<View>(null);
+  const menuBtnPressOverlay = useSharedValue(0);
+  const menuBtnPressOverlayStyle = useAnimatedStyle(() => ({
+    opacity: menuBtnPressOverlay.value,
+  }));
 
   const md = post.meetup_details;
   if (!md) return null;
@@ -127,7 +140,22 @@ export function MeetupCard({
           </View>
         </Pressable>
         {showMenu && (
-          <Pressable ref={menuBtnRef} hitSlop={12} onPress={openMenu} style={styles.menuBtn}>
+          <Pressable
+            ref={menuBtnRef}
+            hitSlop={12}
+            onPress={openMenu}
+            onPressIn={() => {
+              menuBtnPressOverlay.value = withTiming(1, { duration: MENU_DOTS_PRESS_IN_MS });
+            }}
+            onPressOut={() => {
+              menuBtnPressOverlay.value = withTiming(0, { duration: MENU_DOTS_PRESS_OUT_MS });
+            }}
+            style={styles.menuBtn}
+          >
+            <Animated.View
+              pointerEvents="none"
+              style={[styles.menuBtnPressOverlay, menuBtnPressOverlayStyle]}
+            />
             <Ionicons name="ellipsis-horizontal" size={20} color={colors.textMuted} />
           </Pressable>
         )}
@@ -173,6 +201,8 @@ export function MeetupCard({
           {post.content_text}
         </Text>
       ) : null}
+
+      {post.images.length ? <PostImageCarousel images={post.images} imageHeight={220} /> : null}
 
       {/* Meetup details block */}
       <View style={styles.meetupDetails}>
@@ -280,7 +310,16 @@ const styles = StyleSheet.create({
   headerText: { flex: 1, marginLeft: spacing.md },
   author: { ...typography.subtitle, fontSize: 17, lineHeight: 22 },
   meta: { ...typography.caption },
-  menuBtn: { padding: spacing.xs },
+  menuBtn: {
+    padding: spacing.xs,
+    borderRadius: radius.md,
+    overflow: "hidden",
+  },
+  menuBtnPressOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.07)",
+    borderRadius: radius.md,
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.2)",

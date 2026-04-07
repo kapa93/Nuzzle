@@ -27,7 +27,7 @@ import { createReport } from "@/api/reports";
 import { useAuthStore } from "@/store/authStore";
 import { useReactionMutation } from "@/hooks/useReactionMutation";
 import { DogAvatar } from "@/components/DogAvatar";
-import { ImageGrid } from "@/components/ImageGrid";
+import { PostImageCarousel } from "@/components/PostImageCarousel";
 import { ReactionBar } from "@/components/ReactionBar";
 import { HealthDisclaimer } from "@/components/HealthDisclaimer";
 import { AnswerCard } from "@/ui/AnswerCard";
@@ -37,8 +37,9 @@ import { BREED_LABELS, POST_TYPE_LABELS, POST_TAG_LABELS, MEETUP_KIND_LABELS } f
 import { commentSchema } from "@/utils/validation";
 import { useScrollDirection } from "@/context/ScrollDirectionContext";
 import { useStackHeaderHeight } from "@/hooks/useStackHeaderHeight";
-import { colors, radius, shadow, spacing, typography } from "@/theme";
+import { colors, MENU_DOTS_PRESS_IN_MS, MENU_DOTS_PRESS_OUT_MS, radius, shadow, spacing, typography } from "@/theme";
 import type { ReactionEnum } from "@/types";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 
 function getBarksText(count: number) {
   return count === 1 ? "1 Bark" : `${count} Barks`;
@@ -75,6 +76,10 @@ export function PostDetailScreen() {
   }, []);
   const [menuLayout, setMenuLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const menuBtnRef = useRef<View>(null);
+  const menuBtnPressOverlay = useSharedValue(0);
+  const menuBtnPressOverlayStyle = useAnimatedStyle(() => ({
+    opacity: menuBtnPressOverlay.value,
+  }));
 
   const { data: post, isLoading } = useQuery({
     queryKey: ["post", postId],
@@ -215,10 +220,13 @@ export function PostDetailScreen() {
       >
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={[styles.scrollContent, { paddingTop: headerHeight - 60 }]}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingTop: headerHeight - 60 + spacing.xxl },
+          ]}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.card}>
+          <View style={styles.postContent}>
             <View style={styles.header}>
               <Pressable
                 style={styles.authorPressable}
@@ -230,46 +238,67 @@ export function PostDetailScreen() {
                   size={48}
                 />
                 <View style={styles.headerText}>
-                  <Text style={styles.authorName}>{formatAuthorDisplay(post.author_name, post.author_dog_name)}</Text>
+                  <Text style={styles.authorName} numberOfLines={1}>
+                    {formatAuthorDisplay(post.author_name, post.author_dog_name)}
+                  </Text>
                   <Text style={styles.meta}>
                     {breedLabel} · {typeLabel} · {tagLabel}
                   </Text>
                 </View>
               </Pressable>
-              {user?.id === post.author_id && (
-                <>
-                  <Pressable
-                    ref={menuBtnRef}
-                    hitSlop={12}
-                    onPress={openMenu}
-                    style={styles.menuBtn}
-                  >
-                    <Ionicons name="ellipsis-horizontal" size={22} color={colors.textMuted} />
-                  </Pressable>
-                  <Modal visible={menuVisible} transparent animationType="fade">
-                    <Pressable style={styles.modalOverlay} onPress={() => setMenuVisible(false)}>
-                      <View
-                        style={[
-                          styles.menuDropdown,
-                          {
-                            top: menuLayout.y + menuLayout.height + 4,
-                            right: Dimensions.get("window").width - (menuLayout.x + menuLayout.width),
-                          },
-                        ]}
-                      >
-                        <TouchableOpacity style={styles.menuItem} onPress={handleEdit} activeOpacity={0.7}>
-                          <Ionicons name="pencil-outline" size={20} color={colors.textPrimary} />
-                          <Text style={styles.menuItemText}>Edit</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={[styles.menuItem, styles.menuItemDanger]} onPress={handleDelete} activeOpacity={0.7}>
-                          <Ionicons name="trash-outline" size={20} color="#DC2626" />
-                          <Text style={[styles.menuItemText, styles.menuItemTextDanger]}>Delete</Text>
-                        </TouchableOpacity>
-                      </View>
+              <View style={styles.headerRight}>
+                <Text style={styles.headerTimestamp} numberOfLines={1}>
+                  {formatRelativeTime(post.created_at)}
+                </Text>
+                {user?.id === post.author_id ? (
+                  <>
+                    <Pressable
+                      ref={menuBtnRef}
+                      hitSlop={12}
+                      onPress={openMenu}
+                      onPressIn={() => {
+                        menuBtnPressOverlay.value = withTiming(1, {
+                          duration: MENU_DOTS_PRESS_IN_MS,
+                        });
+                      }}
+                      onPressOut={() => {
+                        menuBtnPressOverlay.value = withTiming(0, {
+                          duration: MENU_DOTS_PRESS_OUT_MS,
+                        });
+                      }}
+                      style={[styles.menuBtn, styles.menuBtnShiftUp]}
+                    >
+                      <Animated.View
+                        pointerEvents="none"
+                        style={[styles.menuBtnPressOverlay, menuBtnPressOverlayStyle]}
+                      />
+                      <Ionicons name="ellipsis-horizontal" size={22} color={colors.textMuted} />
                     </Pressable>
-                  </Modal>
-                </>
-              )}
+                    <Modal visible={menuVisible} transparent animationType="fade">
+                      <Pressable style={styles.modalOverlay} onPress={() => setMenuVisible(false)}>
+                        <View
+                          style={[
+                            styles.menuDropdown,
+                            {
+                              top: menuLayout.y + menuLayout.height + 4,
+                              right: Dimensions.get("window").width - (menuLayout.x + menuLayout.width),
+                            },
+                          ]}
+                        >
+                          <TouchableOpacity style={styles.menuItem} onPress={handleEdit} activeOpacity={0.7}>
+                            <Ionicons name="pencil-outline" size={20} color={colors.textPrimary} />
+                            <Text style={styles.menuItemText}>Edit</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity style={[styles.menuItem, styles.menuItemDanger]} onPress={handleDelete} activeOpacity={0.7}>
+                            <Ionicons name="trash-outline" size={20} color="#DC2626" />
+                            <Text style={[styles.menuItemText, styles.menuItemTextDanger]}>Delete</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </Pressable>
+                    </Modal>
+                  </>
+                ) : null}
+              </View>
             </View>
 
             {post.tag === "HEALTH" && <HealthDisclaimer />}
@@ -281,12 +310,7 @@ export function PostDetailScreen() {
 
             {post.images && post.images.length > 0 ? (
               <View style={styles.images}>
-                <ImageGrid
-                  images={post.images}
-                  maxDisplay={post.images.length}
-                  size={120}
-                  compact
-                />
+                <PostImageCarousel images={post.images} imageHeight={320} />
               </View>
             ) : null}
 
@@ -337,17 +361,14 @@ export function PostDetailScreen() {
             ) : null}
 
             <View style={styles.footer}>
-              <ReactionBar
-                reactions={post.reaction_counts}
-                userReaction={post.user_reaction}
-                onSelect={handleReactionSelect}
-              />
-            </View>
-
-            <View style={styles.timestampRow}>
-              <Text style={styles.timestamp}>
-                {formatRelativeTime(post.created_at)}
-              </Text>
+              <View style={styles.footerReactions}>
+                <ReactionBar
+                  reactions={post.reaction_counts}
+                  userReaction={post.user_reaction}
+                  onSelect={handleReactionSelect}
+                  wrapperStyle={styles.footerReactionBarWrapper}
+                />
+              </View>
               <Pressable onPress={handleReport} style={styles.reportBtn}>
                 <View style={styles.reportIconWrap}>
                   <Ionicons name="flag-outline" size={14} color={colors.textMuted} />
@@ -357,10 +378,14 @@ export function PostDetailScreen() {
             </View>
           </View>
 
+          <View style={styles.postCommentsDivider} />
+
           <View style={styles.commentsSection}>
-            <Text style={styles.commentsTitle}>
-              {getBarksText(comments?.length ?? 0)}
-            </Text>
+            {(comments?.length ?? 0) === 0 ? (
+              <Text style={styles.commentsTitleEmpty}>No barks yet.</Text>
+            ) : (
+              <Text style={styles.commentsTitle}>{getBarksText(comments?.length ?? 0)}</Text>
+            )}
 
             {(comments ?? []).map((c) => (
               <AnswerCard
@@ -417,27 +442,49 @@ const styles = StyleSheet.create({
   loadingText: { ...typography.bodyMuted },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: spacing.xxl },
-  card: {
-    backgroundColor: colors.surface,
-    padding: spacing.lg,
-    margin: spacing.lg,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadow.sm,
+  postContent: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+  },
+  postCommentsDivider: {
+    borderTopWidth: 1.5,
+    borderTopColor: colors.border,
+    marginTop: spacing.sm,
+    marginBottom: spacing.lg,
   },
   header: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     marginBottom: spacing.md,
   },
   authorPressable: {
     flex: 1,
+    minWidth: 0,
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
   },
-  headerText: { flex: 1, marginLeft: spacing.md },
-  menuBtn: { padding: spacing.xs },
+  headerText: { flex: 1, marginLeft: spacing.md, minWidth: 0 },
+  headerRight: {
+    flexDirection: "column",
+    alignItems: "flex-end",
+    flexShrink: 0,
+    gap: spacing.xxs,
+    marginLeft: spacing.sm,
+    paddingTop: 2,
+  },
+  headerTimestamp: { ...typography.caption },
+  menuBtn: {
+    padding: spacing.xs,
+    borderRadius: radius.md,
+    overflow: "hidden",
+  },
+  menuBtnPressOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.07)",
+    borderRadius: radius.md,
+  },
+  /** Nudges only the ⋯ control up; timestamp / author block unchanged */
+  menuBtnShiftUp: { marginTop: -5 },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.2)",
@@ -507,14 +554,18 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: spacing.sm,
-  },
-  timestampRow: {
-    flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
+    gap: spacing.md,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
   },
-  timestamp: { ...typography.caption },
+  footerReactions: {
+    flex: 1,
+    minWidth: 0,
+  },
+  footerReactionBarWrapper: {
+    marginTop: 0,
+  },
   reportBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -531,6 +582,12 @@ const styles = StyleSheet.create({
   },
   commentsTitle: {
     ...typography.subtitle,
+    marginBottom: spacing.lg,
+  },
+  commentsTitleEmpty: {
+    ...typography.bodyMuted,
+    textAlign: "center",
+    width: "100%",
     marginBottom: spacing.lg,
   },
   inputRow: {

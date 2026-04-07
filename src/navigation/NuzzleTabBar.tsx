@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Pressable, StyleSheet, Text } from "react-native";
+import { View, Pressable, StyleSheet, Text, Image } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -32,14 +32,19 @@ const CREATE_BUTTON_PRESS_ANIMATION = { duration: 180 };
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const TAB_ICON_COLOR = "#000000";
+const HOME_ICON_ACTIVE = require("../../assets/home-black.png");
+const HOME_ICON_INACTIVE = require("../../assets/home-white.png");
+const HOME_ICON_SIZE = 26;
 
 function TabBarItem({
+  tabKey,
   icon,
   accessibilityLabel,
   isActive,
   onPress,
   badgeCount,
 }: {
+  tabKey: "Home" | "Explore" | "Notifications" | "Profile";
   icon: "house" | "compass" | "bell" | "user";
   accessibilityLabel: string;
   isActive: boolean;
@@ -62,13 +67,21 @@ function TabBarItem({
       style={styles.item}
     >
       <View style={styles.iconWrap}>
-        <FontAwesome6
-          name={icon}
-          size={22}
-          style={styles.tabIcon}
-          color={TAB_ICON_COLOR}
-          solid={isActive}
-        />
+        {tabKey === "Home" ? (
+          <Image
+            source={isActive ? HOME_ICON_ACTIVE : HOME_ICON_INACTIVE}
+            style={styles.homeIcon}
+            resizeMode="contain"
+          />
+        ) : (
+          <FontAwesome6
+            name={icon}
+            size={22}
+            style={styles.tabIcon}
+            color={TAB_ICON_COLOR}
+            solid={isActive}
+          />
+        )}
         {badgeLabel ? (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{badgeLabel}</Text>
@@ -218,6 +231,7 @@ export function NuzzleTabBar({ state, navigation }: BottomTabBarProps) {
           return (
             <TabBarItem
               key={item.key}
+              tabKey={item.key as "Home" | "Explore" | "Notifications" | "Profile"}
               icon={item.icon as "house" | "compass" | "bell" | "user"}
               accessibilityLabel={item.label}
               isActive={isActive}
@@ -266,6 +280,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   tabIcon: {
+    transform: [{ translateY: 4 }],
+  },
+  homeIcon: {
+    width: HOME_ICON_SIZE,
+    height: HOME_ICON_SIZE,
     transform: [{ translateY: 4 }],
   },
   badge: {

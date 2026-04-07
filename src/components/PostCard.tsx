@@ -4,21 +4,18 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
   Pressable,
   Platform,
 } from 'react-native';
 import Animated, { interpolateColor, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { PostWithDetails } from '../types';
 import { DogAvatar } from './DogAvatar';
-import { ImageGrid } from './ImageGrid';
+import { PostImageCarousel } from './PostImageCarousel';
 import { ReactionBar } from './ReactionBar';
 import { formatAuthorDisplay, formatRelativeTime } from '../utils/breed';
 import { BREED_LABELS, POST_TYPE_LABELS, POST_TAG_LABELS } from '../utils/breed';
 import { colors, radius, shadow, spacing, typography } from '@/theme';
 
-const { width } = Dimensions.get('window');
-const THUMB_SIZE = (width - 48) / 3;
 const COMMENT_PRESS_ANIMATION = { duration: 180 };
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -89,11 +86,7 @@ export function PostCard({ post, onPress, onReactionSelect, onAuthorPress }: Pos
 
       {post.images && post.images.length > 0 ? (
         <View style={styles.images}>
-          <ImageGrid
-            images={post.images.slice(0, 3)}
-            maxDisplay={3}
-            size={THUMB_SIZE}
-          />
+          <PostImageCarousel images={post.images} imageHeight={220} />
         </View>
       ) : null}
 

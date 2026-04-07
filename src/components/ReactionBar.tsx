@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Dimensions,
   Platform,
+  type ViewStyle,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { Bone } from "lucide-react-native";
@@ -22,13 +23,15 @@ interface ReactionBarProps {
   userReaction?: ReactionEnum | null;
   onSelect: (reaction: ReactionEnum | null) => void;
   onMenuOpenChange?: (open: boolean) => void;
+  /** Merged with the outer wrapper (e.g. `{ marginTop: 0 }` when sitting in a shared row) */
+  wrapperStyle?: ViewStyle;
 }
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const STRIP_WIDTH = 308;
 const STRIP_HEIGHT = 84;
 
-export function ReactionBar({ reactions, userReaction, onSelect, onMenuOpenChange }: ReactionBarProps) {
+export function ReactionBar({ reactions, userReaction, onSelect, onMenuOpenChange, wrapperStyle }: ReactionBarProps) {
   const [stripVisible, setStripVisible] = useState(false);
   const [buttonLayout, setButtonLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const likeButtonRef = useRef<View>(null);
@@ -64,7 +67,7 @@ export function ReactionBar({ reactions, userReaction, onSelect, onMenuOpenChang
 
   return (
     <>
-      <View style={styles.wrapper}>
+      <View style={[styles.wrapper, wrapperStyle]}>
         <Pressable
           ref={likeButtonRef}
           onPress={handleTap}
