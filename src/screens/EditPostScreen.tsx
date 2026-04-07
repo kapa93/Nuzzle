@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -30,6 +32,7 @@ export function EditPostScreen() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const headerHeight = useStackHeaderHeight();
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -82,6 +85,20 @@ export function EditPostScreen() {
     }
   };
 
+  const scrollBodyFieldIntoView = (target: number) => {
+    const scrollToFocusedInput = () => {
+      const responder = (scrollViewRef.current as unknown as {
+        getScrollResponder?: () => {
+          scrollResponderScrollNativeHandleToKeyboard?: (nodeHandle: number, additionalOffset?: number, preventNegativeScrollOffset?: boolean) => void;
+        };
+      })?.getScrollResponder?.();
+      responder?.scrollResponderScrollNativeHandleToKeyboard?.(target, 72, true);
+    };
+
+    setTimeout(scrollToFocusedInput, 160);
+    setTimeout(scrollToFocusedInput, 320);
+  };
+
   if (!user) return null;
 
   if (isLoading || !post) {
@@ -102,7 +119,17 @@ export function EditPostScreen() {
 
   return (
     <View style={styles.background}>
-      <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: headerHeight }]}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
+      >
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.container}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={[styles.content, { paddingTop: headerHeight }]}
+      >
       <Text style={styles.label}>Breed</Text>
       <Text style={styles.breedValue}>{BREED_LABELS[breed]}</Text>
 
@@ -145,7 +172,7 @@ export function EditPostScreen() {
         ))}
       </ScrollView>
 
-      <Text style={styles.label}>Content</Text>
+      <Text style={styles.label}>Body</Text>
       <TextInput
         style={styles.input}
         placeholder="Share a question, update, or tip..."
@@ -154,6 +181,7 @@ export function EditPostScreen() {
         numberOfLines={4}
         value={content}
         onChangeText={setContent}
+        onFocus={(event) => scrollBodyFieldIntoView(event.nativeEvent.target)}
         textAlignVertical="top"
       />
 
@@ -171,6 +199,7 @@ export function EditPostScreen() {
         )}
       </TouchableOpacity>
     </ScrollView>
+    </KeyboardAvoidingView>
     </View>
   );
 }

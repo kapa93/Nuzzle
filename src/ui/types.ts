@@ -20,8 +20,14 @@ export type QuestionCardData = {
   breedKey: BreedColorKey;
   badge?: string;
   badgeTone?: "neutral" | "question" | "tip" | "story";
+  /** True when the post has a dedicated title (body is separate from title line). */
+  hasTitle: boolean;
+  /** Post title when hasTitle; may be empty string when !hasTitle (use fullContent for body). */
   title: string;
+  /** Body text when hasTitle (same as full content). */
   preview?: string;
+  /** Full post body; used for expandable preview when there is no title line. */
+  fullContent: string;
   images?: string[];
   likeCount?: number;
   loveCount?: number;

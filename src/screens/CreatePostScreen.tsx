@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Image,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -73,6 +74,7 @@ export function CreatePostScreen() {
     createPostPushed: route.name === 'CreatePost',
   });
   const queryClient = useQueryClient();
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
@@ -203,13 +205,37 @@ export function CreatePostScreen() {
     }
   };
 
+  const scrollBodyFieldIntoView = (target: number) => {
+    const scrollToFocusedInput = () => {
+      const responder = (scrollViewRef.current as unknown as {
+        getScrollResponder?: () => {
+          scrollResponderScrollNativeHandleToKeyboard?: (nodeHandle: number, additionalOffset?: number, preventNegativeScrollOffset?: boolean) => void;
+        };
+      })?.getScrollResponder?.();
+      responder?.scrollResponderScrollNativeHandleToKeyboard?.(target, 72, true);
+    };
+
+    setTimeout(scrollToFocusedInput, 160);
+    setTimeout(scrollToFocusedInput, 320);
+  };
+
   if (!user) return null;
 
   const screenBg = route.name === 'CreatePostModal' ? colors.surface : colors.background;
 
   return (
     <View style={[styles.screen, { backgroundColor: screenBg }]}>
-      <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: headerHeight }]}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
+      >
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.container}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={[styles.content, { paddingTop: headerHeight }]}
+      >
         <Text style={styles.label}>Breed</Text>
         <Text style={styles.breedValue}>{BREED_LABELS[breed]}</Text>
 
@@ -266,6 +292,7 @@ export function CreatePostScreen() {
               numberOfLines={4}
               value={content}
               onChangeText={setContent}
+              onFocus={(event) => scrollBodyFieldIntoView(event.nativeEvent.target)}
               textAlignVertical="top"
             />
             <Text style={styles.label}>Location</Text>
@@ -361,6 +388,7 @@ export function CreatePostScreen() {
               numberOfLines={4}
               value={content}
               onChangeText={setContent}
+              onFocus={(event) => scrollBodyFieldIntoView(event.nativeEvent.target)}
               textAlignVertical="top"
             />
           </>
@@ -397,6 +425,7 @@ export function CreatePostScreen() {
           )}
         </TouchableOpacity>
       </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }

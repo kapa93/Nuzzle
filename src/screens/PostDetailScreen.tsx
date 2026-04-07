@@ -11,7 +11,6 @@ import {
   Platform,
   Pressable,
   Modal,
-  TouchableOpacity,
   Dimensions,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -285,14 +284,24 @@ export function PostDetailScreen() {
                             },
                           ]}
                         >
-                          <TouchableOpacity style={styles.menuItem} onPress={handleEdit} activeOpacity={0.7}>
+                          <Pressable
+                            style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
+                            onPress={handleEdit}
+                          >
                             <Ionicons name="pencil-outline" size={20} color={colors.textPrimary} />
                             <Text style={styles.menuItemText}>Edit</Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity style={[styles.menuItem, styles.menuItemDanger]} onPress={handleDelete} activeOpacity={0.7}>
+                          </Pressable>
+                          <Pressable
+                            style={({ pressed }) => [
+                              styles.menuItem,
+                              styles.menuItemDanger,
+                              pressed && styles.menuItemPressedDanger,
+                            ]}
+                            onPress={handleDelete}
+                          >
                             <Ionicons name="trash-outline" size={20} color="#DC2626" />
                             <Text style={[styles.menuItemText, styles.menuItemTextDanger]}>Delete</Text>
-                          </TouchableOpacity>
+                          </Pressable>
                         </View>
                       </Pressable>
                     </Modal>
@@ -475,13 +484,13 @@ const styles = StyleSheet.create({
   headerTimestamp: { ...typography.caption },
   menuBtn: {
     padding: spacing.xs,
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
     overflow: "hidden",
   },
   menuBtnPressOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0, 0, 0, 0.07)",
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
   },
   /** Nudges only the ⋯ control up; timestamp / author block unchanged */
   menuBtnShiftUp: { marginTop: -5 },
@@ -492,11 +501,9 @@ const styles = StyleSheet.create({
   menuDropdown: {
     position: "absolute",
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
+    borderRadius: radius.sm,
     paddingVertical: spacing.xs,
-    paddingLeft: spacing.lg,
-    paddingRight: spacing.md,
-    minWidth: 140,
+    paddingHorizontal: spacing.xs,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
@@ -507,7 +514,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: spacing.sm,
-    gap: spacing.md,
+    paddingHorizontal: spacing.sm,
+    gap: spacing.sm,
+    borderRadius: radius.sm,
+  },
+  menuItemPressed: {
+    backgroundColor: "rgba(0, 0, 0, 0.08)",
+  },
+  menuItemPressedDanger: {
+    backgroundColor: "rgba(220, 38, 38, 0.1)",
   },
   menuItemDanger: {},
   menuItemText: { ...typography.body, fontWeight: "600" },
@@ -518,6 +533,7 @@ const styles = StyleSheet.create({
   content: { ...typography.body, marginBottom: spacing.md },
   body: {
     ...typography.bodyMuted,
+    color: colors.textSupporting,
     marginBottom: spacing.md,
     fontSize: 14,
     lineHeight: 20,

@@ -5,12 +5,12 @@ import {
   StyleSheet,
   Pressable,
   Modal,
-  TouchableOpacity,
   Dimensions,
   Platform,
 } from "react-native";
 import { FontAwesome6, Ionicons } from "@expo/vector-icons";
 import Animated, { interpolateColor, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import { ExpandablePostBody } from "@/components/ExpandablePostBody";
 import { Avatar } from "@/ui/Avatar";
 import { PostImageCarousel } from "@/components/PostImageCarousel";
 import { ReactionBar } from "@/components/ReactionBar";
@@ -175,20 +175,26 @@ export function MeetupCard({
               onStartShouldSetResponder={() => true}
             >
               {onEdit && (
-                <TouchableOpacity style={styles.menuItem} onPress={handleEdit} activeOpacity={0.7}>
+                <Pressable
+                  style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
+                  onPress={handleEdit}
+                >
                   <Ionicons name="pencil-outline" size={20} color={colors.textPrimary} />
                   <Text style={styles.menuItemText}>Edit</Text>
-                </TouchableOpacity>
+                </Pressable>
               )}
               {onDelete && (
-                <TouchableOpacity
-                  style={[styles.menuItem, styles.menuItemDanger]}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.menuItem,
+                    styles.menuItemDanger,
+                    pressed && styles.menuItemPressedDanger,
+                  ]}
                   onPress={handleDelete}
-                  activeOpacity={0.7}
                 >
                   <Ionicons name="trash-outline" size={20} color="#DC2626" />
                   <Text style={[styles.menuItemText, styles.menuItemTextDanger]}>Delete</Text>
-                </TouchableOpacity>
+                </Pressable>
               )}
             </View>
           </Pressable>
@@ -197,9 +203,7 @@ export function MeetupCard({
 
       <Text style={styles.title}>{post.title ?? "Meetup"}</Text>
       {post.content_text ? (
-        <Text style={styles.preview} numberOfLines={3}>
-          {post.content_text}
-        </Text>
+        <ExpandablePostBody text={post.content_text} style={styles.preview} onMorePress={onPress} />
       ) : null}
 
       {post.images.length ? <PostImageCarousel images={post.images} imageHeight={220} /> : null}
@@ -312,13 +316,13 @@ const styles = StyleSheet.create({
   meta: { ...typography.caption },
   menuBtn: {
     padding: spacing.xs,
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
     overflow: "hidden",
   },
   menuBtnPressOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0, 0, 0, 0.07)",
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
   },
   modalOverlay: {
     flex: 1,
@@ -327,11 +331,9 @@ const styles = StyleSheet.create({
   menuDropdown: {
     position: "absolute",
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
+    borderRadius: radius.sm,
     paddingVertical: spacing.xs,
-    paddingLeft: spacing.lg,
-    paddingRight: spacing.md,
-    minWidth: 140,
+    paddingHorizontal: spacing.xs,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
@@ -342,7 +344,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: spacing.sm,
-    gap: spacing.md,
+    paddingHorizontal: spacing.sm,
+    gap: spacing.sm,
+    borderRadius: radius.sm,
+  },
+  menuItemPressed: {
+    backgroundColor: "rgba(0, 0, 0, 0.08)",
+  },
+  menuItemPressedDanger: {
+    backgroundColor: "rgba(220, 38, 38, 0.1)",
   },
   menuItemDanger: {},
   menuItemText: { ...typography.body, fontWeight: "600" },

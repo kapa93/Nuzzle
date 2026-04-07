@@ -13,6 +13,8 @@ const typeTone: Record<PostTypeEnum, "question" | "tip" | "story"> = {
 };
 
 export function postToQuestionCardData(post: PostWithDetails): QuestionCardData {
+  const content = post.content_text ?? "";
+  const hasTitle = !!post.title;
   return {
     id: post.id,
     author: formatAuthorDisplay(post.author_name, post.author_dog_name),
@@ -22,8 +24,10 @@ export function postToQuestionCardData(post: PostWithDetails): QuestionCardData 
     breedKey: BREED_TO_COLOR[post.breed],
     badge: POST_TAG_LABELS[post.tag],
     badgeTone: typeTone[post.type],
-    title: post.title ?? post.content_text.slice(0, 80) + (post.content_text.length > 80 ? "…" : ""),
-    preview: post.title ? post.content_text : undefined,
+    hasTitle,
+    title: post.title ?? "",
+    preview: hasTitle ? content : undefined,
+    fullContent: content,
     images: post.images ?? [],
     likeCount: post.reaction_counts?.LIKE ?? 0,
     loveCount: post.reaction_counts?.LOVE ?? 0,

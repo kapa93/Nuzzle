@@ -202,13 +202,15 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     borderRadius: radius.md,
     overflow: "hidden",
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: colors.surface,
   },
   singleImageWrap: {
     width: "100%",
+    borderRadius: radius.md,
+    overflow: "hidden",
   },
   inlineSlide: {
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: colors.surface,
   },
   inlinePairRow: {
     flex: 1,
@@ -217,13 +219,14 @@ const styles = StyleSheet.create({
   },
   inlinePairImageWrap: {
     flex: 1,
+    borderRadius: radius.md,
     overflow: "hidden",
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: colors.surface,
   },
   inlineImage: {
     width: "100%",
     height: "100%",
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: colors.surface,
   },
   dotsRow: {
     position: "absolute",
