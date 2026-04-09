@@ -4,7 +4,7 @@ jest.mock('@react-navigation/native', () => ({
 
 jest.mock('@/store/authStore', () => {
   const setNeedsOnboarding = jest.fn();
-  const useAuthStore = jest.fn(() => ({}));
+  const useAuthStore = jest.fn(() => ({})) as jest.Mock & { getState: jest.Mock };
   useAuthStore.getState = jest.fn(() => ({ setNeedsOnboarding }));
   return { useAuthStore };
 });

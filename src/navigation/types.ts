@@ -1,10 +1,20 @@
 import type { BreedEnum, PostTypeEnum } from '@/types';
 
+export type SearchMainParams = {
+  initialQuery?: string;
+  initialBreed?: BreedEnum;
+  autoSearch?: boolean;
+  launchKey?: number;
+} | undefined;
+
 export type RootStackParamList = {
   Auth: undefined;
   Onboarding: undefined;
   Main: undefined;
   CreatePostModal: { breed?: BreedEnum; initialType?: PostTypeEnum } | undefined;
+  SearchModal: SearchMainParams;
+  PostDetail: { postId: string };
+  UserProfile: { userId: string };
 };
 
 export type OnboardingStackParamList = {
@@ -27,11 +37,13 @@ export type MainTabParamList = {
 
 export type NotificationsStackParamList = {
   NotificationsMain: undefined;
+  SearchMain: SearchMainParams;
   PostDetail: { postId: string };
 };
 
 export type HomeStackParamList = {
   HomeFeed: undefined;
+  SearchMain: SearchMainParams;
   DogBeachNow: undefined;
   DogProfile: { dogId: string };
   PostDetail: { postId: string };
@@ -43,7 +55,7 @@ export type HomeStackParamList = {
 export type ExploreStackParamList = {
   ExploreList: undefined;
   BreedFeed: { breed: BreedEnum };
-  SearchMain: undefined;
+  SearchMain: SearchMainParams;
   DogProfile: { dogId: string };
   PostDetail: { postId: string };
   CreatePost: { breed: BreedEnum };
@@ -56,12 +68,13 @@ export type CreateStackParamList = {
 };
 
 export type SearchStackParamList = {
-  SearchMain: undefined;
+  SearchMain: SearchMainParams;
   PostDetail: { postId: string };
 };
 
 export type ProfileStackParamList = {
   ProfileMain: undefined;
+  SearchMain: SearchMainParams;
   EditProfile: undefined;
   EditDog: { dogId?: string; fromOnboarding?: boolean };
   DogProfile: { dogId: string };

@@ -167,7 +167,7 @@ describe('MetThisDogButton', () => {
     );
 
     expect(screen.getByLabelText('Already met')).toBeTruthy();
-    expect(screen.getByText('icon:checkmark')).toBeTruthy();
+    expect(screen.getByText('icon:checkmark-sharp')).toBeTruthy();
     expect(screen.queryByText('Met this dog')).toBeNull();
   });
 
@@ -190,6 +190,6 @@ describe('MetThisDogButton', () => {
     fireEvent.press(screen.getByText('Met this dog'));
 
     expect(screen.getByLabelText('Interaction saved')).toBeTruthy();
-    expect(screen.getByText('icon:checkmark')).toBeTruthy();
+    expect(screen.getByText('icon:checkmark-sharp')).toBeTruthy();
   });
 });

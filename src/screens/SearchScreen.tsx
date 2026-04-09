@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -6,38 +6,61 @@ import {
   StyleSheet,
   FlatList,
   ActivityIndicator,
-  TouchableOpacity,
+  Pressable,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { searchPosts } from '@/api/posts';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { deletePost, searchPosts } from '@/api/posts';
 import { setReaction } from '@/api/reactions';
-import { PostCard } from '@/components/PostCard';
+import { rsvpMeetup, unrsvpMeetup } from '@/api/meetups';
+import { FeedItem } from '@/components/FeedItem';
 import { useAuthStore } from '@/store/authStore';
 import {
   BREEDS,
-  POST_TAGS,
-  POST_TYPES,
   BREED_LABELS,
-  POST_TAG_LABELS,
-  POST_TYPE_LABELS,
 } from '@/utils/breed';
 import { ScreenWithWallpaper } from '@/components/ScreenWithWallpaper';
 import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
+import type { SearchMainParams } from '@/navigation/types';
 import type { PostWithDetails } from '@/types';
-import type { BreedEnum, PostTagEnum, PostTypeEnum, ReactionEnum } from '@/types';
+import type { BreedEnum, ReactionEnum } from '@/types';
+import { colors, radius, spacing, typography } from '@/theme';
 
 export function SearchScreen() {
   const navigation = useNavigation<any>();
+  const route = useRoute();
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [breed, setBreed] = useState<BreedEnum | ''>('');
-  const [tag, setTag] = useState<PostTagEnum | ''>('');
-  const [type, setType] = useState<PostTypeEnum | ''>('');
-  const [searchTrigger, setSearchTrigger] = useState(0);
+  const [queryInputFocused, setQueryInputFocused] = useState(false);
+  const [reactionMenuOpen, setReactionMenuOpen] = useState(false);
   const queryClient = useQueryClient();
-  const headerHeight = useStackHeaderHeight();
+  const headerHeight = useStackHeaderHeight({
+    createPostSheetModal: route.name === 'SearchModal',
+  });
+
+  useEffect(() => {
+    const params = (route.params ?? {}) as Partial<NonNullable<SearchMainParams>>;
+    if (typeof params.launchKey !== 'number') return;
+
+    setQuery(params.initialQuery ?? '');
+    setBreed(params.initialBreed ?? '');
+  }, [route.params]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(query.trim());
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [query]);
+
   const reactionMutation = useMutation({
     mutationFn: ({ postId, reaction }: { postId: string; reaction: import('@/types').ReactionEnum | null }) =>
       setReaction(postId, user!.id, reaction),
@@ -48,154 +71,267 @@ export function SearchScreen() {
     },
   });
 
-  const { data: posts, isLoading } = useQuery({
-    queryKey: ['search', query, breed || undefined, tag || undefined, type || undefined, searchTrigger],
+  const deleteMutation = useMutation({
+    mutationFn: (postId: string) => deletePost(postId, user!.id),
+    onSuccess: (_data, postId) => {
+      queryClient.invalidateQueries({ queryKey: ['search'] });
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
+      queryClient.invalidateQueries({ queryKey: ['post', postId] });
+    },
+  });
+
+  const rsvpMutation = useMutation({
+    mutationFn: ({ postId, rsvped }: { postId: string; rsvped: boolean }) =>
+      rsvped ? unrsvpMeetup(postId, user!.id) : rsvpMeetup(postId, user!.id),
+    onSuccess: (_data, { postId }) => {
+      queryClient.invalidateQueries({ queryKey: ['search'] });
+      queryClient.invalidateQueries({ queryKey: ['post', postId] });
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
+    },
+  });
+
+  const searchEnabled = debouncedQuery.length >= 3 || !!breed;
+  const isDebouncing = query.trim() !== debouncedQuery;
+
+  const { data: posts = [], isLoading, isFetching, isFetched } = useQuery<PostWithDetails[]>({
+    queryKey: ['search', debouncedQuery, breed || undefined],
     queryFn: () =>
       searchPosts(
         {
-          query: query.trim() || undefined,
+          query: debouncedQuery.length >= 3 ? debouncedQuery : undefined,
           breed: breed || undefined,
-          tag: tag || undefined,
-          type: type || undefined,
           limit: 30,
         },
         user?.id ?? null
       ),
-    enabled: searchTrigger > 0 || (query.trim().length >= 2) || !!breed || !!tag || !!type,
+    enabled: searchEnabled,
   });
+  const hasAppliedFilters = !!breed;
+  const trimmedQueryLength = query.trim().length;
+  const hasStartedSearch = trimmedQueryLength >= 3 || hasAppliedFilters;
+  const isWaitingForMoreChars = trimmedQueryLength > 0 && trimmedQueryLength < 3;
+  const isSearchPending =
+    hasStartedSearch && (isDebouncing || (searchEnabled && (!isFetched || isFetching)));
 
-  const handleSearch = () => setSearchTrigger((t) => t + 1);
+  const handlePostPress = useCallback(
+    (postId: string) => navigation.navigate('PostDetail', { postId }),
+    [navigation]
+  );
 
-  const handleReactionSelect = (post: PostWithDetails) => (reaction: ReactionEnum | null) => {
-    reactionMutation.mutate({ postId: post.id, reaction });
-  };
+  const handleAuthorPress = useCallback(
+    (authorId: string) => navigation.navigate('UserProfile', { userId: authorId }),
+    [navigation]
+  );
+
+  const handleReactionSelect = useCallback(
+    (postId: string, reaction: ReactionEnum | null) => {
+      reactionMutation.mutate({ postId, reaction });
+    },
+    [reactionMutation]
+  );
+
+  const handleRsvpToggle = useCallback(
+    (postId: string, rsvped: boolean) => {
+      rsvpMutation.mutate({ postId, rsvped });
+    },
+    [rsvpMutation]
+  );
+
+  const handleEditPost = useCallback(
+    (postId: string) => navigation.navigate('EditPost', { postId }),
+    [navigation]
+  );
+
+  const handleDeletePost = useCallback(
+    (postId: string) => {
+      Alert.alert(
+        'Delete post',
+        'Are you sure you want to delete this post? This cannot be undone.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(postId) },
+        ]
+      );
+    },
+    [deleteMutation]
+  );
+
+  const renderFeedItem = useCallback(
+    ({ item }: { item: PostWithDetails }) => (
+      <FeedItem
+        item={item}
+        onPostPress={handlePostPress}
+        onAuthorPress={handleAuthorPress}
+        onReactionSelect={handleReactionSelect}
+        onReactionMenuOpenChange={setReactionMenuOpen}
+        onRsvpToggle={handleRsvpToggle}
+        currentUserId={user?.id}
+        onEdit={handleEditPost}
+        onDelete={handleDeletePost}
+      />
+    ),
+    [
+      handleAuthorPress,
+      handleDeletePost,
+      handleEditPost,
+      handlePostPress,
+      handleReactionSelect,
+      handleRsvpToggle,
+      user?.id,
+    ]
+  );
+
+  const placeholderMessage = useMemo(() => {
+    if (!hasStartedSearch) {
+      return 'Start typing to search posts';
+    }
+    if (queryInputFocused && trimmedQueryLength >= 3 && (isLoading || isFetching)) {
+      return 'Searching...';
+    }
+    return 'No posts found';
+  }, [
+    hasAppliedFilters,
+    hasStartedSearch,
+    isFetching,
+    isLoading,
+    isWaitingForMoreChars,
+    queryInputFocused,
+    trimmedQueryLength,
+  ]);
 
   return (
     <ScreenWithWallpaper>
-      <View style={[styles.container, { paddingTop: headerHeight }]}>
-      <View style={styles.searchRow}>
-        <TextInput
-          style={styles.input}
-          placeholder="Search posts..."
-          value={query}
-          onChangeText={setQuery}
-          onSubmitEditing={handleSearch}
-          returnKeyType="search"
-        />
-        <TouchableOpacity style={styles.searchBtn} onPress={handleSearch}>
-          <Text style={styles.searchBtnText}>Search</Text>
-        </TouchableOpacity>
-      </View>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={[styles.searchChrome, { paddingTop: headerHeight + spacing.sm }]}>
+          <View style={styles.searchInputWrap}>
+            <View style={styles.searchInputRow}>
+              <Ionicons name="search" size={18} color={colors.textMuted} />
+              <TextInput
+                style={styles.input}
+                placeholder="Search posts..."
+                placeholderTextColor={colors.textMuted}
+                value={query}
+                onChangeText={setQuery}
+                onFocus={() => setQueryInputFocused(true)}
+                onBlur={() => setQueryInputFocused(false)}
+                returnKeyType="search"
+                autoFocus={route.name === 'SearchModal'}
+              />
+            </View>
+          </View>
+          <FlatList
+            horizontal
+            data={['ALL', ...BREEDS] as const}
+            keyExtractor={(item) => item}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipRow}
+            renderItem={({ item }) => {
+              const isAll = item === 'ALL';
+              const active = isAll ? breed === '' : breed === item;
+              const label = isAll ? 'All breeds' : BREED_LABELS[item];
+              return (
+                <Pressable
+                  onPress={() => {
+                    setBreed(isAll ? '' : item);
+                  }}
+                  style={({ pressed }) => [
+                    styles.chip,
+                    active && styles.chipActive,
+                    pressed && styles.chipPressed,
+                  ]}
+                >
+                  <Text style={[styles.chipText, active && styles.chipTextActive]}>{label}</Text>
+                </Pressable>
+              );
+            }}
+          />
+        </View>
 
-      <View style={styles.filters}>
-        <Text style={styles.filterLabel}>Breed</Text>
-        <View style={styles.chipRow}>
-          {BREEDS.map((b) => (
-            <TouchableOpacity
-              key={b}
-              style={[styles.chip, breed === b && styles.chipActive]}
-              onPress={() => setBreed(breed === b ? '' : b)}
-            >
-              <Text style={[styles.chipText, breed === b && styles.chipTextActive]}>
-                {BREED_LABELS[b]}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        <Text style={styles.filterLabel}>Tag</Text>
-        <View style={styles.chipRow}>
-          {POST_TAGS.slice(0, 6).map((t) => (
-            <TouchableOpacity
-              key={t}
-              style={[styles.chip, tag === t && styles.chipActive]}
-              onPress={() => setTag(tag === t ? '' : t)}
-            >
-              <Text style={[styles.chipText, tag === t && styles.chipTextActive]}>
-                {POST_TAG_LABELS[t]}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        <Text style={styles.filterLabel}>Type</Text>
-        <View style={styles.chipRow}>
-          {POST_TYPES.map((t) => (
-            <TouchableOpacity
-              key={t}
-              style={[styles.chip, type === t && styles.chipActive]}
-              onPress={() => setType(type === t ? '' : t)}
-            >
-              <Text style={[styles.chipText, type === t && styles.chipTextActive]}>
-                {POST_TYPE_LABELS[t]}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {isLoading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#6366f1" />
-        </View>
-      ) : !posts || posts.length === 0 ? (
-        <View style={styles.centered}>
-          <Text style={styles.emptyText}>
-            {searchTrigger === 0 && !query.trim()
-              ? 'Enter a search term or pick filters'
-              : 'No posts found'}
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={posts}
-          keyExtractor={(p) => p.id}
-          renderItem={({ item }) => (
-            <PostCard
-              post={item}
-              onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
-              onReactionSelect={handleReactionSelect(item)}
-              onAuthorPress={(authorId) => navigation.navigate('UserProfile', { userId: authorId })}
-            />
-          )}
-          contentContainerStyle={styles.list}
-        />
-      )}
-
-    </View>
+        {isSearchPending && posts.length === 0 ? (
+          <View style={styles.centered}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : posts.length === 0 ? (
+          <View style={styles.centered}>
+            <Text style={styles.emptyText}>{placeholderMessage}</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={posts}
+            keyExtractor={(p) => p.id}
+            renderItem={renderFeedItem}
+            scrollEnabled={!reactionMenuOpen}
+            keyboardDismissMode="on-drag"
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={[
+              styles.resultsList,
+              { paddingBottom: insets.bottom + spacing.md },
+            ]}
+          />
+        )}
+      </KeyboardAvoidingView>
     </ScreenWithWallpaper>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  searchRow: { flexDirection: 'row', padding: 16, gap: 8 },
+  container: { flex: 1, backgroundColor: colors.surface },
+  searchChrome: {
+    paddingBottom: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+    gap: spacing.md,
+    backgroundColor: colors.surface,
+  },
+  searchInputWrap: {
+    paddingHorizontal: spacing.lg,
+  },
+  searchInputRow: {
+    height: 46,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.sm + 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surfaceMuted,
+    position: 'relative',
+    top: 2,
+  },
   input: {
     flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
+    ...typography.body,
+    lineHeight: 19,
+    color: colors.textPrimary,
+    paddingVertical: 0,
+    paddingTop: Platform.OS === 'ios' ? 1 : 0,
+    paddingBottom: Platform.OS === 'ios' ? 2 : 0,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
-  searchBtn: {
-    backgroundColor: '#6366f1',
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    justifyContent: 'center',
+  chipRow: {
+    gap: spacing.xs,
+    paddingLeft: spacing.lg,
   },
-  searchBtnText: { color: '#fff', fontWeight: '600', fontSize: 16 },
-  filters: { paddingHorizontal: 16, paddingBottom: 16 },
-  filterLabel: { fontSize: 12, color: '#6b7280', marginBottom: 6 },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#e5e7eb',
-    borderRadius: 16,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceMuted,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
   },
-  chipActive: { backgroundColor: '#6366f1' },
-  chipText: { fontSize: 13, color: '#374151' },
+  chipPressed: { opacity: 0.85 },
+  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  chipText: { ...typography.caption, color: colors.textPrimary, fontWeight: '600' },
   chipTextActive: { color: '#fff' },
-  list: { paddingBottom: 24 },
+  resultsList: {
+    paddingTop: spacing.xs,
+  },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { fontSize: 16, color: '#6b7280' },
+  emptyText: { ...typography.bodyMuted, textAlign: 'center', paddingHorizontal: spacing.xl },
 });

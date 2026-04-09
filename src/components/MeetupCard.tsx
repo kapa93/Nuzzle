@@ -129,11 +129,13 @@ export function MeetupCard({
             onAuthorPress?.(post.author_id);
           }}
         >
-          <Avatar
-            size={42}
-            source={post.author_dog_image_url ? { uri: post.author_dog_image_url } : undefined}
-            fallback={post.author_name?.[0]?.toUpperCase() ?? "🐶"}
-          />
+          <View style={styles.authorAvatarShift}>
+            <Avatar
+              size={32}
+              source={post.author_dog_image_url ? { uri: post.author_dog_image_url } : undefined}
+              fallback={post.author_name?.[0]?.toUpperCase() ?? "🐶"}
+            />
+          </View>
           <View style={styles.headerText}>
             <Text style={styles.author}>{formatAuthorDisplay(post.author_name, post.author_dog_name)}</Text>
             <Text style={styles.meta}>{formatRelativeTime(post.created_at)}</Text>
@@ -150,13 +152,13 @@ export function MeetupCard({
             onPressOut={() => {
               menuBtnPressOverlay.value = withTiming(0, { duration: MENU_DOTS_PRESS_OUT_MS });
             }}
-            style={styles.menuBtn}
+            style={[styles.menuBtn, styles.menuBtnShiftUp]}
           >
             <Animated.View
               pointerEvents="none"
               style={[styles.menuBtnPressOverlay, menuBtnPressOverlayStyle]}
             />
-            <Ionicons name="ellipsis-horizontal" size={20} color={colors.textMuted} />
+            <Ionicons name="ellipsis-horizontal" size={22} color={colors.textMuted} />
           </Pressable>
         )}
       </View>
@@ -308,17 +310,38 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
   },
-  authorPressable: { flex: 1, flexDirection: "row", alignItems: "center" },
-  headerText: { flex: 1, marginLeft: spacing.md },
-  author: { ...typography.subtitle, fontSize: 17, lineHeight: 22 },
-  meta: { ...typography.caption },
+  authorPressable: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  authorAvatarShift: {
+    transform: [{ translateY: 2 }],
+  },
+  headerText: { flex: 1, marginLeft: spacing.xs, minWidth: 0 },
+  author: {
+    ...typography.subtitle,
+    fontSize: 15,
+    lineHeight: 20,
+  },
+  meta: {
+    ...typography.caption,
+    fontSize: 12,
+    lineHeight: 14,
+    marginTop: 0,
+  },
   menuBtn: {
     padding: spacing.xs,
     borderRadius: radius.sm,
     overflow: "hidden",
+    flexShrink: 0,
   },
+  menuBtnShiftUp: { marginTop: -5 },
   menuBtnPressOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0, 0, 0, 0.07)",
@@ -359,8 +382,8 @@ const styles = StyleSheet.create({
   menuItemTextDanger: { color: "#DC2626" },
   title: {
     ...typography.titleMD,
-    fontSize: 21,
-    lineHeight: 28,
+    fontSize: 19,
+    lineHeight: 26,
     marginTop: spacing.sm,
     ...(Platform.OS === "web"
       ? { fontFamily: "'Inter', sans-serif", fontWeight: "600" as const }

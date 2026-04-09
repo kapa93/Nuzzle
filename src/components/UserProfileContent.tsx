@@ -18,10 +18,9 @@ import { DogsMetSection } from '@/components/DogsMetSection';
 import { MetThisDogButton } from '@/components/MetThisDogButton';
 import { DogAvatar } from '@/components/DogAvatar';
 import { ProfileDogCard } from '@/components/ProfileDogCard';
-import { ScreenWithWallpaper } from '@/components/ScreenWithWallpaper';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
-import { colors, radius, shadow, spacing, typography } from '@/theme';
+import { colors, radius, spacing, typography } from '@/theme';
 import {
   BREED_LABELS,
   POST_TAG_LABELS,
@@ -173,18 +172,18 @@ export function UserProfileContent({
 
   if (isLoading && !profile) {
     return (
-      <ScreenWithWallpaper>
+      <View style={styles.screen}>
         <View style={styles.centeredState}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.stateText}>Loading profile...</Text>
         </View>
-      </ScreenWithWallpaper>
+      </View>
     );
   }
 
   if (error) {
     return (
-      <ScreenWithWallpaper>
+      <View style={styles.screen}>
         <View style={styles.centeredState}>
           <Text style={styles.stateTitle}>Couldn&apos;t load this profile</Text>
           <Text style={styles.stateText}>
@@ -202,20 +201,20 @@ export function UserProfileContent({
             <TapFeedbackPressable
               style={styles.signOutButton}
               onPress={onSignOut}
-              fromBackgroundColor="rgba(220,38,38,0)"
-              toBackgroundColor="rgba(220,38,38,0.08)"
+              fromBackgroundColor={colors.dangerSurface}
+              toBackgroundColor={colors.dangerPressedSurface}
             >
               <Text style={styles.signOutText}>Sign Out</Text>
             </TapFeedbackPressable>
           )}
         </View>
-      </ScreenWithWallpaper>
+      </View>
     );
   }
 
   if (!profile) {
     return (
-      <ScreenWithWallpaper>
+      <View style={styles.screen}>
         <View style={styles.centeredState}>
           <Text style={styles.stateTitle}>Profile not found</Text>
           <Text style={styles.stateText}>This member profile isn&apos;t available.</Text>
@@ -223,19 +222,19 @@ export function UserProfileContent({
             <TapFeedbackPressable
               style={styles.signOutButton}
               onPress={onSignOut}
-              fromBackgroundColor="rgba(220,38,38,0)"
-              toBackgroundColor="rgba(220,38,38,0.08)"
+              fromBackgroundColor={colors.dangerSurface}
+              toBackgroundColor={colors.dangerPressedSurface}
             >
               <Text style={styles.signOutText}>Sign Out</Text>
             </TapFeedbackPressable>
           )}
         </View>
-      </ScreenWithWallpaper>
+      </View>
     );
   }
 
   return (
-    <ScreenWithWallpaper>
+    <View style={styles.screen}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={[styles.contentContainer, { paddingTop: headerHeight + 15 }]}
@@ -283,22 +282,22 @@ export function UserProfileContent({
             <View style={styles.heroActions}>
               {onEditProfile ? (
                 <TapFeedbackPressable
-                  style={[styles.primaryButton, styles.heroActionButton]}
+                  style={[styles.primaryButton, styles.heroActionButton, styles.heroActionPrimary]}
                   onPress={onEditProfile}
                   fromBackgroundColor={colors.primary}
                   toBackgroundColor={colors.primaryDark}
                 >
-                  <Text style={styles.primaryButtonText}>Edit Profile</Text>
+                  <Text style={styles.heroActionPrimaryText}>Edit Profile</Text>
                 </TapFeedbackPressable>
               ) : null}
               {onAddDog ? (
                 <TapFeedbackPressable
-                  style={[styles.secondaryButton, styles.heroActionButton]}
+                  style={[styles.secondaryButton, styles.heroActionButton, styles.heroActionSecondary]}
                   onPress={onAddDog}
                   fromBackgroundColor={colors.surfaceMuted}
                   toBackgroundColor={colors.border}
                 >
-                  <Text style={styles.secondaryButtonText}>Add Dog</Text>
+                  <Text style={styles.heroActionSecondaryText}>Add Dog</Text>
                 </TapFeedbackPressable>
               ) : null}
             </View>
@@ -445,26 +444,31 @@ export function UserProfileContent({
 
         {showPrivateAccountInfo && onSignOut ? (
           <TapFeedbackPressable
-            style={styles.signOutButton}
+            style={[styles.signOutButton, styles.signOutButtonFooter]}
             onPress={onSignOut}
-            fromBackgroundColor="rgba(220,38,38,0)"
-            toBackgroundColor="rgba(220,38,38,0.08)"
+            fromBackgroundColor={colors.dangerSurface}
+            toBackgroundColor={colors.dangerPressedSurface}
           >
             <Text style={styles.signOutText}>Sign Out</Text>
           </TapFeedbackPressable>
         ) : null}
       </ScrollView>
-    </ScreenWithWallpaper>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: colors.surface,
+  },
   container: {
     flex: 1,
   },
   contentContainer: {
     paddingBottom: 86,
-    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.lg,
   },
   centeredState: {
     flex: 1,
@@ -482,15 +486,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   heroCard: {
-    marginHorizontal: spacing.lg,
-    padding: spacing.xxl,
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
+    paddingVertical: spacing.lg,
     alignItems: 'center',
     gap: spacing.md,
-    ...shadow.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   heroAvatarWrap: {
     position: 'relative',
@@ -543,17 +543,14 @@ const styles = StyleSheet.create({
   heroActions: {
     width: '100%',
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: spacing.xs,
+    marginTop: 0,
   },
   section: {
-    marginHorizontal: spacing.lg,
-    padding: spacing.lg,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
+    paddingBottom: spacing.lg,
     gap: spacing.md,
-    ...shadow.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -609,12 +606,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   postCard: {
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.lg,
+    paddingVertical: spacing.sm,
     gap: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   postMetaRow: {
     flexDirection: 'row',
@@ -660,7 +655,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.lg,
-    ...shadow.sm,
   },
   primaryButtonText: {
     ...typography.body,
@@ -685,20 +679,42 @@ const styles = StyleSheet.create({
   heroActionButton: {
     flex: 1,
   },
+  heroActionPrimary: {
+    minHeight: 38,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  heroActionSecondary: {
+    minHeight: 38,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  heroActionPrimaryText: {
+    ...typography.caption,
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  heroActionSecondaryText: {
+    ...typography.caption,
+    color: colors.textPrimary,
+    fontWeight: '700',
+  },
   signOutButton: {
-    marginHorizontal: spacing.lg,
     marginTop: spacing.sm,
     minHeight: 50,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: '#DC2626',
-    backgroundColor: 'transparent',
+    borderColor: colors.danger,
+    backgroundColor: colors.dangerSurface,
+  },
+  signOutButtonFooter: {
+    marginBottom: spacing.xxl,
   },
   signOutText: {
     ...typography.body,
-    color: '#DC2626',
+    color: colors.danger,
     fontWeight: '700',
   },
 });

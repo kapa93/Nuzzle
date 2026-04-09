@@ -263,7 +263,11 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg + 20,
     overflow: "visible",
     ...shadow.sm,
-    shadowOffset: { width: 0, height: -2 },
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -1 },
+    shadowOpacity: 0.11,
+    shadowRadius: 2,
+    elevation: 3,
   },
   item: {
     alignItems: "center",

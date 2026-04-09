@@ -68,6 +68,7 @@ function HomeTab() {
       }}
     >
       <Stack.Screen name="HomeFeed" component={HomeScreen} options={{ title: 'Nuzzle' }} />
+      <Stack.Screen name="SearchMain" component={SearchScreen} options={{ title: 'Search' }} />
       <Stack.Screen name="DogBeachNow" component={DogBeachNowScreen} options={{ title: 'Dog Beach Now' }} />
       <Stack.Screen name="DogProfile" component={DogProfileScreen} options={{ title: 'Dog' }} />
       <Stack.Screen name="PostDetail" component={PostDetailScreen} options={{ title: 'Post' }} />
@@ -147,6 +148,7 @@ function NotificationsTab() {
         component={NotificationsScreen}
         options={{ title: 'Notifications' }}
       />
+      <Stack.Screen name="SearchMain" component={SearchScreen} options={{ title: 'Search' }} />
       <Stack.Screen name="PostDetail" component={PostDetailScreen} options={{ title: 'Post' }} />
     </Stack.Navigator>
   );
@@ -163,6 +165,7 @@ function ProfileTab() {
       }}
     >
       <Stack.Screen name="ProfileMain" component={ProfileScreen} options={{ title: 'Profile' }} />
+      <Stack.Screen name="SearchMain" component={SearchScreen} options={{ title: 'Search' }} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ title: 'Edit Profile' }} />
       <Stack.Screen
         name="EditDog"
@@ -323,6 +326,51 @@ export function RootNavigator() {
                   animation: 'slide_from_bottom',
                 }}
               />
+              <RootStack.Screen
+                name="SearchModal"
+                component={SearchScreen}
+                options={{
+                  title: 'Search',
+                  headerShown: true,
+                  headerTransparent: true,
+                  contentStyle: {
+                    backgroundColor: colors.surface,
+                    borderTopLeftRadius: 28,
+                    borderTopRightRadius: 28,
+                    overflow: 'hidden',
+                  },
+                  header: (props) => (
+                    <AnimatedStackHeader
+                      {...props}
+                      options={{
+                        ...props.options,
+                        headerTitleAlign: 'center',
+                        headerTitle: () => (
+                          <View style={styles.modalHeaderTitleBlock}>
+                            <View
+                              style={styles.modalSheetGrabber}
+                              accessibilityLabel="Sheet"
+                              accessibilityHint="Swipe down to close"
+                            />
+                            <Text style={styles.modalHeaderTitle}>Search</Text>
+                          </View>
+                        ),
+                        headerLeft: () => null,
+                        headerRight: () => null,
+                      }}
+                      animateOnScroll={false}
+                      includeTopInset={false}
+                      baseHeaderHeight={CREATE_POST_SHEET_MODAL_HEADER_HEIGHT}
+                      titleImageMarginTop={3}
+                      bottomSeparator
+                    />
+                  ),
+                  presentation: 'modal',
+                  animation: 'slide_from_bottom',
+                }}
+              />
+              <RootStack.Screen name="PostDetail" component={PostDetailScreen} options={{ title: 'Post' }} />
+              <RootStack.Screen name="UserProfile" component={UserProfileScreen} options={{ title: 'Profile' }} />
             </>
           )
         ) : (

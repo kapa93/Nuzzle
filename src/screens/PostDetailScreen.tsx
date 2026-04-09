@@ -221,7 +221,7 @@ export function PostDetailScreen() {
           style={styles.scroll}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingTop: headerHeight - 60 + spacing.xxl },
+            { paddingTop: headerHeight - 60 + spacing.xxl - 5 },
           ]}
           showsVerticalScrollIndicator={false}
         >
@@ -231,11 +231,13 @@ export function PostDetailScreen() {
                 style={styles.authorPressable}
                 onPress={() => handleAuthorPress(post.author_id)}
               >
-                <DogAvatar
-                  imageUrl={post.author_dog_image_url}
-                  name={post.author_dog_name ?? post.author_name}
-                  size={48}
-                />
+                <View style={styles.authorAvatarShift}>
+                  <DogAvatar
+                    imageUrl={post.author_dog_image_url}
+                    name={post.author_dog_name ?? post.author_name}
+                    size={32}
+                  />
+                </View>
                 <View style={styles.headerText}>
                   <Text style={styles.authorName} numberOfLines={1}>
                     {formatAuthorDisplay(post.author_name, post.author_dog_name)}
@@ -464,7 +466,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   authorPressable: {
     flex: 1,
@@ -472,7 +474,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
   },
-  headerText: { flex: 1, marginLeft: spacing.md, minWidth: 0 },
+  /** Nudges avatar down without changing sibling layout (name / meta / menu). */
+  authorAvatarShift: {
+    transform: [{ translateY: 2 }],
+  },
+  headerText: { flex: 1, marginLeft: spacing.xs, minWidth: 0 },
   headerRight: {
     flexDirection: "column",
     alignItems: "flex-end",
@@ -527,8 +533,17 @@ const styles = StyleSheet.create({
   menuItemDanger: {},
   menuItemText: { ...typography.body, fontWeight: "600" },
   menuItemTextDanger: { color: "#DC2626" },
-  authorName: { ...typography.subtitle },
-  meta: { ...typography.caption, marginTop: spacing.xxs },
+  authorName: {
+    ...typography.subtitle,
+    fontSize: 15,
+    lineHeight: 20,
+  },
+  meta: {
+    ...typography.caption,
+    fontSize: 12,
+    lineHeight: 14,
+    marginTop: 0,
+  },
   title: { ...typography.titleMD, marginBottom: spacing.sm },
   content: { ...typography.body, marginBottom: spacing.md },
   body: {

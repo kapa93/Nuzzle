@@ -1,7 +1,8 @@
-import React, { useEffect } from "react";
-import { Image, StyleSheet, useWindowDimensions, View } from "react-native";
+import React, { useEffect, useMemo } from "react";
+import { Image, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getHeaderTitle, Header } from "@react-navigation/elements";
+import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -9,11 +10,18 @@ import Animated, {
   interpolate,
 } from "react-native-reanimated";
 import { useScrollDirection } from "@/context/ScrollDirectionContext";
-import { colors } from "@/theme";
+import { colors, spacing } from "@/theme";
 import type { NativeStackHeaderProps } from "@react-navigation/native-stack";
 
 const HEADER_HIDE_OFFSET = 120;
 const HEADER_ANIM_DURATION = 220;
+const SEARCH_ENABLED_ROUTES = new Set([
+  "HomeFeed",
+  "ExploreList",
+  "BreedFeed",
+  "NotificationsMain",
+  "ProfileMain",
+]);
 
 type Props = NativeStackHeaderProps & {
   animateOnScroll?: boolean;
@@ -41,6 +49,7 @@ export function AnimatedStackHeader({
   const headerHeight = baseHeaderHeight + topInset;
   const { scrollDirection } = useScrollDirection();
   const translateY = useSharedValue(0);
+  const showSearchAction = SEARCH_ENABLED_ROUTES.has(route.name);
 
   useEffect(() => {
     const shouldHide = animateOnScroll && scrollDirection === "down";
@@ -67,6 +76,47 @@ export function AnimatedStackHeader({
       style={{ width: 178.79, height: 41.58, marginTop: titleImageMarginTop }}
       resizeMode="contain"
     />
+  );
+
+  const mergedHeaderRight = useMemo(
+    () =>
+      (props: any) => {
+        const customHeaderRight = options.headerRight?.(props) ?? null;
+        if (!showSearchAction && !customHeaderRight) return null;
+
+        const openSearch = () => {
+          const rootNavigation =
+            (navigation as any).getParent?.()?.getParent?.() ??
+            (navigation as any).getParent?.() ??
+            navigation;
+          if (rootNavigation?.navigate) {
+            rootNavigation.navigate("SearchModal", { launchKey: Date.now() });
+            return;
+          }
+          (navigation as any).navigate("SearchMain", { launchKey: Date.now() });
+        };
+
+        return (
+          <View style={styles.headerRightWrap}>
+            {showSearchAction ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Search posts"
+                hitSlop={8}
+                onPress={openSearch}
+                style={({ pressed }) => [
+                  styles.searchButton,
+                  pressed && styles.searchButtonPressed,
+                ]}
+              >
+                <Ionicons name="search" size={24} color={colors.textPrimary} />
+              </Pressable>
+            ) : null}
+            {customHeaderRight}
+          </View>
+        );
+      },
+    [navigation, options.headerRight, showSearchAction]
   );
 
   return (
@@ -99,7 +149,7 @@ export function AnimatedStackHeader({
           title={getHeaderTitle(options, route.name)}
           headerTitle={options.headerTitle ?? defaultHeaderTitle}
           headerLeft={options.headerLeft}
-          headerRight={options.headerRight}
+          headerRight={mergedHeaderRight}
           headerTransparent={false}
           headerTintColor={options.headerTintColor}
           headerStatusBarHeight={topInset}
@@ -118,11 +168,11 @@ export function AnimatedStackHeader({
                   }
                 : {
                     borderBottomWidth: 0,
-                    elevation: 4,
+                    elevation: 3,
                     shadowColor: "#000",
                     shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.08,
-                    shadowRadius: 3,
+                    shadowOpacity: 0.15,
+                    shadowRadius: 1,
                   }),
             },
           ]}
@@ -134,3 +184,24 @@ export function AnimatedStackHeader({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  headerRightWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  searchButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+    bottom: 2,
+    right: 6,
+  },
+  searchButtonPressed: {
+    opacity: 0.82,
+  },
+});

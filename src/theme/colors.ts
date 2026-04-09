@@ -12,6 +12,12 @@ export const colors = {
   primarySoft: "#E0F2EA",
   chipNeutral: "#EEF2EE",
   chipText: "#24322A",
+  /** Destructive actions (sign out, delete) */
+  danger: "#DC2626",
+  /** Default fill for outline danger controls (e.g. Sign out) */
+  dangerSurface: "rgba(220, 38, 38, 0.08)",
+  /** Filled background on press for outline danger controls */
+  dangerPressedSurface: "rgba(220, 38, 38, 0.18)",
   warningSoft: "#F8E7BA",
   warningText: "#7A5A12",
   breeds: {
