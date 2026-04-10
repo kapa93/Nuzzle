@@ -20,7 +20,7 @@ import { BreedHero } from "@/ui/BreedHero";
 import { SwipeableBreedBanner } from "@/ui/SwipeableBreedBanner";
 import { SegmentTabs } from "@/ui/SegmentTabs";
 import { FeedItem } from "@/components/FeedItem";
-import { getBreedHeroImageSource } from "@/utils/breedAssets";
+import { getBreedHeroImageSource, getBreedHeroImageStyle } from "@/utils/breedAssets";
 import { BREED_LABELS } from "@/utils/breed";
 import { useStackHeaderHeight } from "@/hooks/useStackHeaderHeight";
 import { colors, spacing, typography } from "@/theme";
@@ -283,6 +283,7 @@ export function BreedFeedScreen() {
           <BreedHero
             title={BREED_LABELS[breed]}
             image={getBreedHeroImageSource(breed)}
+            imageStyle={getBreedHeroImageStyle(breed)}
             joined={isJoined}
             onJoinPress={user ? handleJoinPress : undefined}
           />

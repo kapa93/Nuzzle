@@ -34,7 +34,7 @@ import { SegmentTabs } from "@/ui/SegmentTabs";
 import { FeedItem } from "@/components/FeedItem";
 import { DogBeachNearbyAlert } from '@/components/DogBeachNearbyAlert';
 import { DogBeachNowAlert } from '@/components/DogBeachNowAlert';
-import { getBreedHeroImageSource } from "@/utils/breedAssets";
+import { getBreedHeroImageSource, getBreedHeroImageStyle } from "@/utils/breedAssets";
 import { BREED_LABELS } from "@/utils/breed";
 import { DOG_BEACH } from '@/config/dogBeach';
 import { getDistanceMeters } from '@/utils/location';
@@ -462,6 +462,7 @@ export function HomeScreen({
           <BreedHero
           title={BREED_LABELS[breed]}
           image={getBreedHeroImageSource(breed)}
+          imageStyle={getBreedHeroImageStyle(breed)}
           joined={isJoined}
           onJoinPress={handleJoinPress}
           />

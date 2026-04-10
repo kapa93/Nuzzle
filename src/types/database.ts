@@ -8,11 +8,13 @@ export type Json =
 
 export type BreedEnum =
   | 'AUSTRALIAN_SHEPHERD'
+  | 'DACHSHUND'
   | 'GERMAN_SHEPHERD'
   | 'HUSKY'
   | 'GOLDEN_DOODLE'
   | 'GOLDEN_RETRIEVER'
   | 'MIXED_BREED'
+  | 'PUG'
   | 'FRENCH_BULLDOG'
   | 'PIT_BULL'
   | 'LABRADOR_RETRIEVER'

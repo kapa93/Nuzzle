@@ -1,11 +1,13 @@
 // Enums matching Supabase schema
 export type BreedEnum =
   | 'AUSTRALIAN_SHEPHERD'
+  | 'DACHSHUND'
   | 'GERMAN_SHEPHERD'
   | 'HUSKY'
   | 'GOLDEN_DOODLE'
   | 'GOLDEN_RETRIEVER'
   | 'MIXED_BREED'
+  | 'PUG'
   | 'FRENCH_BULLDOG'
   | 'PIT_BULL'
   | 'LABRADOR_RETRIEVER'
@@ -46,11 +48,13 @@ export type ReactionEnum =
 
 export const BREEDS: BreedEnum[] = [
   'AUSTRALIAN_SHEPHERD',
+  'DACHSHUND',
   'GERMAN_SHEPHERD',
   'HUSKY',
   'GOLDEN_DOODLE',
   'GOLDEN_RETRIEVER',
   'MIXED_BREED',
+  'PUG',
   'FRENCH_BULLDOG',
   'PIT_BULL',
   'LABRADOR_RETRIEVER',
@@ -286,11 +290,13 @@ export interface CommentWithAuthor extends Comment {
 // Display helpers
 export const BREED_LABELS: Record<BreedEnum, string> = {
   AUSTRALIAN_SHEPHERD: 'Australian Shepherd',
+  DACHSHUND: 'Dachshund',
   GERMAN_SHEPHERD: 'German Shepherd',
   HUSKY: 'Husky',
   GOLDEN_DOODLE: 'Golden Doodle',
   GOLDEN_RETRIEVER: 'Golden Retriever',
   MIXED_BREED: 'Mixed Breed',
+  PUG: 'Pug',
   FRENCH_BULLDOG: 'French Bulldog',
   PIT_BULL: 'Pit Bull',
   LABRADOR_RETRIEVER: 'Labrador Retriever',

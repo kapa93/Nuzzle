@@ -63,12 +63,14 @@ export function ExploreScreen({
                     imageStyle={[
                       styles.cardImage,
                       item.breed === "AUSTRALIAN_SHEPHERD" && styles.aussieCardImage,
+                      item.breed === "DACHSHUND" && styles.dachshundCardImage,
                       item.breed === "FRENCH_BULLDOG" && styles.frenchieCardImage,
                       item.breed === "GERMAN_SHEPHERD" && styles.germanCardImage,
                       item.breed === "GOLDEN_DOODLE" && styles.goldenDoodleCardImage,
                       item.breed === "GOLDEN_RETRIEVER" && styles.goldenCardImage,
                       item.breed === "HUSKY" && styles.huskyCardImage,
                       item.breed === "MIXED_BREED" && styles.mixedBreedCardImage,
+                      item.breed === "PUG" && styles.pugCardImage,
                       item.breed === "LABRADOODLE" && styles.labradoodleCardImage,
                       item.breed === "LABRADOR_RETRIEVER" && styles.labCardImage,
                       item.breed === "PIT_BULL" && styles.pitbullCardImage,
@@ -182,7 +184,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
   },
   aussieCardImage: {
-    transform: [{ scale: 1.18 }, { translateX: 10 }, { translateY: 3 }],
+    transform: [{ scale: 1.25 }, { translateX: 10 }, { translateY: -10 }],
+  },
+  dachshundCardImage: {
+    transform: [{ scale: 1.4 }, { translateX: 10 }, { translateY: 18 }],
   },
   frenchieCardImage: {
     transform: [{ scale: 1.75 }, { translateX: 11 }, { translateY: -1 }],
@@ -201,6 +206,9 @@ const styles = StyleSheet.create({
   },
   mixedBreedCardImage: {
     transform: [{ scale: 1.25 }, { translateX: 8 }, { translateY: 15 }],
+  },
+  pugCardImage: {
+    transform: [{ scale: 1.21 }, { translateX: 11 }, { translateY: -2 }],
   },
   labCardImage: {
     transform: [{ scale: 1.4 }, { translateX: 7 }, { translateY: 11 }],
