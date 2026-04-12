@@ -151,7 +151,8 @@ export function AnimatedStackHeader({
           headerLeft={options.headerLeft}
           headerRight={mergedHeaderRight}
           headerTransparent={false}
-          headerTintColor={options.headerTintColor}
+          headerTintColor={options.headerTintColor ?? "#000000"}
+          headerBackButtonDisplayMode={options.headerBackButtonDisplayMode ?? "minimal"}
           headerStatusBarHeight={topInset}
           headerStyle={[
             options.headerStyle,

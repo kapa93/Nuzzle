@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useContext, useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,9 +12,10 @@ import {
   Pressable,
   Modal,
   Dimensions,
+  KeyboardEvent,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { BottomTabBarHeightContext } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -47,16 +48,21 @@ function getBarksText(count: number) {
 export function PostDetailScreen() {
   const route = useRoute();
   const navigation = useNavigation<any>();
-  const postId = (route.params as { postId: string })?.postId ?? "";
+  const routeParams = (route.params as { postId: string; source?: "search" } | undefined) ?? undefined;
+  const postId = routeParams?.postId ?? "";
+  const isFromSearch = routeParams?.source === "search";
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const { setScrollDirection } = useScrollDirection();
   const headerHeight = useStackHeaderHeight();
   const insets = useSafeAreaInsets();
-  const tabBarHeight = useBottomTabBarHeight();
+  const tabBarHeight = useContext(BottomTabBarHeightContext) ?? 0;
+  const bottomInsetOffset = Math.max(0, tabBarHeight - insets.bottom - 8);
+  const scrollTopPadding = tabBarHeight > 0 ? headerHeight - 60 + spacing.xxl - 5 : spacing.lg;
   const [commentText, setCommentText] = useState("");
   const [menuVisible, setMenuVisible] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const commentInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
@@ -66,8 +72,14 @@ export function PostDetailScreen() {
   useEffect(() => {
     const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
     const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-    const showSub = Keyboard.addListener(showEvent, () => setIsKeyboardVisible(true));
-    const hideSub = Keyboard.addListener(hideEvent, () => setIsKeyboardVisible(false));
+    const showSub = Keyboard.addListener(showEvent, (event: KeyboardEvent) => {
+      setIsKeyboardVisible(true);
+      setKeyboardHeight(event.endCoordinates?.height ?? 0);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setIsKeyboardVisible(false);
+      setKeyboardHeight(0);
+    });
     return () => {
       showSub.remove();
       hideSub.remove();
@@ -208,20 +220,26 @@ export function PostDetailScreen() {
   const breedLabel = BREED_LABELS[post.breed] ?? post.breed;
   const typeLabel = POST_TYPE_LABELS[post.type] ?? post.type;
   const tagLabel = POST_TAG_LABELS[post.tag] ?? post.tag;
+  const searchClosedBottomOffset = Math.max(0, bottomInsetOffset - spacing.xxs);
+  const closedInputBottomOffset = isFromSearch ? searchClosedBottomOffset : bottomInsetOffset + spacing.xs;
+  const searchKeyboardOffset =
+    isFromSearch && isKeyboardVisible
+      ? Math.max(0, keyboardHeight - insets.bottom - spacing.sm + spacing.xxs)
+      : 0;
 
   return (
     <View style={styles.screenRoot}>
       <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" && !isFromSearch ? "padding" : undefined}
         keyboardVerticalOffset={0}
       >
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingTop: headerHeight - 60 + spacing.xxl - 5 },
+            { paddingTop: scrollTopPadding },
           ]}
           showsVerticalScrollIndicator={false}
         >
@@ -414,7 +432,11 @@ export function PostDetailScreen() {
         <View
           style={[
             styles.inputRow,
-            { marginBottom: isKeyboardVisible ? 0 : Math.max(0, tabBarHeight - insets.bottom - 8) },
+            {
+              marginBottom: isKeyboardVisible
+                ? searchKeyboardOffset
+                : closedInputBottomOffset,
+            },
           ]}
         >
           <TextInput

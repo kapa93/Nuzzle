@@ -257,7 +257,12 @@ export function CreatePostScreen() {
         {!isMeetup && (
           <>
             <Text style={styles.label}>Tag</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tagScroll}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.tagScroll}
+              contentContainerStyle={styles.tagScrollContent}
+            >
               {(['TRAINING', 'HEALTH', 'PLAYDATE', 'GROOMING', 'BEHAVIOR', 'FOOD', 'GEAR', 'PUPPY', 'ADOLESCENT', 'ADULT', 'SENIOR'] as PostTagEnum[]).map((t) => (
                 <TouchableOpacity
                   key={t}
@@ -346,7 +351,12 @@ export function CreatePostScreen() {
               />
             )}
             <Text style={[styles.label, styles.optionalLabel]}>Kind (optional)</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tagScroll}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.tagScroll}
+              contentContainerStyle={styles.tagScrollContent}
+            >
               {(['playdate', 'walk', 'beach', 'training', 'other'] as MeetupKind[]).map((k) => (
                 <TouchableOpacity
                   key={k}
@@ -438,7 +448,15 @@ const styles = StyleSheet.create({
   optionalLabel: { ...interByWeight('500'), color: '#6b7280' },
   breedValue: { ...interByWeight('400'), fontSize: 16, color: '#1f2937', marginBottom: 8 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tagScroll: { marginBottom: 8, maxHeight: 44 },
+  tagScroll: {
+    marginBottom: 8,
+    maxHeight: 44,
+    marginHorizontal: -spacing.lg,
+  },
+  tagScrollContent: {
+    paddingLeft: spacing.lg,
+    paddingRight: 0,
+  },
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -469,7 +487,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     minHeight: 44,
     backgroundColor: '#FFF',
-    ...shadow.sm,
   },
   textArea: { minHeight: 120 },
   dateButton: {
@@ -509,11 +526,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 24,
-    shadowColor: colors.primaryDark,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 4,
   },
   submitDisabled: { opacity: 0.7 },
   submitText: { ...interByWeight('600'), color: '#FFF', fontSize: 16 },

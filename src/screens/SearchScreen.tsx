@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Pressable,
   KeyboardAvoidingView,
+  Keyboard,
   Platform,
   Alert,
 } from 'react-native';
@@ -114,7 +115,10 @@ export function SearchScreen() {
     hasStartedSearch && (isDebouncing || (searchEnabled && (!isFetched || isFetching)));
 
   const handlePostPress = useCallback(
-    (postId: string) => navigation.navigate('PostDetail', { postId }),
+    (postId: string) => {
+      Keyboard.dismiss();
+      navigation.navigate('PostDetail', { postId, source: 'search' });
+    },
     [navigation]
   );
 
