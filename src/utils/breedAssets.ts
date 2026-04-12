@@ -66,6 +66,13 @@ export const BREED_HERO_IMAGES: Record<BreedEnum, string> = {
 const AUSSIE_FEED_IMAGE = require("../../assets/banners/aussie-hero.jpg");
 const HUSKY_FEED_IMAGE = require("../../assets/banners/husky-hero.jpg");
 const PUG_FEED_IMAGE = require("../../assets/banners/pug-hero.jpg");
+const PIT_BULL_FEED_IMAGE = require("../../assets/banners/pittie-hero.jpg");
+const LABRADOR_FEED_IMAGE = require("../../assets/banners/lab-hero.jpg");
+const GERMAN_SHEPHERD_FEED_IMAGE = require("../../assets/banners/shepherd-hero.jpg");
+const MIXED_BREED_FEED_IMAGE = require("../../assets/banners/mixed-breed-hero.jpg");
+const LABRADOODLE_FEED_IMAGE = require("../../assets/banners/labradoodle-hero.jpg");
+const GOLDEN_DOODLE_FEED_IMAGE = require("../../assets/banners/golden-doodle-hero.jpg");
+const GOLDEN_RETRIEVER_FEED_IMAGE = require("../../assets/banners/golden-hero.jpg");
 
 /** Get breed hero image source - uses local assets for selected breeds, URI for others */
 export function getBreedHeroImageSource(breed: BreedEnum) {
@@ -78,13 +85,34 @@ export function getBreedHeroImageSource(breed: BreedEnum) {
   if (breed === "PUG") {
     return PUG_FEED_IMAGE;
   }
+  if (breed === "PIT_BULL") {
+    return PIT_BULL_FEED_IMAGE;
+  }
+  if (breed === "LABRADOR_RETRIEVER") {
+    return LABRADOR_FEED_IMAGE;
+  }
+  if (breed === "GERMAN_SHEPHERD") {
+    return GERMAN_SHEPHERD_FEED_IMAGE;
+  }
+  if (breed === "MIXED_BREED") {
+    return MIXED_BREED_FEED_IMAGE;
+  }
+  if (breed === "LABRADOODLE") {
+    return LABRADOODLE_FEED_IMAGE;
+  }
+  if (breed === "GOLDEN_DOODLE") {
+    return GOLDEN_DOODLE_FEED_IMAGE;
+  }
+  if (breed === "GOLDEN_RETRIEVER") {
+    return GOLDEN_RETRIEVER_FEED_IMAGE;
+  }
   return { uri: BREED_HERO_IMAGES[breed] } as const;
 }
 
 export function getBreedHeroImageStyle(breed: BreedEnum): StyleProp<ImageStyle> | undefined {
   if (breed === "AUSTRALIAN_SHEPHERD") {
     return {
-      transform: [{ scale: 1.3 }, { translateY: -21 }],
+      transform: [{ scale: 1.35 }, { translateY: -25 }],
     };
   }
   if (breed === "HUSKY") {
@@ -97,7 +125,52 @@ export function getBreedHeroImageStyle(breed: BreedEnum): StyleProp<ImageStyle> 
       transform: [{ scale: 1.24 }, { translateY: -6 }, { translateX: -10 }],
     };
   }
+  if (breed === "PIT_BULL") {
+    return {
+      transform: [{ scale: 1.22 }, { translateY: 13 }, { translateX: -10 }],
+    };
+  }
+  if (breed === "LABRADOR_RETRIEVER") {
+    return {
+      transform: [{ scale: 1.2 }, { translateY: 8 }, { translateX: -10 }],
+    };
+  }
+  if (breed === "GERMAN_SHEPHERD") {
+    return {
+      transform: [{ scale: 1.22 }, { translateY: 10 }, { translateX: -10 }],
+    };
+  }
+  if (breed === "MIXED_BREED") {
+    return {
+      transform: [{ scale: 1.18 }, { translateY: 10 }, { translateX: -15 }],
+    };
+  }
+  if (breed === "LABRADOODLE") {
+    return {
+      transform: [{ scale: 1.2 }, { translateY: -6 }, { translateX: -2 }],
+    };
+  }
+  if (breed === "GOLDEN_DOODLE") {
+    return {
+      transform: [{ scale: 1.25 }, { translateY: 8 }, { translateX: -5 }],
+    };
+  }
+  if (breed === "GOLDEN_RETRIEVER") {
+    return {
+      transform: [{ scale: 1.2 }, { translateY: -8 }, { translateX: -6 }],
+    };
+  }
   return undefined;
+}
+
+export function getBreedHeroTitle(breed: BreedEnum): string {
+  if (breed === "MIXED_BREED") {
+    return "Mixed\nBreed";
+  }
+  if (breed === "GOLDEN_DOODLE") {
+    return "Golden\nDoodle";
+  }
+  return BREED_LABELS[breed];
 }
 
 export type PackItem = {

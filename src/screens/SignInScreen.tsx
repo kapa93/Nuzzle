@@ -20,7 +20,8 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { signIn } from '@/api/auth';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import { signIn, signInWithProvider, type SocialAuthProvider } from '@/api/auth';
 import { ScreenWithWallpaper } from '@/components/ScreenWithWallpaper';
 import { colors } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
@@ -36,6 +37,23 @@ const MARQUEE_DURATION_MS = 103818;
 
 const INPUT_MUTED = '#9CA3AF';
 const INPUT_BORDER = '#B8C1C8';
+type RuntimePlatform = 'ios' | 'android' | 'web';
+type SocialButtonVariant = 'apple-native';
+type SocialProviderConfig = {
+  provider: SocialAuthProvider;
+  label: string;
+  visibleOn: RuntimePlatform[];
+  buttonVariant: SocialButtonVariant;
+};
+
+const SOCIAL_PROVIDER_CONFIGS: SocialProviderConfig[] = [
+  {
+    provider: 'apple',
+    label: 'Apple',
+    visibleOn: ['ios'],
+    buttonVariant: 'apple-native',
+  },
+];
 
 export function SignInScreen() {
   const navigation = useNavigation();
@@ -43,6 +61,7 @@ export function SignInScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<SocialAuthProvider | null>(null);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -108,6 +127,24 @@ export function SignInScreen() {
     }
   };
 
+  const visibleSocialProviders = SOCIAL_PROVIDER_CONFIGS.filter((config) =>
+    config.visibleOn.includes(Platform.OS as RuntimePlatform)
+  );
+
+  const handleSocialSignIn = async (provider: SocialAuthProvider, label: string) => {
+    setError('');
+    setSuccessMessage('');
+    setSocialLoading(provider);
+    try {
+      const data = await signInWithProvider(provider);
+      useAuthStore.getState().setSession(data.session);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : `${label} sign in failed`);
+    } finally {
+      setSocialLoading(null);
+    }
+  };
+
   return (
     <ScreenWithWallpaper>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -159,7 +196,7 @@ export function SignInScreen() {
         <TouchableOpacity
           style={[styles.button, loading && styles.buttonDisabled]}
           onPress={handleSignIn}
-          disabled={loading}
+          disabled={loading || socialLoading !== null}
         >
           {loading ? (
             <ActivityIndicator color="#FFF" />
@@ -167,6 +204,30 @@ export function SignInScreen() {
             <Text style={styles.buttonText}>Sign In</Text>
           )}
         </TouchableOpacity>
+
+        {visibleSocialProviders.map((config) => (
+          <View
+            key={config.provider}
+            style={[
+              styles.socialButton,
+              (socialLoading === config.provider || loading) ? styles.socialButtonDisabled : null,
+            ]}
+            pointerEvents={(socialLoading === config.provider || loading) ? 'none' : 'auto'}
+          >
+            {config.buttonVariant === 'apple-native' ? (
+              <AppleAuthentication.AppleAuthenticationButton
+                buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                cornerRadius={8}
+                style={styles.appleButton}
+                onPress={() => handleSocialSignIn(config.provider, config.label)}
+              />
+            ) : null}
+            {socialLoading === config.provider ? (
+              <ActivityIndicator style={styles.appleLoading} color={colors.primary} />
+            ) : null}
+          </View>
+        ))}
 
         <TouchableOpacity style={styles.link} onPress={() => (navigation as any).navigate('SignUp')}>
           <Text style={styles.linkText}>Don't have an account? Sign up</Text>
@@ -306,6 +367,22 @@ const styles = StyleSheet.create({
   link: {
     marginTop: 24,
     alignItems: 'center',
+  },
+  socialButton: {
+    marginTop: 14,
+    position: 'relative',
+  },
+  socialButtonDisabled: {
+    opacity: 0.7,
+  },
+  appleButton: {
+    width: '100%',
+    height: 46,
+  },
+  appleLoading: {
+    position: 'absolute',
+    right: 14,
+    top: 12,
   },
   linkText: {
     color: colors.primary,

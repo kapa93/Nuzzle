@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
     transform: [{ scale: 1.25 }, { translateX: 12 }, { translateY: 6 }],
   },
   huskyCardImage: {
-    transform: [{ scale: 1.6 }, { translateX: 5 }, { translateY: 15 }],
+    transform: [{ scale: 1.6 }, { translateX: 5 }, { translateY: 12 }],
   },
   mixedBreedCardImage: {
     transform: [{ scale: 1.25 }, { translateX: 8 }, { translateY: 15 }],

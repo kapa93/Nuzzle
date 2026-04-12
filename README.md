@@ -38,9 +38,17 @@ npm install
    - `supabase/migrations/003_multi_dog.sql`
    - `supabase/migrations/004_profile_image.sql`
 
-3. Enable Email auth in **Authentication → Providers** (Email is on by default)
+3. Enable auth providers in **Authentication → Providers**:
+   - Email (on by default)
+   - Apple (for iOS native Sign in with Apple)
 
-4. **Email confirmation redirect** (for mobile): Go to **Authentication → URL Configuration** and add `nuzzle://auth/callback` to **Redirect URLs**. This lets the email confirmation link open your app instead of a 404.
+4. **Redirect URL** (for mobile): Go to **Authentication → URL Configuration** and add `nuzzle://auth/callback` to **Redirect URLs**. This lets auth callbacks open your app instead of a 404.
+
+5. **Apple provider setup** (Supabase + Apple Developer):
+   - In Apple Developer, create a Sign in with Apple key/capability for your app identifier.
+   - In Supabase Apple provider settings, configure the Apple Services ID / Team ID / Key ID / Private Key.
+   - Ensure iOS app config includes the same bundle identifier (`com.kapa.nuzzle` in this repo).
+   - Test with an iOS development build or TestFlight build (Apple auth is not supported in Expo Go).
 
 ### 3. Environment variables
 
@@ -107,7 +115,7 @@ src/
 
 ## Features
 
-- **Auth**: Email + password sign up / sign in, session persistence
+- **Auth**: Email + password plus native iOS Apple sign in, session persistence
 - **Profiles**: User profile (name, email, city, profile photo) + dog profile (name, breed, age, energy, photo)
 - **Breed communities**: Home feed for your dog’s breed, Explore all 6 breeds
 - **Posts**: Create posts with type (Question, Update/Story, Tip), tag, and multiple images

@@ -11,7 +11,7 @@ import {
   Text,
 } from "react-native";
 import { BreedHero } from "./BreedHero";
-import { getBreedHeroImageSource, getBreedHeroImageStyle } from "@/utils/breedAssets";
+import { getBreedHeroImageSource, getBreedHeroImageStyle, getBreedHeroTitle } from "@/utils/breedAssets";
 import { BREED_LABELS } from "@/utils/breed";
 import { colors, radius, shadow, spacing, typography } from "@/theme";
 import type { BreedEnum } from "@/types";
@@ -75,7 +75,7 @@ export function SwipeableBreedBanner({
         {breeds.map((b) => (
           <View key={b} style={styles.page}>
             <BreedHero
-              title={BREED_LABELS[b]}
+              title={getBreedHeroTitle(b)}
               image={getBreedHeroImageSource(b)}
               imageStyle={getBreedHeroImageStyle(b)}
               joined={joinedBreeds.includes(b)}

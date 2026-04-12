@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
   image: {},
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.15)",
+    backgroundColor: "rgba(0,0,0,0.05)",
   },
   topRow: { flexDirection: "row", justifyContent: "flex-start", marginTop: 2 },
   joinedPill: {
@@ -86,8 +86,8 @@ const styles = StyleSheet.create({
   titlePressed: { opacity: 0.9 },
   title: {
     fontSize: 32,
-    lineHeight: 37,
-    letterSpacing: 0.25,
+    lineHeight: 35,
+    letterSpacing: 0.1,
     ...Platform.select({
       ios: { fontFamily: "System", fontWeight: "700" as const },
       android: { fontFamily: "sans-serif", fontWeight: "700" as const },
