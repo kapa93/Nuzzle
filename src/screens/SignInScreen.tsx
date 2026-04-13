@@ -29,6 +29,7 @@ import { useAuthStore } from '@/store/authStore';
 import { signInSchema } from '@/utils/validation';
 import type { AuthStackParamList } from '@/navigation/types';
 import { Lock, Mail } from 'lucide-react-native';
+import { captureHandledError } from '@/lib/sentry';
 
 // Match width to dog-friends.png aspect ratio (2910x720) at 220px height
 // to avoid blank columns between repeated tiles.
@@ -122,6 +123,10 @@ export function SignInScreen() {
       const data = await signIn(parsed.data.email, parsed.data.password);
       useAuthStore.getState().setSession(data.session);
     } catch (err: unknown) {
+      captureHandledError(err, {
+        area: 'auth.sign-in',
+        tags: { auth_flow: 'password' },
+      });
       setError(err instanceof Error ? err.message : 'Sign in failed');
     } finally {
       setLoading(false);
@@ -140,6 +145,10 @@ export function SignInScreen() {
       const data = await signInWithProvider(provider);
       useAuthStore.getState().setSession(data.session);
     } catch (err: unknown) {
+      captureHandledError(err, {
+        area: 'auth.sign-in',
+        tags: { auth_flow: provider },
+      });
       setError(err instanceof Error ? err.message : `${label} sign in failed`);
     } finally {
       setSocialLoading(null);

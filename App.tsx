@@ -2,7 +2,7 @@ import 'react-native-url-polyfill/auto';
 import React, { useEffect } from 'react';
 import { Linking, View, StyleSheet, Text, TextInput, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
   Inter_400Regular,
@@ -17,6 +17,7 @@ import { colors } from '@/theme';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { isAuthCallbackUrl } from '@/api/auth';
+import { captureHandledError } from '@/lib/sentry';
 
 type ComponentWithDefaultStyle = {
   defaultProps?: { style?: unknown };
@@ -69,6 +70,27 @@ function handleAuthUrl(url: string) {
 }
 
 const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error, query) => {
+      captureHandledError(error, {
+        area: 'react-query.query',
+        extra: {
+          queryKey: JSON.stringify(query.queryKey),
+          queryStatus: query.state.status,
+        },
+      });
+    },
+  }),
+  mutationCache: new MutationCache({
+    onError: (error, _variables, _context, mutation) => {
+      captureHandledError(error, {
+        area: 'react-query.mutation',
+        extra: {
+          mutationKey: JSON.stringify(mutation.options.mutationKey ?? []),
+        },
+      });
+    },
+  }),
   defaultOptions: {
     queries: {
       staleTime: 60 * 1000,

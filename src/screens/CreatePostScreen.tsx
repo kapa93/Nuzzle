@@ -26,6 +26,7 @@ import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
 import { colors, shadow, spacing } from '@/theme';
 import type { BreedEnum, PostTypeEnum, PostTagEnum, MeetupKind } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
+import { captureHandledError } from '@/lib/sentry';
 
 type CreatePostRoute = {
   CreatePost: { breed?: BreedEnum; initialType?: PostTypeEnum };
@@ -138,13 +139,14 @@ export function CreatePostScreen() {
       }
 
       if (imageUrls.length > 0) {
-        await supabase.from('post_images').insert(
+        const { error: postImagesError } = await supabase.from('post_images').insert(
           imageUrls.map((url, i) => ({
             post_id: post.id,
             image_url: url,
             sort_order: i,
           }))
         );
+        if (postImagesError) throw postImagesError;
       }
 
       return post;
@@ -155,6 +157,11 @@ export function CreatePostScreen() {
       navigation.goBack();
     },
     onError: (err: Error) => {
+      captureHandledError(err, {
+        area: 'create-post.submit',
+        tags: { post_type: type, has_images: imageUris.length > 0 ? 'true' : 'false' },
+        extra: { imageCount: imageUris.length },
+      });
       setError(err.message);
     },
   });
@@ -166,6 +173,10 @@ export function CreatePostScreen() {
         setImageUris((prev) => [...prev, ...picked].slice(0, 5));
       }
     } catch (e) {
+      captureHandledError(e, {
+        area: 'create-post.image-picker',
+        extra: { currentImageCount: imageUris.length },
+      });
       Alert.alert('Error', (e as Error).message);
     }
   };

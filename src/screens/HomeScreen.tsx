@@ -44,6 +44,7 @@ import { useStackHeaderHeight } from "@/hooks/useStackHeaderHeight";
 import { colors, radius, spacing, typography } from "@/theme";
 import type { PostWithDetails, ReactionEnum } from "@/types";
 import type { FeedFilter } from "@/store/uiStore";
+import { captureHandledError } from '@/lib/sentry';
 
 const TABS = ["All", "Questions", "Meetups", "Tips", "Update/Story"] as const;
 type TabKey = (typeof TABS)[number];
@@ -150,7 +151,11 @@ export function HomeScreen({
       queryClient.invalidateQueries({ queryKey: ['dogBeachActiveCheckins'] });
       queryClient.invalidateQueries({ queryKey: ['dogBeachMyCheckins', user?.id] });
     },
-    onError: () => {
+    onError: (error) => {
+      captureHandledError(error, {
+        area: 'dog-beach.check-in',
+        tags: { screen: 'home' },
+      });
       Alert.alert('Could not check in', 'Please try again in a moment.');
     },
   });
@@ -188,7 +193,11 @@ export function HomeScreen({
           setIsNearDogBeach(forceNearby || distanceMeters <= DOG_BEACH.radiusMeters);
           setLocationChecked(true);
         }
-      } catch {
+      } catch (error) {
+        captureHandledError(error, {
+          area: 'dog-beach.location-check',
+          tags: { screen: 'home' },
+        });
         if (!isCancelled) {
           setIsNearDogBeach(forceNearby);
           setLocationChecked(true);
@@ -262,6 +271,14 @@ export function HomeScreen({
       ]
     );
   }, [availableDogsForBeachCheckIn, checkinMutation, dogs]);
+
+  const handleSentryTestCapture = useCallback(() => {
+    captureHandledError(new Error('Manual Sentry test capture from Home screen'), {
+      area: 'sentry.manual-test',
+      tags: { screen: 'home', env: 'dev' },
+    });
+    Alert.alert('Sentry test sent', 'Check your Sentry project for a handled event.');
+  }, []);
 
   const sort = "newest";
   const typeFilter = feedFilter === "QUESTION" || feedFilter === "UPDATE_STORY" || feedFilter === "TIP" || feedFilter === "MEETUP" ? feedFilter : null;
@@ -571,6 +588,14 @@ export function HomeScreen({
       />
       <SafeAreaView style={styles.safe} edges={["left", "right"]}>
         <View style={styles.container}>
+          {__DEV__ ? (
+            <Pressable
+              onPress={handleSentryTestCapture}
+              style={({ pressed }) => [styles.devSentryButton, pressed && styles.devSentryButtonPressed]}
+            >
+              <Text style={styles.devSentryButtonText}>Test Sentry</Text>
+            </Pressable>
+          ) : null}
           {(showNearbyCheckinCard || activeDogBeachCheckins.length > 0) ? (
             <Animated.View style={[styles.dogBeachAlertOverlay, { top: headerHeight + 12 }, dogBeachAlertAnimatedStyle]}>
               {showNearbyCheckinCard ? (
@@ -709,4 +734,22 @@ const styles = StyleSheet.create({
   tabsSection: { marginBottom: spacing.xs },
   listContent: { paddingBottom: spacing.xxxl },
   listContentBarHidden: { paddingBottom: spacing.sm },
+  devSentryButton: {
+    position: 'absolute',
+    right: spacing.lg,
+    bottom: spacing.xxxl,
+    zIndex: 50,
+    backgroundColor: '#111827',
+    borderRadius: radius.pill,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+  },
+  devSentryButtonPressed: {
+    opacity: 0.85,
+  },
+  devSentryButtonText: {
+    ...typography.caption,
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
 });

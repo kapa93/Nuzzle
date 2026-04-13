@@ -2,6 +2,7 @@ import * as Crypto from 'expo-crypto';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from './supabase';
 import { decode } from 'base64-arraybuffer';
+import { captureHandledError } from './sentry';
 
 export type ImagePickResult = {
   uri: string;
@@ -33,21 +34,28 @@ export async function pickImages(maxCount = 5): Promise<ImagePickResult[]> {
 export async function uploadProfileImage(userId: string, base64Data: string): Promise<string> {
   const ext = 'jpg';
   const path = `${userId}/avatar.${ext}`;
+  try {
+    const { data, error } = await supabase.storage
+      .from('profile-images')
+      .upload(path, decode(base64Data), {
+        contentType: 'image/jpeg',
+        upsert: true,
+      });
 
-  const { data, error } = await supabase.storage
-    .from('profile-images')
-    .upload(path, decode(base64Data), {
-      contentType: 'image/jpeg',
-      upsert: true,
+    if (error) throw error;
+
+    const { data: urlData } = supabase.storage
+      .from('profile-images')
+      .getPublicUrl(data.path);
+
+    return urlData.publicUrl;
+  } catch (error) {
+    captureHandledError(error, {
+      area: 'image-upload.profile',
+      extra: { bucket: 'profile-images', path },
     });
-
-  if (error) throw error;
-
-  const { data: urlData } = supabase.storage
-    .from('profile-images')
-    .getPublicUrl(data.path);
-
-  return urlData.publicUrl;
+    throw error;
+  }
 }
 
 export async function uploadDogImage(
@@ -57,21 +65,28 @@ export async function uploadDogImage(
 ): Promise<string> {
   const ext = 'jpg';
   const path = `${userId}/dogs/${dogId}/${Crypto.randomUUID()}.${ext}`;
+  try {
+    const { data, error } = await supabase.storage
+      .from('dog-images')
+      .upload(path, decode(base64Data), {
+        contentType: 'image/jpeg',
+        upsert: true,
+      });
 
-  const { data, error } = await supabase.storage
-    .from('dog-images')
-    .upload(path, decode(base64Data), {
-      contentType: 'image/jpeg',
-      upsert: true,
+    if (error) throw error;
+
+    const { data: urlData } = supabase.storage
+      .from('dog-images')
+      .getPublicUrl(data.path);
+
+    return urlData.publicUrl;
+  } catch (error) {
+    captureHandledError(error, {
+      area: 'image-upload.dog',
+      extra: { bucket: 'dog-images', path, dogId },
     });
-
-  if (error) throw error;
-
-  const { data: urlData } = supabase.storage
-    .from('dog-images')
-    .getPublicUrl(data.path);
-
-  return urlData.publicUrl;
+    throw error;
+  }
 }
 
 export async function uploadPostImage(
@@ -82,19 +97,26 @@ export async function uploadPostImage(
 ): Promise<string> {
   const ext = 'jpg';
   const path = `${userId}/posts/${postId}/${Crypto.randomUUID()}.${ext}`;
+  try {
+    const { data, error } = await supabase.storage
+      .from('post-images')
+      .upload(path, decode(base64Data), {
+        contentType: 'image/jpeg',
+        upsert: false,
+      });
 
-  const { data, error } = await supabase.storage
-    .from('post-images')
-    .upload(path, decode(base64Data), {
-      contentType: 'image/jpeg',
-      upsert: false,
+    if (error) throw error;
+
+    const { data: urlData } = supabase.storage
+      .from('post-images')
+      .getPublicUrl(data.path);
+
+    return urlData.publicUrl;
+  } catch (error) {
+    captureHandledError(error, {
+      area: 'image-upload.post',
+      extra: { bucket: 'post-images', path, postId, index },
     });
-
-  if (error) throw error;
-
-  const { data: urlData } = supabase.storage
-    .from('post-images')
-    .getPublicUrl(data.path);
-
-  return urlData.publicUrl;
+    throw error;
+  }
 }

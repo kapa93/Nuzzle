@@ -18,6 +18,7 @@ import {
 import { useAuthStore } from '@/store/authStore';
 import { BREED_LABELS, formatRelativeTime, PLAY_STYLE_LABELS } from '@/utils/breed';
 import { colors, radius, shadow, spacing, typography } from '@/theme';
+import { captureHandledError } from '@/lib/sentry';
 
 type Props = {
   navigation: {
@@ -55,7 +56,11 @@ export function DogBeachNowScreen({ navigation }: Props) {
       queryClient.invalidateQueries({ queryKey: ['dogBeachActiveCheckins'] });
       queryClient.invalidateQueries({ queryKey: ['dogBeachMyCheckins', user?.id] });
     },
-    onError: () => {
+    onError: (error) => {
+      captureHandledError(error, {
+        area: 'dog-beach.check-in',
+        tags: { screen: 'dog-beach-now' },
+      });
       Alert.alert('Could not check in', 'Please try again in a moment.');
     },
   });
@@ -66,7 +71,11 @@ export function DogBeachNowScreen({ navigation }: Props) {
       queryClient.invalidateQueries({ queryKey: ['dogBeachActiveCheckins'] });
       queryClient.invalidateQueries({ queryKey: ['dogBeachMyCheckins', user?.id] });
     },
-    onError: () => {
+    onError: (error) => {
+      captureHandledError(error, {
+        area: 'dog-beach.end-check-in',
+        tags: { screen: 'dog-beach-now' },
+      });
       Alert.alert('Could not end check-in', 'Please try again in a moment.');
     },
   });

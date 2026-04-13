@@ -29,6 +29,7 @@ import { SearchScreen } from '@/screens/SearchScreen';
 import { AnimatedStackHeader } from '@/components/AnimatedStackHeader';
 import { useScrollDirection } from '@/context/ScrollDirectionContext';
 import { colors } from '@/theme';
+import { registerSentryNavigationContainer } from '@/lib/sentry';
 import {
   CREATE_POST_SHEET_MODAL_HEADER_HEIGHT,
   CREATE_POST_STACK_HEADER_BAR,
@@ -286,7 +287,14 @@ export function RootNavigator() {
   };
 
   return (
-    <NavigationContainer theme={theme}>
+    <NavigationContainer
+      theme={theme}
+      ref={(navigationContainerRef) => {
+        if (navigationContainerRef) {
+          registerSentryNavigationContainer(navigationContainerRef);
+        }
+      }}
+    >
       <RootStack.Navigator
         screenOptions={{
           headerShown: false,

@@ -77,10 +77,12 @@ Create `.env` or `.env.local` in the project root:
 ```
 EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+EXPO_PUBLIC_SENTRY_DSN=https://examplePublicKey@o0.ingest.sentry.io/0
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-Values are in Supabase **Settings → API**. The service role key is only needed for local scripts (e.g. seeding), not the client app.
+Values are in Supabase **Settings → API**. The service role key is only needed for local scripts (e.g. seeding), not the client app.  
+The Sentry DSN is optional; if omitted, Sentry initialization stays disabled.
 
 ### 4. Run the app
 

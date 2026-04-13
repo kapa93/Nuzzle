@@ -20,6 +20,7 @@ import { AuthLegalNotice } from '@/components/AuthLegalNotice';
 import { colors } from '@/theme';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import { signUpSchema } from '@/utils/validation';
+import { captureHandledError } from '@/lib/sentry';
 
 const INPUT_MUTED = '#9CA3AF';
 const INPUT_BORDER = '#B8C1C8';
@@ -123,6 +124,10 @@ export function SignUpScreen() {
       }
     } catch (err: unknown) {
       useOnboardingStore.getState().setNeedsOnboarding(false);
+      captureHandledError(err, {
+        area: 'auth.sign-up',
+        tags: { auth_flow: 'password' },
+      });
       setError(err instanceof Error ? err.message : 'Sign up failed');
     } finally {
       setLoading(false);

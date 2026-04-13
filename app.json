@@ -36,7 +36,8 @@
         {
           "locationWhenInUsePermission": "Nuzzle uses your location to let you check in when you are near Ocean Beach Dog Beach."
         }
-      ]
+      ],
+      "@sentry/react-native"
     ]
   }
 }
