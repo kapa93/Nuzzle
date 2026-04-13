@@ -51,10 +51,11 @@ export const REACTION_EMOJI: Record<ReactionEnum, string> = {
 };
 
 export function formatAuthorDisplay(authorName: string, dogName: string | null | undefined): string {
+  const firstName = authorName.split(' ')[0] ?? authorName;
   if (dogName?.trim()) {
-    return `${authorName} & ${dogName}`;
+    return `${firstName} & ${dogName}`;
   }
-  return authorName;
+  return firstName;
 }
 
 export function formatRelativeTime(dateStr: string): string {
