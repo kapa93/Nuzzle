@@ -190,7 +190,7 @@ async function main() {
           response_format: 'b64_json',
         });
 
-        const b64 = response.data[0]?.b64_json;
+        const b64 = response.data?.[0]?.b64_json;
         if (!b64) throw new Error('No b64_json in response');
 
         // Decode base64 to bytes
