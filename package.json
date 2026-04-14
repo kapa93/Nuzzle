@@ -13,6 +13,7 @@
     "env:dev": "cp .env.development .env && echo 'Switched to development environment (default for local dev)'",
     "env:prod": "cp .env.production .env && echo 'Switched to production environment (for scripts only — expo start always prefers .env.development)'",
     "seed:posts": "tsx scripts/seedPosts.ts",
+    "seed:engagement": "tsx scripts/seedEngagement.ts",
     "seed:posts:wipe": "tsx scripts/seedPosts.ts --wipe-only",
     "seed:posts:reset": "tsx scripts/seedPosts.ts --reset",
     "seed:images": "tsx scripts/seedImages.ts",

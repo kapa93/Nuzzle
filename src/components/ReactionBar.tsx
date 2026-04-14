@@ -1,22 +1,15 @@
-import React, { useState, useRef, useEffect } from "react";
+import React from "react";
 import {
   View,
   Text,
   Pressable,
-  Modal,
   StyleSheet,
-  TouchableOpacity,
-  Dimensions,
   Platform,
   type ViewStyle,
 } from "react-native";
-import * as Haptics from "expo-haptics";
 import { Bone } from "lucide-react-native";
-import { REACTION_EMOJI } from "@/utils/breed";
 import { colors, radius, spacing, typography } from "@/theme";
 import type { ReactionEnum } from "@/types";
-
-const REACTIONS: ReactionEnum[] = ["LIKE", "LOVE", "HAHA", "WOW", "SAD", "ANGRY"];
 
 interface ReactionBarProps {
   reactions: Partial<Record<ReactionEnum, number>>;
@@ -27,18 +20,8 @@ interface ReactionBarProps {
   wrapperStyle?: ViewStyle;
 }
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
-const STRIP_WIDTH = 308;
-const STRIP_HEIGHT = 84;
-
-export function ReactionBar({ reactions, userReaction, onSelect, onMenuOpenChange, wrapperStyle }: ReactionBarProps) {
-  const [stripVisible, setStripVisible] = useState(false);
-  const [buttonLayout, setButtonLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
-  const likeButtonRef = useRef<View>(null);
-
+export function ReactionBar({ reactions, userReaction, onSelect, wrapperStyle }: ReactionBarProps) {
   const totalCount = Object.values(reactions || {}).reduce((s, c) => s + (c ?? 0), 0);
-  const showBone = !userReaction || userReaction === "LIKE";
-  const displayEmoji = userReaction ? REACTION_EMOJI[userReaction] : "👍";
 
   const handleTap = () => {
     if (userReaction) {
@@ -48,104 +31,28 @@ export function ReactionBar({ reactions, userReaction, onSelect, onMenuOpenChang
     }
   };
 
-  const handleLongPress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    likeButtonRef.current?.measureInWindow((x, y, width, height) => {
-      setButtonLayout({ x, y, width, height: height ?? 0 });
-      setStripVisible(true);
-    });
-  };
-
-  useEffect(() => {
-    onMenuOpenChange?.(stripVisible);
-  }, [stripVisible, onMenuOpenChange]);
-
-  const handleStripSelect = (reaction: ReactionEnum) => {
-    onSelect(reaction === userReaction ? null : reaction);
-    setStripVisible(false);
-  };
-
   return (
-    <>
-      <View style={[styles.wrapper, wrapperStyle]}>
-        <Pressable
-          ref={likeButtonRef}
-          onPress={handleTap}
-          onLongPress={handleLongPress}
-          delayLongPress={200}
-          style={({ pressed }) => [
-            styles.likeButton,
-            totalCount > 0 && styles.likeButtonWithCount,
-            userReaction && styles.likeButtonActive,
-            pressed && styles.pressed,
-          ]}
-        >
-          {showBone ? (
-            <View style={styles.iconWrap} pointerEvents="none">
-              <Bone
-                size={20}
-                color={userReaction ? colors.primary : colors.textSecondary}
-              />
-            </View>
-          ) : (
-            <Text style={styles.emoji} pointerEvents="none">{displayEmoji}</Text>
-          )}
-          {totalCount > 0 && (
-            <Text pointerEvents="none" style={[styles.count, userReaction && styles.countActive]}>{totalCount}</Text>
-          )}
-        </Pressable>
-      </View>
-
-      <Modal
-        visible={stripVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setStripVisible(false)}
+    <View style={[styles.wrapper, wrapperStyle]}>
+      <Pressable
+        onPress={handleTap}
+        style={({ pressed }) => [
+          styles.likeButton,
+          totalCount > 0 && styles.likeButtonWithCount,
+          userReaction && styles.likeButtonActive,
+          pressed && styles.pressed,
+        ]}
       >
-        <TouchableOpacity
-          style={styles.stripOverlay}
-          activeOpacity={1}
-          onPress={() => setStripVisible(false)}
-        >
-          <View
-            style={[
-              styles.stripContainer,
-              {
-                position: "absolute",
-                top:
-                  buttonLayout.y - STRIP_HEIGHT - 4 >= 16
-                    ? buttonLayout.y - STRIP_HEIGHT - 4
-                    : buttonLayout.y + buttonLayout.height + 4,
-                left: Math.max(16, Math.min(SCREEN_WIDTH - STRIP_WIDTH - 16, buttonLayout.x + buttonLayout.width / 2 - STRIP_WIDTH / 2)),
-              },
-            ]}
-          >
-            <View style={styles.strip}>
-              {REACTIONS.map((type) => (
-                <TouchableOpacity
-                  key={type}
-                  onPress={() => handleStripSelect(type)}
-                  style={[
-                    styles.stripEmoji,
-                    userReaction === type && styles.stripEmojiActive,
-                  ]}
-                  activeOpacity={0.7}
-                >
-                  {type === "LIKE" ? (
-                    <Bone
-                      size={28}
-                      color={userReaction === type ? colors.primary : colors.textSecondary}
-                    />
-                  ) : (
-                    <Text style={styles.stripEmojiText}>{REACTION_EMOJI[type]}</Text>
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </TouchableOpacity>
-      </Modal>
-    </>
+        <View style={styles.iconWrap} pointerEvents="none">
+          <Bone
+            size={20}
+            color={userReaction ? colors.primary : colors.textSecondary}
+          />
+        </View>
+        {totalCount > 0 && (
+          <Text pointerEvents="none" style={[styles.count, userReaction && styles.countActive]}>{totalCount}</Text>
+        )}
+      </Pressable>
+    </View>
   );
 }
 
@@ -179,10 +86,6 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   iconWrap: { marginRight: 3 },
-  emoji: {
-    fontSize: 18,
-    marginRight: 3,
-  },
   count: {
     ...typography.bodyMuted,
     fontSize: 14,
@@ -194,39 +97,5 @@ const styles = StyleSheet.create({
   },
   countActive: {
     color: colors.primary,
-  },
-  stripOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  stripContainer: {
-    padding: spacing.md,
-  },
-  strip: {
-    flexDirection: "row",
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  stripEmoji: {
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 22,
-  },
-  stripEmojiActive: {
-    backgroundColor: colors.primarySoft,
-  },
-  stripEmojiText: {
-    fontSize: 28,
   },
 });

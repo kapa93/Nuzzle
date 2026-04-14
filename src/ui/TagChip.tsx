@@ -20,7 +20,7 @@ export const toneStyles: Record<Tone, { bg: string; text: string }> = {
   neutral:    { bg: colors.chipNeutral, text: colors.chipText },
   training:   { bg: "#D6F0EC", text: "#339989" },
   behavior:   { bg: "#D6F3FC", text: "#00a8dd" },
-  health:     { bg: "#FFE4E1", text: "#8B1F1F" },
+  health:     { bg: "#FDECEA", text: "#CA2D2D" },
   grooming:   { bg: "#F0E4F8", text: "#6B2E8A" },
   food:       { bg: "#E8F5E0", text: "#2E5A1A" },
   gear:       { bg: "#DDE8F5", text: "#1A3E6B" },
