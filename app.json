@@ -14,8 +14,11 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.kapa.nuzzle",
-      "usesAppleSignIn": true
+      "bundleIdentifier": "com.kapa.nuzzle-dev",
+      "usesAppleSignIn": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -41,7 +44,7 @@
           "locationWhenInUsePermission": "Nuzzle uses your location to let you check in when you are near Ocean Beach Dog Beach."
         }
       ],
-      "@sentry/react-native"
+      ["@sentry/react-native", { "disableAutoUpload": true }]
     ],
     "extra": {
       "eas": {
