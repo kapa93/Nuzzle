@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import { getNotifications, markNotificationRead, markAllNotificationsRead } from
 import { useAuthStore } from '@/store/authStore';
 import { ScreenWithWallpaper } from '@/components/ScreenWithWallpaper';
 import { useScrollDirection, useScrollDirectionUpdater } from '@/context/ScrollDirectionContext';
-import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
+import { colors } from '@/theme';
 import { formatRelativeTime } from '@/utils/breed';
 
 type NotificationItem = {
@@ -69,6 +69,35 @@ export function NotificationsScreen() {
 
   const unreadCount = items.filter((i) => !i.read_at).length;
 
+  const renderItem = useCallback(({ item }: { item: NotificationItem }) => (
+    <TouchableOpacity
+      style={[styles.item, !item.read_at && styles.itemUnread]}
+      onPress={() => {
+        if (!item.read_at) markReadMutation.mutate({ id: item.id });
+        if (item.post_id) {
+          navigation.navigate('PostDetail', { postId: item.post_id });
+        }
+      }}
+    >
+      <Text style={styles.itemText}>
+        <Text style={styles.actorName}>{item.actor_name ?? 'Someone'}</Text>
+        {item.type === 'COMMENT'
+          ? ' commented on your post'
+          : item.type === 'MEETUP_RSVP'
+            ? ' joined your meetup'
+            : item.type === 'DOG_INTERACTION'
+              ? ' marked that your dog met their dog'
+            : ' reacted to your post'}
+      </Text>
+      {item.content_preview ? (
+        <Text style={styles.preview} numberOfLines={1}>
+          "{item.content_preview}..."
+        </Text>
+      ) : null}
+      <Text style={styles.time}>{formatRelativeTime(item.created_at)}</Text>
+    </TouchableOpacity>
+  ), [markReadMutation, navigation]);
+
   if (!user) {
     return (
       <ScreenWithWallpaper>
@@ -89,7 +118,7 @@ export function NotificationsScreen() {
         <SafeAreaView style={styles.safe} edges={['left', 'right']}>
           <View style={[styles.container, { paddingTop: headerHeight }]}>
             <View style={styles.centered}>
-              <ActivityIndicator size="large" color="#6366f1" />
+              <ActivityIndicator size="large" color={colors.primary} />
             </View>
           </View>
         </SafeAreaView>
@@ -109,34 +138,7 @@ export function NotificationsScreen() {
             <FlatList
               data={items}
               keyExtractor={(i) => i.id}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[styles.item, !item.read_at && styles.itemUnread]}
-                  onPress={() => {
-                    if (!item.read_at) markReadMutation.mutate({ id: item.id });
-                    if (item.post_id) {
-                      navigation.navigate('PostDetail', { postId: item.post_id });
-                    }
-                  }}
-                >
-                  <Text style={styles.itemText}>
-                    <Text style={styles.actorName}>{item.actor_name ?? 'Someone'}</Text>
-                    {item.type === 'COMMENT'
-                      ? ' commented on your post'
-                      : item.type === 'MEETUP_RSVP'
-                        ? ' joined your meetup'
-                        : item.type === 'DOG_INTERACTION'
-                          ? ' marked that your dog met their dog'
-                        : ' reacted to your post'}
-                  </Text>
-                  {item.content_preview ? (
-                    <Text style={styles.preview} numberOfLines={1}>
-                      "{item.content_preview}..."
-                    </Text>
-                  ) : null}
-                  <Text style={styles.time}>{formatRelativeTime(item.created_at)}</Text>
-                </TouchableOpacity>
-              )}
+              renderItem={renderItem}
               ListHeaderComponent={
                 <View style={styles.listHeader}>
                   {unreadCount > 0 ? (
@@ -167,7 +169,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, paddingTop: 8 },
   listHeader: { minHeight: 18, justifyContent: 'center' },
   markAllBtn: { paddingHorizontal: 16, paddingVertical: 4, alignItems: 'flex-end' },
-  markAllText: { color: '#6366f1', fontWeight: '600', fontSize: 14 },
+  markAllText: { color: colors.primary, fontWeight: '600', fontSize: 14 },
   list: { paddingTop: 0 },
   item: {
     backgroundColor: '#fff',

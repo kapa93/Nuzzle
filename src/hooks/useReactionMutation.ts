@@ -15,9 +15,10 @@ export function useReactionMutation() {
       userId: string;
       reaction: ReactionEnum | null;
     }) => setReaction(postId, userId, reaction),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
-      queryClient.invalidateQueries({ queryKey: ['post'] });
+    onSuccess: (_, { postId }) => {
+      queryClient.invalidateQueries({ queryKey: ['post', postId] });
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
+      queryClient.invalidateQueries({ queryKey: ['search'] });
     },
   });
 }

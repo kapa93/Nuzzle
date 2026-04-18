@@ -15,7 +15,6 @@ export function ProfileScreen({ navigation }: { navigation: ProfileNav }) {
   const { user, signOut: clearSession } = useAuthStore();
   const userId = user?.id ?? '';
   const queryClient = useQueryClient();
-  if (!userId) return null;
 
   const deleteMutation = useMutation({
     mutationFn: (dogId: string) => deleteDog(dogId, userId),
@@ -28,6 +27,23 @@ export function ProfileScreen({ navigation }: { navigation: ProfileNav }) {
       queryClient.invalidateQueries({ queryKey: ['userPosts', userId] });
     },
   });
+
+  const photoMutation = useMutation({
+    mutationFn: async (base64Data: string) => {
+      const url = await uploadProfileImage(userId, base64Data);
+      return updateProfile(userId, { profile_image_url: url });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
+      queryClient.invalidateQueries({ queryKey: ['post'] });
+      queryClient.invalidateQueries({ queryKey: ['search'] });
+      queryClient.invalidateQueries({ queryKey: ['comments'] });
+    },
+    onError: (err: Error) => Alert.alert('Error', err.message),
+  });
+
+  if (!userId) return null;
 
   const handleSignOut = () => {
     Alert.alert('Sign out', 'Are you sure?', [
@@ -56,21 +72,6 @@ export function ProfileScreen({ navigation }: { navigation: ProfileNav }) {
       },
     ]);
   };
-
-  const photoMutation = useMutation({
-    mutationFn: async (base64Data: string) => {
-      const url = await uploadProfileImage(userId, base64Data);
-      return updateProfile(userId, { profile_image_url: url });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['profile', userId] });
-      queryClient.invalidateQueries({ queryKey: ['feed'] });
-      queryClient.invalidateQueries({ queryKey: ['post'] });
-      queryClient.invalidateQueries({ queryKey: ['search'] });
-      queryClient.invalidateQueries({ queryKey: ['comments'] });
-    },
-    onError: (err: Error) => Alert.alert('Error', err.message),
-  });
 
   const handleChangePhoto = async () => {
     try {

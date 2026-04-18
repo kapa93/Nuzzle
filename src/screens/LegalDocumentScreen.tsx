@@ -1,17 +1,28 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRoute, type RouteProp } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { AuthStackParamList } from '@/navigation/types';
 import { LEGAL_DOCUMENTS } from '@/content/legalDocuments';
 import { colors } from '@/theme';
+import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
 
 type LegalRoute = RouteProp<AuthStackParamList, 'LegalDocument'>;
 
 export function LegalDocumentScreen() {
   const route = useRoute<LegalRoute>();
-  const insets = useSafeAreaInsets();
+  const headerHeight = useStackHeaderHeight();
   const document = LEGAL_DOCUMENTS[route.params.documentType];
+
+  if (!document) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.notFound}>
+          <Text style={styles.notFoundText}>Document not found.</Text>
+        </View>
+      </View>
+    );
+  }
+
   const lines = document.content.split('\n');
 
   const renderInline = (value: string) => {
@@ -45,7 +56,7 @@ export function LegalDocumentScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: insets.top + 88 },
+          { paddingTop: headerHeight + 8 },
         ]}
       >
         <Text style={styles.title}>{document.title}</Text>
@@ -106,6 +117,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  notFound: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  notFoundText: {
+    fontSize: 16,
+    color: colors.textSecondary,
   },
   content: {
     padding: 20,

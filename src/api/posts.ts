@@ -20,6 +20,8 @@ async function enrichPosts(rawPosts: RawPostRow[], userId: string | null): Promi
   const authorIds = [...new Set(rawPosts.map((p) => p.author_id))];
   const meetupPostIds = rawPosts.filter((p) => p.type === 'MEETUP').map((p) => p.id);
 
+  const postIds = rawPosts.map((p) => p.id);
+
   const [
     profilesRes,
     dogsRes,
@@ -29,11 +31,7 @@ async function enrichPosts(rawPosts: RawPostRow[], userId: string | null): Promi
   ] = await Promise.all([
     supabase.from('profiles').select('id, name').in('id', authorIds),
     supabase.from('dogs').select('owner_id, name, dog_image_url').in('owner_id', authorIds).order('created_at', { ascending: true }),
-    Promise.all(
-      rawPosts.map((p) =>
-        supabase.from('comments').select('*', { count: 'exact', head: true }).eq('post_id', p.id)
-      )
-    ),
+    supabase.from('comments').select('post_id').in('post_id', postIds),
     meetupPostIds.length > 0
       ? supabase.from('meetup_details').select('*').in('post_id', meetupPostIds)
       : Promise.resolve({ data: [] as MeetupDetails[] }),
@@ -41,6 +39,11 @@ async function enrichPosts(rawPosts: RawPostRow[], userId: string | null): Promi
       ? supabase.from('meetup_rsvps').select('meetup_post_id').eq('user_id', userId).in('meetup_post_id', meetupPostIds)
       : Promise.resolve({ data: [] as { meetup_post_id: string }[] }),
   ]);
+
+  const commentCountMap = new Map<string, number>();
+  for (const row of (commentCountsRes.data ?? []) as { post_id: string }[]) {
+    commentCountMap.set(row.post_id, (commentCountMap.get(row.post_id) ?? 0) + 1);
+  }
 
   const profilesMap = new Map(
     (profilesRes.data ?? []).map((p) => [p.id, p])
@@ -75,10 +78,10 @@ async function enrichPosts(rawPosts: RawPostRow[], userId: string | null): Promi
     }
   }
 
-  return rawPosts.map((post, idx) => {
+  return rawPosts.map((post) => {
     const profile = profilesMap.get(post.author_id);
     const dog = dogsMap.get(post.author_id);
-    const commentCount = commentCountsRes[idx]?.count ?? 0;
+    const commentCount = commentCountMap.get(post.id) ?? 0;
 
     const reactions = (post.post_reactions ?? []) as Array<{ user_id: string; reaction_type: ReactionEnum }>;
     const reaction_counts = { ...INITIAL_REACTION_COUNTS } as Partial<Record<ReactionEnum, number>>;
@@ -277,7 +280,8 @@ export async function createPost(
       image_url: url,
       sort_order: i,
     }));
-    await supabase.from('post_images').insert(inserts);
+    const { error: imagesError } = await supabase.from('post_images').insert(inserts);
+    if (imagesError) throw imagesError;
   }
 
   return newPost;

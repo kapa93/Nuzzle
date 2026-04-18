@@ -92,6 +92,10 @@ function feedItemPropsAreEqual(prev: Props, next: Props): boolean {
   if (prev.item.user_rsvped !== next.item.user_rsvped) return false;
   if (prev.item.attendee_count !== next.item.attendee_count) return false;
   if (prev.item.comment_count !== next.item.comment_count) return false;
+  if (prev.item.content_text !== next.item.content_text) return false;
+  if (prev.item.title !== next.item.title) return false;
+  if (prev.item.images.length !== next.item.images.length) return false;
+  if (prev.item.images.some((url, i) => url !== next.item.images[i])) return false;
   if (prev.currentUserId !== next.currentUserId) return false;
   const prevCounts = prev.item.reaction_counts ?? {};
   const nextCounts = next.item.reaction_counts ?? {};

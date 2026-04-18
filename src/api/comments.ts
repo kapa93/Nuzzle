@@ -1,6 +1,5 @@
 import { supabase } from '@/lib/supabase';
 import type { CommentWithAuthor } from '@/types';
-import { getDogByOwner } from './dogs';
 
 export async function getCommentsByPost(postId: string): Promise<CommentWithAuthor[]> {
   const { data, error } = await supabase
@@ -27,12 +26,20 @@ export async function getCommentsByPost(postId: string): Promise<CommentWithAuth
 
   const authorIds = [...new Set(comments.map((c) => c.author_id))];
   const dogMap = new Map<string, { name: string; dog_image_url: string | null }>();
-  await Promise.all(
-    authorIds.map(async (uid) => {
-      const dog = await getDogByOwner(uid);
-      if (dog) dogMap.set(uid, { name: dog.name, dog_image_url: dog.dog_image_url });
-    })
-  );
+
+  if (authorIds.length > 0) {
+    const { data: dogsData } = await supabase
+      .from('dogs')
+      .select('owner_id, name, dog_image_url')
+      .in('owner_id', authorIds)
+      .order('created_at', { ascending: true });
+
+    for (const dog of dogsData ?? []) {
+      if (!dogMap.has(dog.owner_id)) {
+        dogMap.set(dog.owner_id, { name: dog.name, dog_image_url: dog.dog_image_url });
+      }
+    }
+  }
 
   return comments.map((c) => {
     const profile = Array.isArray(c.profiles) ? c.profiles[0] : c.profiles;

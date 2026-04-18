@@ -8,10 +8,12 @@ import {
   ScrollView,
   Pressable,
   Alert,
+  ActivityIndicator,
 } from "react-native";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Location from 'expo-location';
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useAuthStore } from "@/store/authStore";
 import { useOnboardingStore } from '@/store/onboardingStore';
@@ -280,14 +282,22 @@ export function HomeScreen({
     Alert.alert('Sentry test sent', 'Check your Sentry project for a handled event.');
   }, []);
 
+  const tabBarHeight = useBottomTabBarHeight();
   const sort = "newest";
   const typeFilter = feedFilter === "QUESTION" || feedFilter === "UPDATE_STORY" || feedFilter === "TIP" || feedFilter === "MEETUP" ? feedFilter : null;
 
-  const { data: posts, isLoading, refetch } = useQuery({
+  const { data, isLoading, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ["feed", breed, feedFilter, user?.id],
-    queryFn: () => getFeed(breed, sort, 20, 0, user?.id ?? null, typeFilter),
+    queryFn: ({ pageParam }) => getFeed(breed, sort, 10, pageParam as number, user?.id ?? null, typeFilter),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+      if (lastPage.length < 10) return undefined;
+      return (lastPageParam as number) + 10;
+    },
     enabled: !!user?.id,
   });
+
+  const posts = useMemo(() => data?.pages.flat() ?? [], [data]);
 
   const handleRefresh = useCallback(async () => {
     setIsPullRefreshing(true);
@@ -304,21 +314,26 @@ export function HomeScreen({
       setReaction(postId, user!.id, reaction),
     onMutate: async ({ postId, reaction }) => {
       await queryClient.cancelQueries({ queryKey: feedQueryKey });
-      const prev = queryClient.getQueryData<PostWithDetails[]>(feedQueryKey);
-      queryClient.setQueryData<PostWithDetails[]>(feedQueryKey, (old) => {
+      const prev = queryClient.getQueryData<InfiniteData<PostWithDetails[]>>(feedQueryKey);
+      queryClient.setQueryData<InfiniteData<PostWithDetails[]>>(feedQueryKey, (old) => {
         if (!old) return old;
-        return old.map((p) => {
-          if (p.id !== postId) return p;
-          const prevReaction = p.user_reaction;
-          const counts = { ...(p.reaction_counts ?? {}) } as Partial<Record<ReactionEnum, number>>;
-          if (prevReaction) {
-            counts[prevReaction] = Math.max(0, (counts[prevReaction] ?? 1) - 1);
-          }
-          if (reaction) {
-            counts[reaction] = (counts[reaction] ?? 0) + 1;
-          }
-          return { ...p, user_reaction: reaction, reaction_counts: counts };
-        });
+        return {
+          ...old,
+          pages: old.pages.map((page) =>
+            page.map((p) => {
+              if (p.id !== postId) return p;
+              const prevReaction = p.user_reaction;
+              const counts = { ...(p.reaction_counts ?? {}) } as Partial<Record<ReactionEnum, number>>;
+              if (prevReaction) {
+                counts[prevReaction] = Math.max(0, (counts[prevReaction] ?? 1) - 1);
+              }
+              if (reaction) {
+                counts[reaction] = (counts[reaction] ?? 0) + 1;
+              }
+              return { ...p, user_reaction: reaction, reaction_counts: counts };
+            })
+          ),
+        };
       });
       return { prev };
     },
@@ -340,19 +355,24 @@ export function HomeScreen({
       rsvped ? unrsvpMeetup(postId, user!.id) : rsvpMeetup(postId, user!.id),
     onMutate: async ({ postId, rsvped }) => {
       await queryClient.cancelQueries({ queryKey: feedQueryKey });
-      const prev = queryClient.getQueryData<PostWithDetails[]>(feedQueryKey);
-      queryClient.setQueryData<PostWithDetails[]>(feedQueryKey, (old) => {
+      const prev = queryClient.getQueryData<InfiniteData<PostWithDetails[]>>(feedQueryKey);
+      queryClient.setQueryData<InfiniteData<PostWithDetails[]>>(feedQueryKey, (old) => {
         if (!old) return old;
-        return old.map((p) => {
-          if (p.id !== postId || p.type !== "MEETUP") return p;
-          const wasRsvped = p.user_rsvped ?? false;
-          const delta = rsvped ? -1 : 1;
-          return {
-            ...p,
-            user_rsvped: !wasRsvped,
-            attendee_count: Math.max(0, (p.attendee_count ?? 0) + delta),
-          };
-        });
+        return {
+          ...old,
+          pages: old.pages.map((page) =>
+            page.map((p) => {
+              if (p.id !== postId || p.type !== "MEETUP") return p;
+              const wasRsvped = p.user_rsvped ?? false;
+              const delta = rsvped ? -1 : 1;
+              return {
+                ...p,
+                user_rsvped: !wasRsvped,
+                attendee_count: Math.max(0, (p.attendee_count ?? 0) + delta),
+              };
+            })
+          ),
+        };
       });
       return { prev };
     },
@@ -411,7 +431,7 @@ export function HomeScreen({
     ({ item, index }: { item: PostWithDetails; index: number }) => (
       <FeedItem
         item={item}
-        showBottomBorder={index < (posts?.length ?? 0) - 1}
+        showBottomBorder={index < posts.length - 1}
         onPostPress={handlePostPress}
         onAuthorPress={handleAuthorPress}
         onReactionSelect={handleReactionSelect}
@@ -423,6 +443,7 @@ export function HomeScreen({
       />
     ),
     [
+      posts.length,
       handlePostPress,
       handleAuthorPress,
       handleReactionSelect,
@@ -430,7 +451,6 @@ export function HomeScreen({
       handleRsvpToggle,
       handleEditPost,
       handleDeletePost,
-      posts?.length,
       user?.id,
     ]
   );
@@ -538,6 +558,32 @@ export function HomeScreen({
     setFeedFilter,
   ]);
 
+  const renderEmpty = useCallback(() => (
+    <View style={styles.empty}>
+      <Text style={styles.emptyEmoji}>🐕</Text>
+      <Text style={styles.emptyTitle}>No posts yet in {BREED_LABELS[breed]} community</Text>
+      <Text style={styles.emptySub}>Be the first to share!</Text>
+      <Text style={styles.link} onPress={() => navigation.navigate("CreatePost", { breed })}>
+        Ask a question or share
+      </Text>
+    </View>
+  ), [breed, navigation]);
+
+  const renderFooter = useCallback(() => {
+    if (!isFetchingNextPage) return null;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color={colors.primary} />
+      </View>
+    );
+  }, [isFetchingNextPage]);
+
+  const handleEndReached = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
   if (!user) {
     return (
       <View style={styles.screen}>
@@ -564,17 +610,6 @@ export function HomeScreen({
       </View>
     );
   }
-
-  const renderEmpty = () => (
-    <View style={styles.empty}>
-      <Text style={styles.emptyEmoji}>🐕</Text>
-      <Text style={styles.emptyTitle}>No posts yet in {BREED_LABELS[breed]} community</Text>
-      <Text style={styles.emptySub}>Be the first to share!</Text>
-      <Text style={styles.link} onPress={() => navigation.navigate("CreatePost", { breed })}>
-        Ask a question or share
-      </Text>
-    </View>
-  );
 
   return (
     <View style={styles.screen}>
@@ -614,7 +649,7 @@ export function HomeScreen({
             </Animated.View>
           ) : null}
           <FlatList
-          data={posts ?? []}
+          data={posts}
           keyExtractor={(item) => item.id}
           ListHeaderComponent={renderHeader}
           scrollEnabled={!reactionMenuOpen}
@@ -622,12 +657,22 @@ export function HomeScreen({
           maxToRenderPerBatch={8}
           windowSize={11}
           renderItem={renderFeedItem}
-          ListEmptyComponent={!isLoading ? renderEmpty : null}
+          ListEmptyComponent={isLoading ? (
+            <View style={[styles.initialLoader, { paddingBottom: tabBarHeight }]}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          ) : renderEmpty}
+          ListFooterComponent={renderFooter}
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.5}
           refreshControl={
             <RefreshControl
               refreshing={isPullRefreshing}
               onRefresh={handleRefresh}
               tintColor={colors.primary}
+              colors={[colors.primary]}
+              progressBackgroundColor={colors.primarySoft}
+              style={{ backgroundColor: colors.primarySoft }}
             />
           }
           onScroll={onScroll}
@@ -635,7 +680,7 @@ export function HomeScreen({
           contentContainerStyle={[
             styles.listContent,
             { paddingTop: headerHeight },
-            (!posts || posts.length === 0) && styles.emptyList,
+            posts.length === 0 && styles.emptyList,
             scrollDirection === "down" && styles.listContentBarHidden,
           ]}
           showsVerticalScrollIndicator={false}
@@ -736,6 +781,8 @@ const styles = StyleSheet.create({
   tabsSection: {},
   listContent: { paddingBottom: spacing.xxxl },
   listContentBarHidden: { paddingBottom: spacing.sm },
+  initialLoader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  footerLoader: { paddingVertical: spacing.xl, alignItems: 'center' },
   devSentryButton: {
     position: 'absolute',
     right: spacing.lg,

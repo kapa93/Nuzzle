@@ -17,7 +17,7 @@ import { uploadProfileImage, pickImages } from '@/lib/imageUpload';
 import { useAuthStore } from '@/store/authStore';
 import { ScreenWithWallpaper } from '@/components/ScreenWithWallpaper';
 import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
-import { shadow } from '@/theme';
+import { colors, shadow } from '@/theme';
 import { profileSchema } from '@/utils/validation';
 
 export function EditProfileScreen() {
@@ -31,7 +31,7 @@ export function EditProfileScreen() {
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [error, setError] = useState('');
 
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: isProfileLoading } = useQuery({
     queryKey: ['profile', user?.id],
     queryFn: () => getProfile(user!.id),
     enabled: !!user?.id,
@@ -88,6 +88,16 @@ export function EditProfileScreen() {
 
   if (!user) return null;
 
+  if (isProfileLoading) {
+    return (
+      <ScreenWithWallpaper>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </ScreenWithWallpaper>
+    );
+  }
+
   return (
     <ScreenWithWallpaper>
       <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: headerHeight }]}>
@@ -138,6 +148,7 @@ export function EditProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8, marginTop: 16 },
   imagePicker: {
     width: 100,
@@ -148,7 +159,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
     marginBottom: 8,
-    ...shadow.sm,
   },
   profileImage: { width: 100, height: 100 },
   imagePlaceholder: { fontSize: 14, color: '#6b7280' },
@@ -159,11 +169,10 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     backgroundColor: '#FFF',
-    ...shadow.sm,
   },
   error: { color: '#ef4444', marginTop: 12, fontSize: 14 },
   submit: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: colors.primary,
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',

@@ -99,6 +99,15 @@ export function EditPostScreen() {
     setTimeout(scrollToFocusedInput, 320);
   };
 
+  const isUnauthorized = !isLoading && !!post && !!user && post.author_id !== user.id;
+
+  useEffect(() => {
+    if (isUnauthorized) {
+      Alert.alert('Error', "You can't edit this post");
+      navigation.goBack();
+    }
+  }, [isUnauthorized, navigation]);
+
   if (!user) return null;
 
   if (isLoading || !post) {
@@ -109,11 +118,7 @@ export function EditPostScreen() {
     );
   }
 
-  if (post.author_id !== user.id) {
-    Alert.alert('Error', "You can't edit this post");
-    navigation.goBack();
-    return null;
-  }
+  if (isUnauthorized) return null;
 
   const breed = post.breed;
 

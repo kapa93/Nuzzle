@@ -92,7 +92,7 @@ export function PostDetailScreen() {
     opacity: menuBtnPressOverlay.value,
   }));
 
-  const { data: post, isLoading } = useQuery({
+  const { data: post, isLoading, isError, refetch: refetchPost } = useQuery({
     queryKey: ["post", postId],
     queryFn: () => getPostById(postId, user?.id ?? null),
     enabled: !!postId,
@@ -207,11 +207,24 @@ export function PostDetailScreen() {
     );
   };
 
-  if (isLoading || !post) {
+  if (isLoading) {
     return (
       <View style={styles.screenRoot}>
         <View style={styles.centered}>
           <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (isError || !post) {
+    return (
+      <View style={styles.screenRoot}>
+        <View style={styles.centered}>
+          <Text style={styles.loadingText}>Could not load post.</Text>
+          <Pressable onPress={() => refetchPost()} style={styles.retryBtn}>
+            <Text style={styles.retryBtnText}>Retry</Text>
+          </Pressable>
         </View>
       </View>
     );
@@ -470,6 +483,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loadingText: { ...typography.bodyMuted },
+  retryBtn: {
+    marginTop: spacing.md,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.surface,
+  },
+  retryBtnText: { ...typography.body, fontWeight: '700' },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: spacing.xxl },
   postContent: {

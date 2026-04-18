@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -91,7 +91,7 @@ export function DogBeachNowScreen({ navigation }: Props) {
   );
   const allDogsLabel = availableDogsToCheckIn.length === 2 ? 'Both dogs' : 'All my dogs';
 
-  const handleCheckIn = () => {
+  const handleCheckIn = useCallback(() => {
     if (dogs.length === 0) {
       Alert.alert('No dog profile', 'Add a dog profile before checking in.');
       return;
@@ -120,12 +120,52 @@ export function DogBeachNowScreen({ navigation }: Props) {
         { text: 'Cancel', style: 'cancel' as const },
       ]
     );
-  };
+  }, [allDogsLabel, availableDogsToCheckIn, createMutation, dogs]);
 
-  const handleEndCheckin = () => {
+  const handleEndCheckin = useCallback(() => {
     if (myActiveCheckins.length === 0) return;
     endMutation.mutate(myActiveCheckins.map((checkin) => checkin.id));
-  };
+  }, [endMutation, myActiveCheckins]);
+
+  const renderAttendeeItem = useCallback(({ item }: { item: typeof activeCheckins[0] }) => (
+    <View style={styles.row}>
+      <Pressable
+        onPress={() => navigation.navigate('DogProfile', { dogId: item.dog_id })}
+        style={styles.rowIdentity}
+      >
+        <DogAvatar imageUrl={item.dog_image_url} name={item.dog_name} size={44} />
+        <View style={styles.rowText}>
+          <View style={styles.rowHeader}>
+            <View style={styles.nameRow}>
+              <Text style={styles.dogName}>{item.dog_name}</Text>
+              {item.dog_play_style ? (
+                <View style={styles.playStyleChip}>
+                  <Text style={styles.playStyleChipText}>{PLAY_STYLE_LABELS[item.dog_play_style]}</Text>
+                </View>
+              ) : null}
+            </View>
+          </View>
+          <Text style={styles.rowMeta}>
+            {BREED_LABELS[item.dog_breed]}
+            {item.owner_name ? ` • ${item.owner_name}` : ''}
+          </Text>
+        </View>
+      </Pressable>
+
+      <View style={styles.rowSide}>
+        <Text style={styles.rowTime}>{formatRelativeTime(item.created_at)}</Text>
+        <MetThisDogButton
+          viewerUserId={user?.id ?? null}
+          viewerDogs={dogs}
+          targetDog={{ id: item.dog_id, name: item.dog_name }}
+          sourceType="dog_beach"
+          locationName={DOG_BEACH.locationName}
+          compact
+          alignRight
+        />
+      </View>
+    </View>
+  ), [navigation, user?.id, dogs]);
 
   return (
     <ScreenWithWallpaper>
@@ -209,45 +249,7 @@ export function DogBeachNowScreen({ navigation }: Props) {
               data={activeCheckins}
               keyExtractor={(item) => item.id}
               contentContainerStyle={styles.listContent}
-              renderItem={({ item }) => (
-                <View style={styles.row}>
-                  <Pressable
-                    onPress={() => navigation.navigate('DogProfile', { dogId: item.dog_id })}
-                    style={styles.rowIdentity}
-                  >
-                    <DogAvatar imageUrl={item.dog_image_url} name={item.dog_name} size={44} />
-                    <View style={styles.rowText}>
-                      <View style={styles.rowHeader}>
-                        <View style={styles.nameRow}>
-                          <Text style={styles.dogName}>{item.dog_name}</Text>
-                          {item.dog_play_style ? (
-                            <View style={styles.playStyleChip}>
-                              <Text style={styles.playStyleChipText}>{PLAY_STYLE_LABELS[item.dog_play_style]}</Text>
-                            </View>
-                          ) : null}
-                        </View>
-                      </View>
-                      <Text style={styles.rowMeta}>
-                        {BREED_LABELS[item.dog_breed]}
-                        {item.owner_name ? ` • ${item.owner_name}` : ''}
-                      </Text>
-                    </View>
-                  </Pressable>
-
-                  <View style={styles.rowSide}>
-                    <Text style={styles.rowTime}>{formatRelativeTime(item.created_at)}</Text>
-                    <MetThisDogButton
-                      viewerUserId={user?.id ?? null}
-                      viewerDogs={dogs}
-                      targetDog={{ id: item.dog_id, name: item.dog_name }}
-                      sourceType="dog_beach"
-                      locationName={DOG_BEACH.locationName}
-                      compact
-                      alignRight
-                    />
-                    </View>
-                </View>
-              )}
+              renderItem={renderAttendeeItem}
             />
           )}
         </View>

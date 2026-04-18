@@ -31,12 +31,14 @@ export async function signUp(email: string, password: string, name: string, city
   if (!authData.user) throw new Error('Sign up failed');
 
   // Profile is created via trigger, but we can upsert to ensure
-  await supabase.from('profiles').upsert({
+  const { error: profileError } = await supabase.from('profiles').upsert({
     id: authData.user.id,
     name: name || authData.user.email?.split('@')[0],
     email: authData.user.email ?? email,
     city: city ?? null,
   });
+
+  if (profileError) throw profileError;
 
   return authData;
 }

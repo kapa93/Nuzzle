@@ -2,6 +2,7 @@ import 'react-native-url-polyfill/auto';
 import React, { useEffect } from 'react';
 import { Linking, View, StyleSheet, Text, TextInput, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import * as Sentry from '@sentry/react-native';
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
@@ -69,6 +70,15 @@ function handleAuthUrl(url: string) {
   }
 }
 
+function AppErrorFallback() {
+  return (
+    <View style={styles.errorFallback}>
+      <Text style={styles.errorFallbackTitle}>Something went wrong</Text>
+      <Text style={styles.errorFallbackBody}>Please restart the app. The error has been reported.</Text>
+    </View>
+  );
+}
+
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error, query) => {
@@ -122,19 +132,40 @@ export default function App() {
   if (!fontsLoaded) return null;
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <SafeAreaProvider>
-        <ScrollDirectionProvider>
-          <View style={styles.root}>
-            <RootNavigator />
-          </View>
-        </ScrollDirectionProvider>
-        <StatusBar style="auto" />
-      </SafeAreaProvider>
-    </QueryClientProvider>
+    <Sentry.ErrorBoundary fallback={<AppErrorFallback />}>
+      <QueryClientProvider client={queryClient}>
+        <SafeAreaProvider>
+          <ScrollDirectionProvider>
+            <View style={styles.root}>
+              <RootNavigator />
+            </View>
+          </ScrollDirectionProvider>
+          <StatusBar style="auto" />
+        </SafeAreaProvider>
+      </QueryClientProvider>
+    </Sentry.ErrorBoundary>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
+  errorFallback: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    padding: 32,
+  },
+  errorFallbackTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  errorFallbackBody: {
+    fontSize: 15,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
 });

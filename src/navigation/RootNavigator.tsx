@@ -3,6 +3,7 @@ import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, ActivityIndicator, StyleSheet, Platform } from 'react-native';
+import * as Sentry from '@sentry/react-native';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { useOnboardingStore } from '@/store/onboardingStore';
@@ -68,6 +69,27 @@ function AuthNavigator() {
       />
     </AuthStack.Navigator>
   );
+}
+
+function TabErrorFallback() {
+  return (
+    <View style={styles.tabErrorFallback}>
+      <Text style={styles.tabErrorText}>Something went wrong in this tab.</Text>
+    </View>
+  );
+}
+
+function HomeTabWithBoundary() {
+  return <Sentry.ErrorBoundary fallback={<TabErrorFallback />}><HomeTab /></Sentry.ErrorBoundary>;
+}
+function ExploreTabWithBoundary() {
+  return <Sentry.ErrorBoundary fallback={<TabErrorFallback />}><ExploreTab /></Sentry.ErrorBoundary>;
+}
+function NotificationsTabWithBoundary() {
+  return <Sentry.ErrorBoundary fallback={<TabErrorFallback />}><NotificationsTab /></Sentry.ErrorBoundary>;
+}
+function ProfileTabWithBoundary() {
+  return <Sentry.ErrorBoundary fallback={<TabErrorFallback />}><ProfileTab /></Sentry.ErrorBoundary>;
 }
 
 function HomeTab() {
@@ -245,11 +267,11 @@ function MainTabs() {
         tabBarStyle,
       }}
     >
-      <Tab.Screen name="Home" component={HomeTab} />
-      <Tab.Screen name="Explore" component={ExploreTab} />
+      <Tab.Screen name="Home" component={HomeTabWithBoundary} />
+      <Tab.Screen name="Explore" component={ExploreTabWithBoundary} />
       <Tab.Screen name="Create" component={EmptyCreateTab} />
-      <Tab.Screen name="Notifications" component={NotificationsTab} />
-      <Tab.Screen name="Profile" component={ProfileTab} />
+      <Tab.Screen name="Notifications" component={NotificationsTabWithBoundary} />
+      <Tab.Screen name="Profile" component={ProfileTabWithBoundary} />
     </Tab.Navigator>
   );
 }
@@ -420,6 +442,18 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
     color: '#5B6A61',
+  },
+  tabErrorFallback: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    padding: 24,
+  },
+  tabErrorText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
   modalHeaderTitleBlock: {
     alignItems: 'center',
