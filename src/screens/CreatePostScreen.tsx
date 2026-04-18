@@ -69,7 +69,8 @@ export function CreatePostScreen() {
     enabled: !!user?.id && route.params?.breed == null,
   });
 
-  const breed = route.params?.breed ?? dogs?.[0]?.breed ?? 'GOLDEN_RETRIEVER';
+  const [selectedDogIndex, setSelectedDogIndex] = useState(0);
+  const breed = route.params?.breed ?? dogs?.[selectedDogIndex]?.breed ?? 'GOLDEN_RETRIEVER';
   const headerHeight = useStackHeaderHeight({
     createPostSheetModal: route.name === 'CreatePostModal',
     createPostPushed: route.name === 'CreatePost',
@@ -248,7 +249,28 @@ export function CreatePostScreen() {
         contentContainerStyle={[styles.content, { paddingTop: headerHeight }]}
       >
         <Text style={styles.label}>Breed</Text>
-        <Text style={styles.breedValue}>{BREED_LABELS[breed]}</Text>
+        {!route.params?.breed && dogs && dogs.length > 1 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.tagScroll}
+            contentContainerStyle={styles.tagScrollContent}
+          >
+            {dogs.map((dog, i) => (
+              <TouchableOpacity
+                key={dog.id}
+                style={[styles.tagChip, selectedDogIndex === i && styles.tagChipSelected]}
+                onPress={() => setSelectedDogIndex(i)}
+              >
+                <Text style={[styles.chipText, selectedDogIndex === i && styles.chipTextSelected]}>
+                  {BREED_LABELS[dog.breed]}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        ) : (
+          <Text style={styles.breedValue}>{BREED_LABELS[breed]}</Text>
+        )}
 
         <Text style={styles.label}>Type</Text>
         <View style={styles.chipRow}>

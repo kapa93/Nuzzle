@@ -187,16 +187,20 @@ export function EditDogScreen() {
         return dog;
       }
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['dogs', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['dog', user?.id] });
       if (fromOnboarding) {
         if (user) {
-          joinBreedFeed(user.id, breed as BreedEnum).catch(() => {});
+          await joinBreedFeed(user.id, breed as BreedEnum).catch(() => {});
           queryClient.invalidateQueries({ queryKey: ['joinedBreeds', user.id] });
         }
         useOnboardingStore.getState().completeOnboarding(name, breed);
       } else {
+        if (!existingDog && user) {
+          await joinBreedFeed(user.id, breed as BreedEnum).catch(() => {});
+          queryClient.invalidateQueries({ queryKey: ['joinedBreeds', user.id] });
+        }
         navigation.goBack();
       }
     },
