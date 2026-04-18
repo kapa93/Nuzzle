@@ -16,9 +16,7 @@
     "seed:engagement": "tsx scripts/seedEngagement.ts",
     "seed:posts:wipe": "tsx scripts/seedPosts.ts --wipe-only",
     "seed:posts:reset": "tsx scripts/seedPosts.ts --reset",
-    "seed:images": "tsx scripts/seedImages.ts",
-    "seed:dog-interactions": "tsx scripts/seedDogInteractions.ts",
-    "seed:dog-interactions:reset": "tsx scripts/seedDogInteractions.ts --reset"
+    "seed:images": "tsx scripts/seedImages.ts"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
@@ -43,7 +41,6 @@
     "expo-location": "~55.1.2",
     "expo-status-bar": "~55.0.4",
     "lucide-react-native": "^0.577.0",
-    "openai": "^6.34.0",
     "react": "19.2.0",
     "react-native": "0.83.2",
     "react-native-reanimated": "4.2.1",
@@ -71,6 +68,7 @@
     "react-refresh": "^0.18.0",
     "react-test-renderer": "^19.2.0",
     "tsx": "^4.21.0",
+    "openai": "^6.34.0",
     "typescript": "~5.9.2"
   },
   "private": true

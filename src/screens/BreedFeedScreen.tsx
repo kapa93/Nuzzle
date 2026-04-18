@@ -1,32 +1,28 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   RefreshControl,
-  Alert,
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { useInfiniteQuery, useQuery, useMutation, useQueryClient, type InfiniteData } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute, useNavigation } from "@react-navigation/native";
-import { getFeed, deletePost } from "@/api/posts";
-import { rsvpMeetup, unrsvpMeetup } from "@/api/meetups";
 import { getJoinedBreeds, joinBreedFeed, leaveBreedFeed } from "@/api/breedJoins";
-import { setReaction } from "@/api/reactions";
 import { useAuthStore } from "@/store/authStore";
 import { useUIStore } from "@/store/uiStore";
 import { BreedHero } from "@/ui/BreedHero";
 import { SwipeableBreedBanner } from "@/ui/SwipeableBreedBanner";
 import { SegmentTabs } from "@/ui/SegmentTabs";
-import { FeedItem } from "@/components/FeedItem";
 import { getBreedHeroImageSource, getBreedHeroImageStyle, getBreedHeroTitle } from "@/utils/breedAssets";
 import { BREED_LABELS } from "@/utils/breed";
 import { useStackHeaderHeight } from "@/hooks/useStackHeaderHeight";
+import { useFeedData } from "@/hooks/useFeedData";
 import { colors, spacing, typography } from "@/theme";
-import type { PostWithDetails, BreedEnum, ReactionEnum } from "@/types";
+import type { BreedEnum } from "@/types";
 import type { FeedFilter } from "@/store/uiStore";
 
 const TABS = ["All", "Questions", "Meetups", "Tips", "Update/Story"] as const;
@@ -57,10 +53,9 @@ export function BreedFeedScreen() {
   const { feedFilter, setFeedFilter } = useUIStore();
   const queryClient = useQueryClient();
   const breed = breedParam ?? "GOLDEN_RETRIEVER";
-  const [reactionMenuOpen, setReactionMenuOpen] = useState(false);
-  const [isPullRefreshing, setIsPullRefreshing] = useState(false);
+  const bottomFeedInset = useMemo(() => insets.bottom + spacing.xxxl + 25, [insets.bottom]);
 
-  const { data: joinedBreeds = [], refetch: refetchJoins } = useQuery({
+  const { data: joinedBreeds = [] } = useQuery({
     queryKey: ["joinedBreeds", user?.id],
     queryFn: () => getJoinedBreeds(user!.id),
     enabled: !!user?.id,
@@ -69,14 +64,14 @@ export function BreedFeedScreen() {
   const isJoined = joinedBreeds.includes(breed);
 
   const joinMutation = useMutation({
-    mutationFn: (b: import("@/types").BreedEnum) => joinBreedFeed(user!.id, b),
+    mutationFn: (b: BreedEnum) => joinBreedFeed(user!.id, b),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["joinedBreeds", user?.id] });
     },
   });
 
   const leaveMutation = useMutation({
-    mutationFn: (b: import("@/types").BreedEnum) => leaveBreedFeed(user!.id, b),
+    mutationFn: (b: BreedEnum) => leaveBreedFeed(user!.id, b),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["joinedBreeds", user?.id] });
     },
@@ -90,7 +85,7 @@ export function BreedFeedScreen() {
     }
   };
 
-  const handleJoinPressForBreed = (b: import("@/types").BreedEnum) => {
+  const handleJoinPressForBreed = (b: BreedEnum) => {
     const joined = joinedBreeds.includes(b);
     if (joined) {
       leaveMutation.mutate(b);
@@ -99,179 +94,26 @@ export function BreedFeedScreen() {
     }
   };
 
-  const sort = "newest";
   const typeFilter = feedFilter === "QUESTION" || feedFilter === "UPDATE_STORY" || feedFilter === "TIP" || feedFilter === "MEETUP" ? feedFilter : null;
-
   const tabKey = FILTER_TO_TAB(feedFilter);
 
-  const feedQueryKey = ["feed", breed, feedFilter, user?.id] as const;
-  const bottomFeedInset = useMemo(() => insets.bottom + spacing.xxxl + 25, [insets.bottom]);
-  const { data, isLoading, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
-    queryKey: feedQueryKey,
-    queryFn: ({ pageParam }) => getFeed(breed, sort, 10, pageParam as number, user?.id ?? null, typeFilter),
-    initialPageParam: 0,
-    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
-      if (lastPage.length < 10) return undefined;
-      return (lastPageParam as number) + 10;
-    },
-  });
-
-  const posts = useMemo(() => data?.pages.flat() ?? [], [data]);
-
-  const handleRefresh = useCallback(async () => {
-    setIsPullRefreshing(true);
-    try {
-      await refetch();
-    } finally {
-      setIsPullRefreshing(false);
-    }
-  }, [refetch]);
-
-  const reactionMutation = useMutation({
-    mutationFn: ({ postId, reaction }: { postId: string; reaction: ReactionEnum | null }) =>
-      setReaction(postId, user!.id, reaction),
-    onMutate: async ({ postId, reaction }) => {
-      await queryClient.cancelQueries({ queryKey: feedQueryKey });
-      const prev = queryClient.getQueryData<InfiniteData<PostWithDetails[]>>(feedQueryKey);
-      queryClient.setQueryData<InfiniteData<PostWithDetails[]>>(feedQueryKey, (old) => {
-        if (!old) return old;
-        return {
-          ...old,
-          pages: old.pages.map((page) =>
-            page.map((p) => {
-              if (p.id !== postId) return p;
-              const prevReaction = p.user_reaction;
-              const counts = { ...(p.reaction_counts ?? {}) } as Partial<Record<ReactionEnum, number>>;
-              if (prevReaction) {
-                counts[prevReaction] = Math.max(0, (counts[prevReaction] ?? 1) - 1);
-              }
-              if (reaction) {
-                counts[reaction] = (counts[reaction] ?? 0) + 1;
-              }
-              return { ...p, user_reaction: reaction, reaction_counts: counts };
-            })
-          ),
-        };
-      });
-      return { prev };
-    },
-    onError: (_err, _vars, ctx) => {
-      if (ctx?.prev) queryClient.setQueryData(feedQueryKey, ctx.prev);
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (postId: string) => deletePost(postId, user!.id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["feed", breed] });
-      queryClient.invalidateQueries({ queryKey: ["post"] });
-    },
-  });
-
-  const rsvpMutation = useMutation({
-    mutationFn: ({ postId, rsvped }: { postId: string; rsvped: boolean }) =>
-      rsvped ? unrsvpMeetup(postId, user!.id) : rsvpMeetup(postId, user!.id),
-    onMutate: async ({ postId, rsvped }) => {
-      await queryClient.cancelQueries({ queryKey: feedQueryKey });
-      const prev = queryClient.getQueryData<InfiniteData<PostWithDetails[]>>(feedQueryKey);
-      queryClient.setQueryData<InfiniteData<PostWithDetails[]>>(feedQueryKey, (old) => {
-        if (!old) return old;
-        return {
-          ...old,
-          pages: old.pages.map((page) =>
-            page.map((p) => {
-              if (p.id !== postId || p.type !== "MEETUP") return p;
-              const wasRsvped = p.user_rsvped ?? false;
-              const delta = rsvped ? -1 : 1;
-              return {
-                ...p,
-                user_rsvped: !wasRsvped,
-                attendee_count: Math.max(0, (p.attendee_count ?? 0) + delta),
-              };
-            })
-          ),
-        };
-      });
-      return { prev };
-    },
-    onError: (_err, _vars, ctx) => {
-      if (ctx?.prev) queryClient.setQueryData(feedQueryKey, ctx.prev);
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: feedQueryKey });
-    },
-  });
-
-  const handlePostPress = useCallback(
-    (postId: string) => navigation.navigate("PostDetail", { postId }),
-    [navigation]
-  );
-
-  const handleEditPost = useCallback(
-    (postId: string) => navigation.navigate("EditPost", { postId }),
-    [navigation]
-  );
-
-  const handleAuthorPress = useCallback(
-    (authorId: string) => navigation.navigate("UserProfile", { userId: authorId }),
-    [navigation]
-  );
-
-  const handleDeletePost = useCallback(
-    (postId: string) => {
-      Alert.alert(
-        "Delete post",
-        "Are you sure you want to delete this post? This cannot be undone.",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Delete", style: "destructive", onPress: () => deleteMutation.mutate(postId) },
-        ]
-      );
-    },
-    [deleteMutation]
-  );
-
-  const handleReactionSelect = useCallback(
-    (postId: string, reaction: ReactionEnum | null) => {
-      reactionMutation.mutate({ postId, reaction });
-    },
-    [reactionMutation]
-  );
-
-  const handleRsvpToggle = useCallback(
-    (postId: string, rsvped: boolean) => {
-      rsvpMutation.mutate({ postId, rsvped });
-    },
-    [rsvpMutation]
-  );
-
-  const renderFeedItem = useCallback(
-    ({ item, index }: { item: PostWithDetails; index: number }) => (
-      <FeedItem
-        item={item}
-        showBottomBorder={index < posts.length - 1}
-        onPostPress={handlePostPress}
-        onAuthorPress={handleAuthorPress}
-        onReactionSelect={handleReactionSelect}
-        onReactionMenuOpenChange={setReactionMenuOpen}
-        onRsvpToggle={handleRsvpToggle}
-        currentUserId={user?.id}
-        onEdit={handleEditPost}
-        onDelete={handleDeletePost}
-      />
-    ),
-    [
-      posts.length,
-      handlePostPress,
-      handleAuthorPress,
-      handleReactionSelect,
-      setReactionMenuOpen,
-      handleRsvpToggle,
-      handleEditPost,
-      handleDeletePost,
-      user?.id,
-    ]
-  );
+  const {
+    feedQueryKey,
+    posts,
+    isLoading,
+    isFetchingNextPage,
+    isPullRefreshing,
+    reactionMenuOpen,
+    handleRefresh,
+    handlePostPress,
+    handleEditPost,
+    handleAuthorPress,
+    handleDeletePost,
+    handleReactionSelect,
+    handleRsvpToggle,
+    handleEndReached,
+    renderFeedItem,
+  } = useFeedData({ breed, feedFilter, typeFilter, user, navigation });
 
   const renderEmpty = useCallback(() => (
     <View style={styles.empty}>
@@ -297,12 +139,6 @@ export function BreedFeedScreen() {
       </View>
     );
   }, [isFetchingNextPage]);
-
-  const handleEndReached = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const showSwipeable =
     user && joinedBreeds.length >= 1 && joinedBreeds.includes(breed);

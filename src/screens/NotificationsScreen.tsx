@@ -17,6 +17,7 @@ import { ScreenWithWallpaper } from '@/components/ScreenWithWallpaper';
 import { useScrollDirection, useScrollDirectionUpdater } from '@/context/ScrollDirectionContext';
 import { colors } from '@/theme';
 import { formatRelativeTime } from '@/utils/breed';
+import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
 
 type NotificationItem = {
   id: string;
@@ -172,17 +173,17 @@ const styles = StyleSheet.create({
   markAllText: { color: colors.primary, fontWeight: '600', fontSize: 14 },
   list: { paddingTop: 0 },
   item: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     padding: 16,
     marginHorizontal: 16,
     marginBottom: 8,
     borderRadius: 12,
   },
-  itemUnread: { backgroundColor: '#eef2ff' },
-  itemText: { fontSize: 15, color: '#374151' },
+  itemUnread: { backgroundColor: colors.primarySoft },
+  itemText: { fontSize: 15, color: colors.textPrimary },
   actorName: { fontWeight: '600' },
-  preview: { fontSize: 13, color: '#6b7280', marginTop: 4, fontStyle: 'italic' },
-  time: { fontSize: 12, color: '#9ca3af', marginTop: 4 },
+  preview: { fontSize: 13, color: colors.textSecondary, marginTop: 4, fontStyle: 'italic' },
+  time: { fontSize: 12, color: colors.textMuted, marginTop: 4 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { fontSize: 16, color: '#6b7280', position: 'relative', top: -40 },
+  emptyText: { fontSize: 16, color: colors.textSecondary, position: 'relative', top: -40 },
 });

@@ -114,7 +114,7 @@ export function EditProfileScreen() {
       <TextInput
         style={styles.input}
         placeholder="Your name"
-        placeholderTextColor="#9ca3af"
+        placeholderTextColor={colors.textMuted}
         value={name}
         onChangeText={setName}
         autoCapitalize="words"
@@ -123,7 +123,7 @@ export function EditProfileScreen() {
       <TextInput
         style={styles.input}
         placeholder="City"
-        placeholderTextColor="#9ca3af"
+        placeholderTextColor={colors.textMuted}
         value={city}
         onChangeText={setCity}
         autoCapitalize="words"
@@ -135,7 +135,7 @@ export function EditProfileScreen() {
         disabled={mutation.isPending}
       >
         {mutation.isPending ? (
-          <ActivityIndicator color="#FFF" />
+          <ActivityIndicator color={colors.surface} />
         ) : (
           <Text style={styles.submitText}>Save</Text>
         )}
@@ -149,28 +149,28 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8, marginTop: 16 },
+  label: { fontSize: 14, fontWeight: '600', color: colors.textPrimary, marginBottom: 8, marginTop: 16 },
   imagePicker: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
     marginBottom: 8,
   },
   profileImage: { width: 100, height: 100 },
-  imagePlaceholder: { fontSize: 14, color: '#6b7280' },
+  imagePlaceholder: { fontSize: 14, color: colors.textSecondary },
   input: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: colors.border,
     borderRadius: 12,
     padding: 12,
     fontSize: 16,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.surface,
   },
-  error: { color: '#ef4444', marginTop: 12, fontSize: 14 },
+  error: { color: colors.danger, marginTop: 12, fontSize: 14 },
   submit: {
     backgroundColor: colors.primary,
     padding: 16,
@@ -180,5 +180,5 @@ const styles = StyleSheet.create({
     ...shadow.sm,
   },
   submitDisabled: { opacity: 0.7 },
-  submitText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
+  submitText: { color: colors.surface, fontSize: 16, fontWeight: '600' },
 });

@@ -329,7 +329,7 @@ export function PostDetailScreen() {
                             ]}
                             onPress={handleDelete}
                           >
-                            <Ionicons name="trash-outline" size={20} color="#DC2626" />
+                            <Ionicons name="trash-outline" size={20} color={colors.danger} />
                             <Text style={[styles.menuItemText, styles.menuItemTextDanger]}>Delete</Text>
                           </Pressable>
                         </View>
@@ -573,7 +573,7 @@ const styles = StyleSheet.create({
   },
   menuItemDanger: {},
   menuItemText: { ...typography.body, fontWeight: "600" },
-  menuItemTextDanger: { color: "#DC2626" },
+  menuItemTextDanger: { color: colors.danger },
   authorName: {
     ...typography.subtitle,
     fontSize: 15,
@@ -623,7 +623,7 @@ const styles = StyleSheet.create({
   rsvpBtnJoined: {
     backgroundColor: colors.primaryDark,
   },
-  rsvpBtnText: { ...typography.body, fontWeight: "700", color: "#FFF" },
+  rsvpBtnText: { ...typography.body, fontWeight: "700", color: colors.surface },
   footer: {
     flexDirection: "row",
     alignItems: "center",

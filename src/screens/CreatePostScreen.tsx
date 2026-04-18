@@ -295,7 +295,7 @@ export function CreatePostScreen() {
             <TextInput
               style={styles.input}
               placeholder="e.g. Golden Retriever playdate at the park"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={colors.textMuted}
               value={title}
               onChangeText={setTitle}
             />
@@ -303,7 +303,7 @@ export function CreatePostScreen() {
             <TextInput
               style={[styles.input, styles.textArea]}
               placeholder="What should attendees know?"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={colors.textMuted}
               multiline
               numberOfLines={4}
               value={content}
@@ -315,7 +315,7 @@ export function CreatePostScreen() {
             <TextInput
               style={styles.input}
               placeholder="e.g. Central Park Dog Run"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={colors.textMuted}
               value={locationName}
               onChangeText={setLocationName}
             />
@@ -384,7 +384,7 @@ export function CreatePostScreen() {
             <TextInput
               style={styles.input}
               placeholder="e.g. 10"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={colors.textMuted}
               keyboardType="number-pad"
               value={spotsAvailable}
               onChangeText={setSpotsAvailable}
@@ -396,7 +396,7 @@ export function CreatePostScreen() {
             <TextInput
               style={styles.input}
               placeholder="Add a short headline"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={colors.textMuted}
               value={title}
               onChangeText={setTitle}
             />
@@ -404,7 +404,7 @@ export function CreatePostScreen() {
             <TextInput
               style={[styles.input, styles.textArea]}
               placeholder="Share a question, update, or tip..."
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={colors.textMuted}
               multiline
               numberOfLines={4}
               value={content}
@@ -440,7 +440,7 @@ export function CreatePostScreen() {
           disabled={mutation.isPending}
         >
           {mutation.isPending ? (
-            <ActivityIndicator color="#FFF" />
+            <ActivityIndicator color={colors.surface} />
           ) : (
             <Text style={styles.submitText}>{isMeetup ? 'Create Meetup' : 'Post'}</Text>
           )}
@@ -455,9 +455,9 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   container: { flex: 1 },
   content: { padding: 16, paddingBottom: 90 },
-  label: { ...interByWeight('600'), fontSize: 14, color: '#374151', marginBottom: 8, marginTop: 16 },
-  optionalLabel: { ...interByWeight('500'), color: '#6b7280' },
-  breedValue: { ...interByWeight('400'), fontSize: 16, color: '#1f2937', marginBottom: 8 },
+  label: { ...interByWeight('600'), fontSize: 14, color: colors.textPrimary, marginBottom: 8, marginTop: 16 },
+  optionalLabel: { ...interByWeight('500'), color: colors.textSecondary },
+  breedValue: { ...interByWeight('400'), fontSize: 16, color: colors.textPrimary, marginBottom: 8 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tagScroll: {
     marginBottom: 8,
@@ -471,7 +471,7 @@ const styles = StyleSheet.create({
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: colors.border,
     borderRadius: 20,
   },
   chipSelected: {
@@ -480,24 +480,24 @@ const styles = StyleSheet.create({
   tagChip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: colors.border,
     borderRadius: 20,
     marginRight: spacing.xxs,
   },
   tagChipSelected: {
     backgroundColor: colors.primary,
   },
-  chipText: { ...interByWeight('400'), fontSize: 14, color: '#374151' },
-  chipTextSelected: { ...interByWeight('600'), color: '#FFF' },
+  chipText: { ...interByWeight('400'), fontSize: 14, color: colors.textPrimary },
+  chipTextSelected: { ...interByWeight('600'), color: colors.surface },
   input: {
     ...interByWeight('400'),
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: colors.border,
     borderRadius: 12,
     padding: 12,
     fontSize: 16,
     minHeight: 44,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.surface,
   },
   textArea: { minHeight: 120 },
   dateButton: {
@@ -505,32 +505,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: colors.border,
     borderRadius: 12,
     padding: 12,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.surface,
     ...shadow.sm,
     marginBottom: 8,
   },
-  dateButtonText: { ...interByWeight('400'), fontSize: 16, color: '#1f2937' },
+  dateButtonText: { ...interByWeight('400'), fontSize: 16, color: colors.textPrimary },
   imageRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  thumb: { width: 72, height: 72, borderRadius: 8, overflow: 'hidden', backgroundColor: '#e5e7eb', position: 'relative', ...shadow.sm },
+  thumb: { width: 72, height: 72, borderRadius: 8, overflow: 'hidden', backgroundColor: colors.border, position: 'relative', ...shadow.sm },
   thumbImage: { width: 72, height: 72 },
   removeOverlay: { position: 'absolute', top: 0, right: 0, width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  removeText: { ...interByWeight('700'), fontSize: 18, color: '#fff' },
+  removeText: { ...interByWeight('700'), fontSize: 18, color: colors.surface },
   addImage: {
     width: 72,
     height: 72,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: '#d1d5db',
+    borderColor: colors.border,
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
     ...shadow.sm,
   },
-  addImageText: { ...interByWeight('400'), fontSize: 14, color: '#6b7280' },
-  error: { ...interByWeight('400'), color: '#ef4444', marginTop: 12, fontSize: 14 },
+  addImageText: { ...interByWeight('400'), fontSize: 14, color: colors.textSecondary },
+  error: { ...interByWeight('400'), color: colors.danger, marginTop: 12, fontSize: 14 },
   submit: {
     backgroundColor: colors.primary,
     padding: 16,
@@ -539,5 +539,5 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   submitDisabled: { opacity: 0.7 },
-  submitText: { ...interByWeight('600'), color: '#FFF', fontSize: 16 },
+  submitText: { ...interByWeight('600'), color: colors.surface, fontSize: 16 },
 });

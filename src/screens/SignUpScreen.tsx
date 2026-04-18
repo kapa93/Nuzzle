@@ -22,8 +22,8 @@ import { useOnboardingStore } from '@/store/onboardingStore';
 import { signUpSchema } from '@/utils/validation';
 import { captureHandledError } from '@/lib/sentry';
 
-const INPUT_MUTED = '#9CA3AF';
-const INPUT_BORDER = '#B8C1C8';
+const INPUT_MUTED = colors.textMuted;
+const INPUT_BORDER = colors.border;
 
 export function SignUpScreen() {
   const insets = useSafeAreaInsets();
@@ -225,7 +225,7 @@ export function SignUpScreen() {
             disabled={loading}
           >
             {loading ? (
-              <ActivityIndicator color="#FFF" />
+              <ActivityIndicator color={colors.surface} />
             ) : (
               <Text style={styles.buttonText}>Sign Up</Text>
             )}
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
     paddingRight: 16,
     paddingVertical: 16,
     marginBottom: 16,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.surface,
     gap: 10,
   },
   inputField: {
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     margin: 0,
   },
   error: {
-    color: '#DC2626',
+    color: colors.danger,
     fontSize: 14,
     marginBottom: 16,
   },
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   buttonText: {
-    color: '#FFF',
+    color: colors.surface,
     fontSize: 16,
     fontWeight: '600',
   },

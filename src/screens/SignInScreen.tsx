@@ -37,8 +37,8 @@ const MARQUEE_WIDTH = 889;
 const MARQUEE_HEIGHT = 220;
 const MARQUEE_DURATION_MS = 103818;
 
-const INPUT_MUTED = '#9CA3AF';
-const INPUT_BORDER = '#B8C1C8';
+const INPUT_MUTED = colors.textMuted;
+const INPUT_BORDER = colors.border;
 type RuntimePlatform = 'ios' | 'android' | 'web';
 type SocialButtonVariant = 'apple-native';
 type SocialProviderConfig = {
@@ -210,7 +210,7 @@ export function SignInScreen() {
           disabled={loading || socialLoading !== null}
         >
           {loading ? (
-            <ActivityIndicator color="#FFF" />
+            <ActivityIndicator color={colors.surface} />
           ) : (
             <Text style={styles.buttonText}>Sign In</Text>
           )}
@@ -322,12 +322,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#1a1a1a',
+    color: colors.textPrimary,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#6b7280',
+    color: colors.textSecondary,
     marginBottom: 32,
   },
   inputRow: {
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
     paddingRight: 16,
     paddingVertical: 16,
     marginBottom: 16,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.surface,
     gap: 10,
   },
   inputField: {
@@ -350,12 +350,12 @@ const styles = StyleSheet.create({
     margin: 0,
   },
   error: {
-    color: '#DC2626',
+    color: colors.danger,
     fontSize: 14,
     marginBottom: 16,
   },
   successMessage: {
-    color: '#059669',
+    color: colors.primary,
     fontSize: 14,
     marginBottom: 16,
   },
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   buttonText: {
-    color: '#FFF',
+    color: colors.surface,
     fontSize: 16,
     fontWeight: '600',
   },

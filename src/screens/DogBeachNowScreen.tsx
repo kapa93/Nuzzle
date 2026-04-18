@@ -272,9 +272,9 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-  title: { ...typography.titleMD, color: '#FFFFFF', fontWeight: '700' },
-  subtitle: { ...typography.body, marginTop: spacing.xxs, color: '#F3F4F6' },
-  breedSummary: { ...typography.caption, marginTop: spacing.xs, color: '#E8F5EE' },
+  title: { ...typography.titleMD, color: colors.surface, fontWeight: '700' },
+  subtitle: { ...typography.body, marginTop: spacing.xxs, color: colors.background },
+  breedSummary: { ...typography.caption, marginTop: spacing.xs, color: colors.primarySoft },
   statusCard: {
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: spacing.lg,
   },
-  checkinBtnText: { ...typography.caption, color: '#FFFFFF', fontWeight: '700' },
+  checkinBtnText: { ...typography.caption, color: colors.surface, fontWeight: '700' },
   endBtn: {
     alignSelf: 'flex-start',
     alignItems: 'center',

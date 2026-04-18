@@ -11,6 +11,7 @@ import {
   Keyboard,
   Platform,
   Alert,
+  InteractionManager,
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -118,9 +119,8 @@ export function SearchScreen() {
     (postId: string) => {
       setQueryInputFocused(false);
       Keyboard.dismiss();
-      requestIdleCallback(
-        () => navigation.navigate('PostDetail', { postId, source: 'search' }),
-        { timeout: 500 }
+      InteractionManager.runAfterInteractions(() =>
+        navigation.navigate('PostDetail', { postId, source: 'search' })
       );
     },
     [navigation]
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
   chipPressed: { opacity: 0.85 },
   chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   chipText: { ...typography.caption, color: colors.textPrimary, fontWeight: '600' },
-  chipTextActive: { color: '#fff' },
+  chipTextActive: { color: colors.surface },
   resultsList: {
     paddingTop: spacing.xs,
   },

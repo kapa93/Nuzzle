@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.textPrimary,
     marginBottom: 12,
   },
   markdownContainer: {
@@ -144,35 +144,35 @@ const styles = StyleSheet.create({
   body: {
     fontSize: 14,
     lineHeight: 22,
-    color: '#1F2937',
+    color: colors.textSupporting,
   },
   h2: {
     fontSize: 26,
     lineHeight: 32,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.textPrimary,
     marginTop: 10,
   },
   h3: {
     fontSize: 20,
     lineHeight: 28,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.textPrimary,
     marginTop: 6,
   },
   listItem: {
     fontSize: 14,
     lineHeight: 22,
-    color: '#1F2937',
+    color: colors.textSupporting,
     paddingLeft: 4,
   },
   bold: {
     fontWeight: '700',
-    color: '#111827',
+    color: colors.textPrimary,
   },
   hr: {
     height: 1,
-    backgroundColor: '#D1D5DB',
+    backgroundColor: colors.border,
     marginVertical: 8,
   },
   spacer: {

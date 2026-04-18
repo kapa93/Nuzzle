@@ -142,7 +142,7 @@ export function EditPostScreen() {
       <TextInput
         style={styles.titleInput}
         placeholder="Add a title (optional)"
-        placeholderTextColor="#9ca3af"
+        placeholderTextColor={colors.textMuted}
         value={title}
         onChangeText={setTitle}
       />
@@ -181,7 +181,7 @@ export function EditPostScreen() {
       <TextInput
         style={styles.input}
         placeholder="Share a question, update, or tip..."
-        placeholderTextColor="#9ca3af"
+        placeholderTextColor={colors.textMuted}
         multiline
         numberOfLines={4}
         value={content}
@@ -198,7 +198,7 @@ export function EditPostScreen() {
         disabled={mutation.isPending}
       >
         {mutation.isPending ? (
-          <ActivityIndicator color="#FFF" />
+          <ActivityIndicator color={colors.surface} />
         ) : (
           <Text style={styles.submitText}>Save</Text>
         )}
@@ -214,15 +214,15 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16, paddingBottom: 40 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8, marginTop: 16 },
-  breedValue: { fontSize: 16, color: '#1f2937', marginBottom: 8 },
+  label: { fontSize: 14, fontWeight: '600', color: colors.textPrimary, marginBottom: 8, marginTop: 16 },
+  breedValue: { fontSize: 16, color: colors.textPrimary, marginBottom: 8 },
   titleInput: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: colors.border,
     borderRadius: 12,
     padding: 12,
     fontSize: 16,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.surface,
     marginBottom: 8,
     ...shadow.sm,
   },
@@ -231,23 +231,23 @@ const styles = StyleSheet.create({
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: colors.border,
     borderRadius: 20,
   },
   chipSelected: { backgroundColor: colors.primary },
-  chipText: { fontSize: 14, color: '#374151' },
-  chipTextSelected: { color: '#FFF' },
+  chipText: { fontSize: 14, color: colors.textPrimary },
+  chipTextSelected: { color: colors.surface },
   input: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: colors.border,
     borderRadius: 12,
     padding: 12,
     fontSize: 16,
     minHeight: 120,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.surface,
     ...shadow.sm,
   },
-  error: { color: '#ef4444', marginTop: 12, fontSize: 14 },
+  error: { color: colors.danger, marginTop: 12, fontSize: 14 },
   submit: {
     backgroundColor: colors.primary,
     padding: 16,
@@ -257,5 +257,5 @@ const styles = StyleSheet.create({
     ...shadow.sm,
   },
   submitDisabled: { opacity: 0.7 },
-  submitText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
+  submitText: { color: colors.surface, fontSize: 16, fontWeight: '600' },
 });

@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   primaryButtonText: {
-    color: '#FFF',
+    color: colors.surface,
     fontSize: 16,
     fontWeight: '600',
   },

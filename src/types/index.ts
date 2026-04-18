@@ -1,50 +1,28 @@
-// Enums matching Supabase schema
-export type BreedEnum =
-  | 'AUSTRALIAN_SHEPHERD'
-  | 'DACHSHUND'
-  | 'GERMAN_SHEPHERD'
-  | 'HUSKY'
-  | 'GOLDEN_DOODLE'
-  | 'GOLDEN_RETRIEVER'
-  | 'MIXED_BREED'
-  | 'PUG'
-  | 'FRENCH_BULLDOG'
-  | 'PIT_BULL'
-  | 'LABRADOR_RETRIEVER'
-  | 'LABRADOODLE';
+// Re-export DB-generated enums from database.ts as the single source of truth
+export type {
+  BreedEnum,
+  PostTagEnum,
+  AgeGroupEnum,
+  EnergyLevelEnum,
+  PlayStyleEnum,
+  CompatibilityAnswerEnum,
+  ReactionEnum,
+  DogInteractionSourceTypeEnum as DogInteractionSourceType,
+} from './database';
 
+import type {
+  BreedEnum,
+  PostTagEnum,
+  AgeGroupEnum,
+  EnergyLevelEnum,
+  PlayStyleEnum,
+  CompatibilityAnswerEnum,
+  ReactionEnum,
+  DogInteractionSourceTypeEnum as DogInteractionSourceType,
+} from './database';
+
+// PostTypeEnum extends the DB type with MEETUP (app-level post type)
 export type PostTypeEnum = 'QUESTION' | 'UPDATE_STORY' | 'TIP' | 'MEETUP';
-
-export type PostTagEnum =
-  | 'TRAINING'
-  | 'BEHAVIOR'
-  | 'HEALTH'
-  | 'GROOMING'
-  | 'FOOD'
-  | 'GEAR'
-  | 'PUPPY'
-  | 'ADOLESCENT'
-  | 'ADULT'
-  | 'SENIOR'
-  | 'PLAYDATE';
-
-export type AgeGroupEnum = 'PUPPY' | 'ADOLESCENT' | 'ADULT' | 'SENIOR';
-
-export type EnergyLevelEnum = 'LOW' | 'MED' | 'HIGH';
-
-export type PlayStyleEnum = 'gentle' | 'chase' | 'wrestle' | 'independent' | 'mixed';
-
-export type CompatibilityAnswerEnum = 'yes' | 'no' | 'unsure';
-
-export type DogInteractionSourceType = 'dog_beach' | 'meetup' | 'manual';
-
-export type ReactionEnum =
-  | 'LIKE'
-  | 'LOVE'
-  | 'HAHA'
-  | 'WOW'
-  | 'SAD'
-  | 'ANGRY';
 
 export const BREEDS: BreedEnum[] = [
   'AUSTRALIAN_SHEPHERD',

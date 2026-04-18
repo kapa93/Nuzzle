@@ -281,8 +281,7 @@ export function EditDogScreen() {
       <TextInput
         style={styles.input}
         placeholder="Dog's name"
-        placeholderTextColor="#9ca3af"
-        value={name}
+        placeholderTextColor={colors.textMuted}        value={name}
         onChangeText={setName}
       />
 
@@ -420,8 +419,7 @@ export function EditDogScreen() {
       <TextInput
         style={[styles.input, styles.notesInput]}
         placeholder="Anything useful for playdates? (e.g. needs slow intros)"
-        placeholderTextColor="#9ca3af"
-        value={temperamentNotes}
+        placeholderTextColor={colors.textMuted}        value={temperamentNotes}
         onChangeText={setTemperamentNotes}
         onFocus={handleTemperamentFocus}
         multiline
@@ -436,7 +434,7 @@ export function EditDogScreen() {
         disabled={mutation.isPending}
       >
         {mutation.isPending ? (
-          <ActivityIndicator color="#FFF" />
+          <ActivityIndicator color={colors.surface} />
         ) : (
           <Text style={styles.submitText}>Save</Text>
         )}
@@ -447,32 +445,32 @@ export function EditDogScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#f9fafb' },
+  screen: { flex: 1, backgroundColor: colors.background },
   container: { flex: 1 },
   content: { padding: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1f2937', marginTop: 24, marginBottom: 4 },
-  helperText: { fontSize: 13, color: '#6b7280', marginBottom: 6 },
-  label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8, marginTop: 16 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary, marginTop: 24, marginBottom: 4 },
+  helperText: { fontSize: 13, color: colors.textSecondary, marginBottom: 6 },
+  label: { fontSize: 14, fontWeight: '600', color: colors.textPrimary, marginBottom: 8, marginTop: 16 },
   imagePicker: {
     width: 120,
     height: 120,
     alignSelf: 'center',
     borderRadius: 60,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
     ...shadow.sm,
   },
   dogImage: { width: 120, height: 120 },
-  imagePlaceholder: { fontSize: 14, color: '#6b7280' },
+  imagePlaceholder: { fontSize: 14, color: colors.textSecondary },
   input: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: colors.border,
     borderRadius: 12,
     padding: 12,
     fontSize: 16,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.surface,
     ...shadow.sm,
   },
   notesInput: { minHeight: 84, textAlignVertical: 'top' },
@@ -481,13 +479,13 @@ const styles = StyleSheet.create({
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: colors.border,
     borderRadius: 20,
   },
   chipSelected: { backgroundColor: colors.primary },
-  chipText: { fontSize: 14, color: '#374151' },
-  chipTextSelected: { color: '#FFF' },
-  error: { color: '#ef4444', marginTop: 12, fontSize: 14 },
+  chipText: { fontSize: 14, color: colors.textPrimary },
+  chipTextSelected: { color: colors.surface },
+  error: { color: colors.danger, marginTop: 12, fontSize: 14 },
   submit: {
     backgroundColor: colors.primary,
     padding: 16,
@@ -497,5 +495,5 @@ const styles = StyleSheet.create({
     ...shadow.sm,
   },
   submitDisabled: { opacity: 0.7 },
-  submitText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
+  submitText: { color: colors.surface, fontSize: 16, fontWeight: '600' },
 });
