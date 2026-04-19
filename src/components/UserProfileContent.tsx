@@ -332,19 +332,19 @@ export function UserProfileContent({
                       ? () => onDeleteDog(dog.id, dog.name)
                       : undefined
                   }
+                  headerAction={
+                    <MetThisDogButton
+                      viewerUserId={viewerUserId}
+                      viewerDogs={viewerDogs}
+                      targetDog={dog}
+                    />
+                  }
                   footer={
-                    <>
-                      <MetThisDogButton
-                        viewerUserId={viewerUserId}
-                        viewerDogs={viewerDogs}
-                        targetDog={dog}
-                      />
-                      <DogsMetSection
-                        dogId={dog.id}
-                        onOpenDogProfile={onOpenDogProfile}
-                        title="Friends"
-                      />
-                    </>
+                    <DogsMetSection
+                      dogId={dog.id}
+                      onOpenDogProfile={onOpenDogProfile}
+                      title="Friends"
+                    />
                   }
                 />
               ))}

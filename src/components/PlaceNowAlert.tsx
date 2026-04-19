@@ -4,17 +4,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, shadow, spacing, typography } from '@/theme';
 
 type Props = {
+  placeName: string;
   activeCount: number;
   onPressView: () => void;
 };
 
-export function DogBeachNowAlert({ activeCount, onPressView }: Props) {
+export function PlaceNowAlert({ placeName, activeCount, onPressView }: Props) {
   return (
     <Pressable onPress={onPressView} style={({ pressed }) => [styles.banner, pressed && styles.pressed]}>
       <View style={styles.left}>
         <Ionicons name="alert-circle" size={22} color="#FFFFFF" />
         <View style={styles.textWrap}>
-          <Text style={styles.title}>Dogs at Dog Beach right now</Text>
+          <Text style={styles.title}>Dogs at {placeName} right now</Text>
           <Text style={styles.subtitle}>{activeCount} active</Text>
         </View>
       </View>

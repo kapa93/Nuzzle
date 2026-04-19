@@ -45,7 +45,7 @@ export type NotificationsStackParamList = {
 export type HomeStackParamList = {
   HomeFeed: undefined;
   SearchMain: SearchMainParams;
-  DogBeachNow: undefined;
+  PlaceNow: { placeId: string };
   DogProfile: { dogId: string };
   PostDetail: { postId: string };
   CreatePost: { breed: BreedEnum; initialType?: PostTypeEnum };

@@ -2,8 +2,7 @@ import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { DogAvatar } from '@/components/DogAvatar';
 import { useDogsMetByDog } from '@/hooks/useDogsMetByDog';
-import { colors, radius, spacing, typography } from '@/theme';
-import { BREED_LABELS, formatRelativeTime } from '@/utils/breed';
+import { colors, spacing, typography } from '@/theme';
 
 type Props = {
   dogId: string;
@@ -32,23 +31,15 @@ export function DogsMetSection({
       ) : dogsMet.length === 0 ? (
         <Text style={styles.emptyText}>{emptyLabel}</Text>
       ) : (
-        <View style={styles.list}>
+        <View style={styles.avatarRow}>
           {dogsMet.map((dog) => (
             <Pressable
               key={dog.id}
               onPress={onOpenDogProfile ? () => onOpenDogProfile(dog.id) : undefined}
-              style={({ pressed }) => [styles.row, pressed && onOpenDogProfile ? styles.pressed : null]}
+              style={({ pressed }) => [styles.avatarItem, pressed && onOpenDogProfile ? styles.pressed : null]}
             >
-              <DogAvatar imageUrl={dog.dog_image_url} name={dog.name} size={44} roundedSquare />
-
-              <View style={styles.textWrap}>
-                <Text style={styles.name}>{dog.name}</Text>
-                <Text style={styles.breed}>{BREED_LABELS[dog.breed] ?? dog.breed}</Text>
-                <Text style={styles.meta}>
-                  {dog.interaction_count === 1 ? 'Met once' : `Met ${dog.interaction_count} times`} ·{' '}
-                  {formatRelativeTime(dog.latest_interaction_at)}
-                </Text>
-              </View>
+              <DogAvatar imageUrl={dog.dog_image_url} name={dog.name} size={44} />
+              <Text style={styles.dogName} numberOfLines={1}>{dog.name}</Text>
             </Pressable>
           ))}
         </View>
@@ -76,35 +67,22 @@ const styles = StyleSheet.create({
   emptyText: {
     ...typography.bodyMuted,
   },
-  list: {
+  avatarRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
   },
-  row: {
-    flexDirection: 'row',
+  avatarItem: {
     alignItems: 'center',
-    gap: spacing.md,
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md,
+    gap: 3,
+    width: 56,
   },
-  pressed: {
-    opacity: 0.9,
-  },
-  textWrap: {
-    flex: 1,
-    gap: 2,
-  },
-  name: {
-    ...typography.body,
-    fontWeight: '700',
-  },
-  breed: {
+  dogName: {
     ...typography.caption,
+    textAlign: 'center',
     color: colors.textSecondary,
   },
-  meta: {
-    ...typography.caption,
+  pressed: {
+    opacity: 0.8,
   },
 });

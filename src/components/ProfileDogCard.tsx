@@ -25,6 +25,7 @@ type Props = {
   onDelete?: () => void;
   onPress?: () => void;
   footer?: React.ReactNode;
+  headerAction?: React.ReactNode;
 };
 
 const BUTTON_PRESS_ANIMATION = { duration: 180 };
@@ -74,7 +75,7 @@ function DetailChip({ label }: { label: string }) {
   );
 }
 
-export function ProfileDogCard({ dog, showDetails = true, onEdit, onDelete, onPress, footer }: Props) {
+export function ProfileDogCard({ dog, showDetails = true, onEdit, onDelete, onPress, footer, headerAction }: Props) {
   const compatibilityChips = [
     dog.dog_friendliness != null ? `Friendliness ${dog.dog_friendliness}/5` : null,
     dog.play_style ? `Play style: ${PLAY_STYLE_LABELS[dog.play_style]}` : null,
@@ -114,6 +115,8 @@ export function ProfileDogCard({ dog, showDetails = true, onEdit, onDelete, onPr
               />
             ) : null}
           </View>
+        ) : headerAction ? (
+          <View style={styles.headerActionSlot}>{headerAction}</View>
         ) : null}
       </View>
 
@@ -190,6 +193,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+  },
+  headerActionSlot: {
+    alignItems: 'flex-end',
+    justifyContent: 'flex-start',
   },
   iconButton: {
     width: 34,

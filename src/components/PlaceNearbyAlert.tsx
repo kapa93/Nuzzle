@@ -4,11 +4,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, shadow, spacing, typography } from '@/theme';
 
 type Props = {
+  placeName: string;
   onCheckIn: () => void;
   disabled?: boolean;
 };
 
-export function DogBeachNearbyAlert({ onCheckIn, disabled }: Props) {
+export function PlaceNearbyAlert({ placeName, onCheckIn, disabled }: Props) {
   const pulse = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -53,7 +54,7 @@ export function DogBeachNearbyAlert({ onCheckIn, disabled }: Props) {
         <View style={styles.left}>
           <Ionicons name="location" size={22} color="#FFFFFF" />
           <View style={styles.textWrap}>
-            <Text style={styles.title}>Dog Beach nearby</Text>
+            <Text style={styles.title}>{placeName} nearby</Text>
             <Text style={styles.subtitle}>Check in with your dog?</Text>
           </View>
         </View>

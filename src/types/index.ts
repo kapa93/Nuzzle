@@ -8,6 +8,7 @@ export type {
   CompatibilityAnswerEnum,
   ReactionEnum,
   DogInteractionSourceTypeEnum as DogInteractionSourceType,
+  PlaceTypeEnum,
 } from './database';
 
 import type {
@@ -19,6 +20,7 @@ import type {
   CompatibilityAnswerEnum,
   ReactionEnum,
   DogInteractionSourceTypeEnum as DogInteractionSourceType,
+  PlaceTypeEnum,
 } from './database';
 
 // PostTypeEnum extends the DB type with MEETUP (app-level post type)
@@ -110,6 +112,7 @@ export interface DogLocationCheckin {
   id: string;
   user_id: string;
   dog_id: string;
+  place_id: string | null;
   location_key: string;
   location_name: string;
   created_at: string;
@@ -117,12 +120,33 @@ export interface DogLocationCheckin {
   ended_at: string | null;
 }
 
-export interface ActiveDogBeachCheckin extends DogLocationCheckin {
+export interface ActivePlaceCheckin extends DogLocationCheckin {
   dog_name: string;
   dog_breed: BreedEnum;
   dog_play_style: PlayStyleEnum | null;
   dog_image_url: string | null;
   owner_name: string | null;
+}
+
+/** @deprecated Use ActivePlaceCheckin */
+export type ActiveDogBeachCheckin = ActivePlaceCheckin;
+
+export interface Place {
+  id: string;
+  name: string;
+  slug: string;
+  place_type: PlaceTypeEnum;
+  city: string | null;
+  neighborhood: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  check_in_radius_meters: number;
+  check_in_duration_minutes: number;
+  description: string | null;
+  is_active: boolean;
+  supports_check_in: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface DogInteraction {

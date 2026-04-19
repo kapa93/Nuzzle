@@ -11,7 +11,7 @@ import type { RootStackParamList, AuthStackParamList, MainTabParamList, Onboardi
 import { SignInScreen } from '@/screens/SignInScreen';
 import { SignUpScreen } from '@/screens/SignUpScreen';
 import { HomeScreen } from '@/screens/HomeScreen';
-import { DogBeachNowScreen } from '@/screens/DogBeachNowScreen';
+import { PlaceCheckinScreen } from '@/screens/PlaceCheckinScreen';
 import { ExploreScreen } from '@/screens/ExploreScreen';
 import { NotificationsScreen } from '@/screens/NotificationsScreen';
 import { ProfileScreen } from '@/screens/ProfileScreen';
@@ -104,7 +104,7 @@ function HomeTab() {
     >
       <Stack.Screen name="HomeFeed" component={HomeScreen} options={{ title: 'Nuzzle' }} />
       <Stack.Screen name="SearchMain" component={SearchScreen} options={{ title: 'Search' }} />
-      <Stack.Screen name="DogBeachNow" component={DogBeachNowScreen} options={{ title: 'Dog Beach Now' }} />
+      <Stack.Screen name="PlaceNow" component={PlaceCheckinScreen} options={{ title: 'Dogs Here Now' }} />
       <Stack.Screen name="DogProfile" component={DogProfileScreen} options={{ title: 'Dog' }} />
       <Stack.Screen name="PostDetail" component={PostDetailScreen} options={{ title: 'Post' }} />
       <Stack.Screen

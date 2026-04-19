@@ -2,34 +2,41 @@ import React, { useCallback, useMemo } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { DOG_BEACH } from '@/config/dogBeach';
 import { MetThisDogButton } from '@/components/MetThisDogButton';
 import { DogAvatar } from '@/components/DogAvatar';
 import { ScreenWithWallpaper } from '@/components/ScreenWithWallpaper';
 import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
 import { getDogsByOwner } from '@/api/dogs';
 import {
-  createDogBeachCheckins,
-  endDogBeachCheckins,
-  getActiveDogBeachCheckins,
-  getDogBeachBreedCounts,
-  getMyActiveDogBeachCheckins,
-} from '@/api/locationCheckins';
+  checkIntoPlace,
+  endPlaceCheckins,
+  getActivePlaceCheckins,
+  getMyActivePlaceCheckins,
+  getPlaceBreedCounts,
+  getPlaceById,
+} from '@/api/places';
 import { useAuthStore } from '@/store/authStore';
 import { BREED_LABELS, formatRelativeTime, PLAY_STYLE_LABELS } from '@/utils/breed';
 import { colors, radius, shadow, spacing, typography } from '@/theme';
 import { captureHandledError } from '@/lib/sentry';
 
 type Props = {
+  route: { params: { placeId: string } };
   navigation: {
     navigate: (screen: string, params?: object) => void;
   };
 };
 
-export function DogBeachNowScreen({ navigation }: Props) {
+export function PlaceCheckinScreen({ route, navigation }: Props) {
+  const { placeId } = route.params;
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const headerHeight = useStackHeaderHeight();
+
+  const { data: place } = useQuery({
+    queryKey: ['place', placeId],
+    queryFn: () => getPlaceById(placeId),
+  });
 
   const { data: dogs = [] } = useQuery({
     queryKey: ['dogs', user?.id],
@@ -38,49 +45,50 @@ export function DogBeachNowScreen({ navigation }: Props) {
   });
 
   const { data: activeCheckins = [], isLoading, isError, refetch } = useQuery({
-    queryKey: ['dogBeachActiveCheckins'],
-    queryFn: getActiveDogBeachCheckins,
+    queryKey: ['placeActiveCheckins', placeId],
+    queryFn: () => getActivePlaceCheckins(placeId),
     refetchInterval: 60_000,
   });
 
   const { data: myActiveCheckins = [] } = useQuery({
-    queryKey: ['dogBeachMyCheckins', user?.id],
-    queryFn: () => getMyActiveDogBeachCheckins(user!.id),
+    queryKey: ['placeMyCheckins', user?.id, placeId],
+    queryFn: () => getMyActivePlaceCheckins(placeId, user!.id),
     enabled: !!user?.id,
     refetchInterval: 60_000,
   });
 
   const createMutation = useMutation({
-    mutationFn: (dogIds: string[]) => createDogBeachCheckins(user!.id, dogIds),
+    mutationFn: (dogIds: string[]) =>
+      checkIntoPlace(placeId, user!.id, dogIds, place?.check_in_duration_minutes),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dogBeachActiveCheckins'] });
-      queryClient.invalidateQueries({ queryKey: ['dogBeachMyCheckins', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['placeActiveCheckins', placeId] });
+      queryClient.invalidateQueries({ queryKey: ['placeMyCheckins', user?.id, placeId] });
     },
     onError: (error) => {
       captureHandledError(error, {
-        area: 'dog-beach.check-in',
-        tags: { screen: 'dog-beach-now' },
+        area: 'place.check-in',
+        tags: { screen: 'place-checkin', placeId },
       });
       Alert.alert('Could not check in', 'Please try again in a moment.');
     },
   });
 
   const endMutation = useMutation({
-    mutationFn: (checkinIds: string[]) => endDogBeachCheckins(checkinIds, user!.id),
+    mutationFn: (checkinIds: string[]) => endPlaceCheckins(checkinIds, user!.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dogBeachActiveCheckins'] });
-      queryClient.invalidateQueries({ queryKey: ['dogBeachMyCheckins', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['placeActiveCheckins', placeId] });
+      queryClient.invalidateQueries({ queryKey: ['placeMyCheckins', user?.id, placeId] });
     },
     onError: (error) => {
       captureHandledError(error, {
-        area: 'dog-beach.end-check-in',
-        tags: { screen: 'dog-beach-now' },
+        area: 'place.end-check-in',
+        tags: { screen: 'place-checkin', placeId },
       });
       Alert.alert('Could not end check-in', 'Please try again in a moment.');
     },
   });
 
-  const breedCounts = useMemo(() => getDogBeachBreedCounts(activeCheckins), [activeCheckins]);
+  const breedCounts = useMemo(() => getPlaceBreedCounts(activeCheckins), [activeCheckins]);
   const checkedInDogIds = useMemo(
     () => new Set(myActiveCheckins.map((checkin) => checkin.dog_id)),
     [myActiveCheckins]
@@ -107,7 +115,7 @@ export function DogBeachNowScreen({ navigation }: Props) {
 
     Alert.alert(
       'Choose dogs',
-      'Which of your dogs are at the beach right now?',
+      'Which of your dogs are here right now?',
       [
         {
           text: allDogsLabel,
@@ -159,20 +167,22 @@ export function DogBeachNowScreen({ navigation }: Props) {
           viewerDogs={dogs}
           targetDog={{ id: item.dog_id, name: item.dog_name }}
           sourceType="dog_beach"
-          locationName={DOG_BEACH.locationName}
+          locationName={place?.name ?? ''}
           compact
           alignRight
         />
       </View>
     </View>
-  ), [navigation, user?.id, dogs]);
+  ), [navigation, user?.id, dogs, place?.name]);
+
+  const placeName = place?.name ?? '';
 
   return (
     <ScreenWithWallpaper>
       <SafeAreaView style={styles.safe} edges={['left', 'right']}>
         <View style={[styles.container, { paddingTop: headerHeight + 15 }]}>
           <View style={styles.headerCard}>
-            <Text style={styles.title}>Dogs at Dog Beach right now</Text>
+            <Text style={styles.title}>Dogs at {placeName} right now</Text>
             <Text style={styles.subtitle}>{activeCheckins.length} active check-ins</Text>
             {breedCounts.length > 0 ? (
               <Text style={styles.breedSummary}>
@@ -235,7 +245,7 @@ export function DogBeachNowScreen({ navigation }: Props) {
             </View>
           ) : isError ? (
             <View style={styles.centered}>
-              <Text style={styles.helperText}>Could not load Dog Beach check-ins.</Text>
+              <Text style={styles.helperText}>Could not load check-ins.</Text>
               <Pressable onPress={() => refetch()} style={styles.retryBtn}>
                 <Text style={styles.retryBtnText}>Retry</Text>
               </Pressable>

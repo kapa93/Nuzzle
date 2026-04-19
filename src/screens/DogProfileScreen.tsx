@@ -77,7 +77,7 @@ export function DogProfileScreen({ route, navigation }: Props) {
         >
           <ProfileDogCard
             dog={dog}
-            footer={
+            headerAction={
               <MetThisDogButton
                 viewerUserId={viewerUserId}
                 viewerDogs={viewerDogsQuery.data ?? []}

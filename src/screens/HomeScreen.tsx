@@ -23,19 +23,19 @@ import { MeetupPromptCard } from "@/components/MeetupPromptCard";
 import { useUIStore } from "@/store/uiStore";
 import { getDogsByOwner } from "@/api/dogs";
 import { getJoinedBreeds, joinBreedFeed, leaveBreedFeed } from "@/api/breedJoins";
-import {
-  createDogBeachCheckins,
-  getActiveDogBeachCheckins,
-  getMyActiveDogBeachCheckins,
-} from '@/api/locationCheckins';
+import { checkIntoPlace,
+  getActivePlaceCheckins,
+  getMyActivePlaceCheckins,
+  getPlaceBySlug,
+} from '@/api/places';
 import { BreedHero } from "@/ui/BreedHero";
 import { SwipeableBreedBanner } from "@/ui/SwipeableBreedBanner";
 import { SegmentTabs } from "@/ui/SegmentTabs";
-import { DogBeachNearbyAlert } from '@/components/DogBeachNearbyAlert';
-import { DogBeachNowAlert } from '@/components/DogBeachNowAlert';
+import { PlaceNearbyAlert } from '@/components/PlaceNearbyAlert';
+import { PlaceNowAlert } from '@/components/PlaceNowAlert';
 import { getBreedHeroImageSource, getBreedHeroImageStyle, getBreedHeroTitle } from "@/utils/breedAssets";
 import { BREED_LABELS } from "@/utils/breed";
-import { DOG_BEACH } from '@/config/dogBeach';
+import { OB_DOG_BEACH_SLUG, DEBUG_FORCE_NEARBY } from '@/config/places';
 import { getDistanceMeters } from '@/utils/location';
 import { useScrollDirection, useScrollDirectionUpdater } from "@/context/ScrollDirectionContext";
 import { useStackHeaderHeight } from "@/hooks/useStackHeaderHeight";
@@ -83,10 +83,10 @@ export function HomeScreen({
   const queryClient = useQueryClient();
   const [selectedDogIndex, setSelectedDogIndex] = useState(0);
   const [selectedBreedIndex, setSelectedBreedIndex] = useState(0);
-  const [isNearDogBeach, setIsNearDogBeach] = useState(false);
+  const [isNearPlace, setIsNearPlace] = useState(false);
   const [locationChecked, setLocationChecked] = useState(false);
-  const forceNearby = __DEV__ && DOG_BEACH.debugForceNearby;
-  const dogBeachAlertTranslateY = useSharedValue(0);
+  const forceNearby = __DEV__ && DEBUG_FORCE_NEARBY;
+  const placeAlertTranslateY = useSharedValue(0);
 
   const { data: dogs = [] } = useQuery({
     queryKey: ["dogs", user?.id],
@@ -100,17 +100,24 @@ export function HomeScreen({
     enabled: !!user?.id,
   });
 
-  const { data: activeDogBeachCheckins = [] } = useQuery({
-    queryKey: ['dogBeachActiveCheckins'],
-    queryFn: getActiveDogBeachCheckins,
+  const { data: obPlace } = useQuery({
+    queryKey: ['place', OB_DOG_BEACH_SLUG],
+    queryFn: () => getPlaceBySlug(OB_DOG_BEACH_SLUG),
     enabled: !!user?.id,
+    staleTime: 10 * 60_000,
+  });
+
+  const { data: activePlaceCheckins = [] } = useQuery({
+    queryKey: ['placeActiveCheckins', obPlace?.id],
+    queryFn: () => getActivePlaceCheckins(obPlace!.id),
+    enabled: !!user?.id && !!obPlace?.id,
     refetchInterval: 60_000,
   });
 
-  const { data: myDogBeachCheckins = [] } = useQuery({
-    queryKey: ['dogBeachMyCheckins', user?.id],
-    queryFn: () => getMyActiveDogBeachCheckins(user!.id),
-    enabled: !!user?.id,
+  const { data: myPlaceCheckins = [] } = useQuery({
+    queryKey: ['placeMyCheckins', user?.id, obPlace?.id],
+    queryFn: () => getMyActivePlaceCheckins(obPlace!.id, user!.id),
+    enabled: !!user?.id && !!obPlace?.id,
     refetchInterval: 60_000,
   });
 
@@ -122,10 +129,10 @@ export function HomeScreen({
       : defaultBreed;
 
   const isJoined = joinedBreeds.includes(breed);
-  const myDogBeachCheckinDogIds = new Set(myDogBeachCheckins.map((checkin) => checkin.dog_id));
-  const availableDogsForBeachCheckIn = dogs.filter((dog) => !myDogBeachCheckinDogIds.has(dog.id));
+  const myPlaceCheckinDogIds = new Set(myPlaceCheckins.map((checkin) => checkin.dog_id));
+  const availableDogsForPlaceCheckIn = dogs.filter((dog) => !myPlaceCheckinDogIds.has(dog.id));
   const showNearbyCheckinCard =
-    locationChecked && isNearDogBeach && availableDogsForBeachCheckIn.length > 0;
+    locationChecked && isNearPlace && availableDogsForPlaceCheckIn.length > 0 && !!obPlace;
 
   const joinMutation = useMutation({
     mutationFn: (b: import("@/types").BreedEnum) => joinBreedFeed(user!.id, b),
@@ -142,14 +149,15 @@ export function HomeScreen({
   });
 
   const checkinMutation = useMutation({
-    mutationFn: (dogIds: string[]) => createDogBeachCheckins(user!.id, dogIds),
+    mutationFn: (dogIds: string[]) =>
+      checkIntoPlace(obPlace!.id, user!.id, dogIds, obPlace!.check_in_duration_minutes),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dogBeachActiveCheckins'] });
-      queryClient.invalidateQueries({ queryKey: ['dogBeachMyCheckins', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['placeActiveCheckins', obPlace?.id] });
+      queryClient.invalidateQueries({ queryKey: ['placeMyCheckins', user?.id, obPlace?.id] });
     },
     onError: (error) => {
       captureHandledError(error, {
-        area: 'dog-beach.check-in',
+        area: 'place.check-in',
         tags: { screen: 'home' },
       });
       Alert.alert('Could not check in', 'Please try again in a moment.');
@@ -157,7 +165,7 @@ export function HomeScreen({
   });
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || !obPlace) return;
     let isCancelled = false;
 
     const checkProximity = async () => {
@@ -170,7 +178,7 @@ export function HomeScreen({
         }
         if (status !== 'granted') {
           if (!isCancelled) {
-            setIsNearDogBeach(false);
+            setIsNearPlace(false);
             setLocationChecked(true);
           }
           return;
@@ -182,20 +190,20 @@ export function HomeScreen({
         const distanceMeters = getDistanceMeters(
           position.coords.latitude,
           position.coords.longitude,
-          DOG_BEACH.latitude,
-          DOG_BEACH.longitude
+          obPlace.latitude!,
+          obPlace.longitude!
         );
         if (!isCancelled) {
-          setIsNearDogBeach(forceNearby || distanceMeters <= DOG_BEACH.radiusMeters);
+          setIsNearPlace(forceNearby || distanceMeters <= obPlace.check_in_radius_meters);
           setLocationChecked(true);
         }
       } catch (error) {
         captureHandledError(error, {
-          area: 'dog-beach.location-check',
+          area: 'place.location-check',
           tags: { screen: 'home' },
         });
         if (!isCancelled) {
-          setIsNearDogBeach(forceNearby);
+          setIsNearPlace(forceNearby);
           setLocationChecked(true);
         }
       }
@@ -207,17 +215,17 @@ export function HomeScreen({
       isCancelled = true;
       clearInterval(intervalId);
     };
-  }, [user?.id, forceNearby]);
+  }, [user?.id, obPlace, forceNearby]);
 
   useEffect(() => {
-    dogBeachAlertTranslateY.value = withTiming(scrollDirection === 'down' ? -(headerHeight - 48) : 0, {
+    placeAlertTranslateY.value = withTiming(scrollDirection === 'down' ? -(headerHeight - 48) : 0, {
       duration: ALERT_ANIM_DURATION,
     });
-  }, [scrollDirection, headerHeight, dogBeachAlertTranslateY]);
+  }, [scrollDirection, headerHeight, placeAlertTranslateY]);
 
-  const dogBeachAlertAnimatedStyle = useAnimatedStyle(() => {
+  const placeAlertAnimatedStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ translateY: dogBeachAlertTranslateY.value }],
+      transform: [{ translateY: placeAlertTranslateY.value }],
     };
   });
 
@@ -238,35 +246,35 @@ export function HomeScreen({
     }
   };
 
-  const handleDogBeachCheckIn = useCallback(() => {
+  const handlePlaceCheckIn = useCallback(() => {
     if (!dogs || dogs.length === 0) {
       Alert.alert('No dog profile', 'Add a dog profile before checking in.');
       return;
     }
-    if (availableDogsForBeachCheckIn.length === 0) {
+    if (availableDogsForPlaceCheckIn.length === 0) {
       Alert.alert('All set', 'All of your dogs are already checked in.');
       return;
     }
-    if (availableDogsForBeachCheckIn.length === 1) {
-      checkinMutation.mutate([availableDogsForBeachCheckIn[0].id]);
+    if (availableDogsForPlaceCheckIn.length === 1) {
+      checkinMutation.mutate([availableDogsForPlaceCheckIn[0].id]);
       return;
     }
     Alert.alert(
       'Choose dogs',
-      'Which of your dogs are at the beach right now?',
+      'Which of your dogs are here right now?',
       [
         {
-          text: availableDogsForBeachCheckIn.length === 2 ? 'Both dogs' : 'All my dogs',
-          onPress: () => checkinMutation.mutate(availableDogsForBeachCheckIn.map((dog) => dog.id)),
+          text: availableDogsForPlaceCheckIn.length === 2 ? 'Both dogs' : 'All my dogs',
+          onPress: () => checkinMutation.mutate(availableDogsForPlaceCheckIn.map((dog) => dog.id)),
         },
-        ...availableDogsForBeachCheckIn.map((dog) => ({
+        ...availableDogsForPlaceCheckIn.map((dog) => ({
           text: dog.name,
           onPress: () => checkinMutation.mutate([dog.id]),
         })),
         { text: 'Cancel', style: 'cancel' as const },
       ]
     );
-  }, [availableDogsForBeachCheckIn, checkinMutation, dogs]);
+  }, [availableDogsForPlaceCheckIn, checkinMutation, dogs]);
 
   const handleSentryTestCapture = useCallback(() => {
     captureHandledError(new Error('Manual Sentry test capture from Home screen'), {
@@ -476,16 +484,21 @@ export function HomeScreen({
               <Text style={styles.devSentryButtonText}>Test Sentry</Text>
             </Pressable>
           ) : null}
-          {(showNearbyCheckinCard || activeDogBeachCheckins.length > 0) ? (
-            <Animated.View style={[styles.dogBeachAlertOverlay, { top: headerHeight + 12 }, dogBeachAlertAnimatedStyle]}>
+          {(showNearbyCheckinCard || activePlaceCheckins.length > 0) ? (
+            <Animated.View style={[styles.placeAlertOverlay, { top: headerHeight + 12 }, placeAlertAnimatedStyle]}>
               {showNearbyCheckinCard ? (
-                <DogBeachNearbyAlert onCheckIn={handleDogBeachCheckIn} disabled={checkinMutation.isPending} />
+                <PlaceNearbyAlert
+                  placeName={obPlace!.name}
+                  onCheckIn={handlePlaceCheckIn}
+                  disabled={checkinMutation.isPending}
+                />
               ) : null}
-              {activeDogBeachCheckins.length > 0 ? (
+              {activePlaceCheckins.length > 0 ? (
                 <View style={showNearbyCheckinCard ? styles.secondaryAlert : undefined}>
-                  <DogBeachNowAlert
-                    activeCount={activeDogBeachCheckins.length}
-                    onPressView={() => navigation.navigate('DogBeachNow')}
+                  <PlaceNowAlert
+                    placeName={obPlace?.name ?? ''}
+                    activeCount={activePlaceCheckins.length}
+                    onPressView={() => navigation.navigate('PlaceNow', { placeId: obPlace!.id })}
                   />
                 </View>
               ) : null}
@@ -538,7 +551,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.surface },
   safe: { flex: 1 },
   container: { flex: 1 },
-  dogBeachAlertOverlay: {
+  placeAlertOverlay: {
     position: 'absolute',
     left: spacing.lg,
     right: spacing.lg,

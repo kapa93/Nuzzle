@@ -49,7 +49,7 @@ Nuzzle provides a social community platform for dog breed enthusiasts, including
 - **Posts** — Questions, Updates/Stories, Tips, and Meetups with photos
 - **Comments and reactions** on posts
 - **Meetups** — create and RSVP to dog meetup events
-- **Dog Beach Now** — real-time location-based check-ins at Ocean Beach Dog Beach, San Francisco
+- **Dog Beach Now** — real-time location-based check-ins at Ocean Beach Dog Beach, San Diego
 - **Dog profiles** and **dog-to-dog interaction logs**
 - **Search and discovery** across breeds, posts, and users
 - **In-app notifications** for community activity
@@ -123,8 +123,8 @@ Nuzzle enables users to organize and RSVP to dog meetup events. You acknowledge 
 ---
 
 ## 9. Dog Beach Now
+The Dog Beach Now feature uses your device's location to verify proximity to Ocean Beach Dog Beach in San Diego. By using this feature:
 
-The Dog Beach Now feature uses your device's location to verify proximity to Ocean Beach Dog Beach in San Francisco. By using this feature:
 
 - You consent to the one-time location access required to verify proximity
 - You represent that your check-in is genuine and that you or your dog are present at or near the location
@@ -194,7 +194,7 @@ You agree to indemnify, defend, and hold harmless Nuzzle and its officers, direc
 
 ## 18. Governing Law and Dispute Resolution
 
-These Terms are governed by the laws of the State of California, without regard to its conflict-of-law principles. Any disputes arising under these Terms shall be resolved in the state or federal courts located in San Francisco County, California, and you consent to personal jurisdiction in those courts.
+These Terms are governed by the laws of the State of California, without regard to its conflict-of-law principles. Any disputes arising under these Terms shall be resolved in the state or federal courts located in San Diego County, California, and you consent to personal jurisdiction in those courts.
 
 ---
 
@@ -472,7 +472,7 @@ We collect content you create and share within the app, including:
 
 ### 2.4 Location Information
 
-When you use the Dog Beach Now check-in feature, we request access to your device's location solely to verify proximity to Ocean Beach Dog Beach in San Francisco. We do not continuously track your location; location access is only requested at the moment of a check-in action.
+When you use the Dog Beach Now check-in feature, we request access to your device's location solely to verify proximity to Ocean Beach Dog Beach in San Diego. We do not continuously track your location; location access is only requested at the moment of a check-in action.
 
 ### 2.5 Usage and Activity Data
 

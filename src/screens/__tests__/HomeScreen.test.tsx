@@ -72,19 +72,20 @@ jest.mock('@/components/ScreenWithWallpaper', () => {
 jest.mock('@/components/OnboardingCompleteCard', () => ({ OnboardingCompleteCard: () => null }));
 jest.mock('@/components/CreatePostPromptCard', () => ({ CreatePostPromptCard: () => null }));
 jest.mock('@/components/MeetupPromptCard', () => ({ MeetupPromptCard: () => null }));
-jest.mock('@/components/DogBeachNearbyAlert', () => ({ DogBeachNearbyAlert: () => null }));
-jest.mock('@/components/DogBeachNowAlert', () => ({ DogBeachNowAlert: () => null }));
+jest.mock('@/components/PlaceNearbyAlert', () => ({ PlaceNearbyAlert: () => null }));
+jest.mock('@/components/PlaceNowAlert', () => ({ PlaceNowAlert: () => null }));
 jest.mock('@/ui/BreedHero', () => ({ BreedHero: () => null }));
 jest.mock('@/ui/SwipeableBreedBanner', () => ({ SwipeableBreedBanner: () => null }));
 jest.mock('@/ui/SegmentTabs', () => ({ SegmentTabs: () => null }));
 jest.mock('@/api/dogs', () => ({ getDogsByOwner: jest.fn() }));
 jest.mock('@/api/breedJoins', () => ({ getJoinedBreeds: jest.fn(), joinBreedFeed: jest.fn(), leaveBreedFeed: jest.fn() }));
-jest.mock('@/api/locationCheckins', () => ({
-  createDogBeachCheckins: jest.fn(),
-  getActiveDogBeachCheckins: jest.fn(),
-  getMyActiveDogBeachCheckins: jest.fn(),
+jest.mock('@/api/places', () => ({
+  checkIntoPlace: jest.fn(),
+  getActivePlaceCheckins: jest.fn(),
+  getMyActivePlaceCheckins: jest.fn(),
+  getPlaceBySlug: jest.fn(),
 }));
-jest.mock('@/config/dogBeach', () => ({ DOG_BEACH: { lat: 32.77, lng: -117.25, radiusMeters: 200, debugForceNearby: false } }));
+jest.mock('@/config/places', () => ({ OB_DOG_BEACH_SLUG: 'ocean-beach-dog-beach', DEBUG_FORCE_NEARBY: false }));
 jest.mock('@/utils/location', () => ({ getDistanceMeters: jest.fn(() => 9999) }));
 jest.mock('@/utils/breedAssets', () => ({
   getBreedHeroImageSource: jest.fn(() => null),

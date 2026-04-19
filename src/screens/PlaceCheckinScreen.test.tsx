@@ -12,14 +12,15 @@ jest.mock('@/api/dogs', () => ({
   getDogsByOwner: jest.fn(),
 }));
 
-jest.mock('@/api/locationCheckins', () => ({
-  createDogBeachCheckins: jest.fn(),
-  endDogBeachCheckins: jest.fn(),
-  getActiveDogBeachCheckins: jest.fn(),
-  getDogBeachBreedCounts: jest.fn((checkins: Array<{ dog_breed: string }>) =>
+jest.mock('@/api/places', () => ({
+  checkIntoPlace: jest.fn(),
+  endPlaceCheckins: jest.fn(),
+  getActivePlaceCheckins: jest.fn(),
+  getPlaceBreedCounts: jest.fn((checkins: Array<{ dog_breed: string }>) =>
     checkins.length > 0 ? [{ breed: checkins[0].dog_breed, count: checkins.length }] : []
   ),
-  getMyActiveDogBeachCheckins: jest.fn(),
+  getMyActivePlaceCheckins: jest.fn(),
+  getPlaceById: jest.fn(),
 }));
 
 jest.mock('@/store/authStore', () => ({
@@ -68,10 +69,12 @@ import React from 'react';
 import { Alert } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { DOG_BEACH } from '@/config/dogBeach';
-import { DogBeachNowScreen } from '@/screens/DogBeachNowScreen';
+import { PlaceCheckinScreen } from '@/screens/PlaceCheckinScreen';
 import { useAuthStore } from '@/store/authStore';
-import type { ActiveDogBeachCheckin, Dog, DogLocationCheckin } from '@/types';
+import type { ActivePlaceCheckin, Dog, DogLocationCheckin } from '@/types';
+
+const PLACE_ID = 'place-ob-uuid';
+const PLACE_NAME = 'Ocean Beach Dog Beach';
 
 function makeDog(overrides: Partial<Dog> = {}): Dog {
   return {
@@ -93,13 +96,14 @@ function makeDog(overrides: Partial<Dog> = {}): Dog {
   };
 }
 
-function makeActiveCheckin(overrides: Partial<ActiveDogBeachCheckin> = {}): ActiveDogBeachCheckin {
+function makeActiveCheckin(overrides: Partial<ActivePlaceCheckin> = {}): ActivePlaceCheckin {
   return {
     id: overrides.id ?? 'checkin-1',
     user_id: overrides.user_id ?? 'owner-ben',
     dog_id: overrides.dog_id ?? 'dog-scout',
-    location_key: overrides.location_key ?? DOG_BEACH.locationKey,
-    location_name: overrides.location_name ?? DOG_BEACH.locationName,
+    place_id: overrides.place_id ?? PLACE_ID,
+    location_key: overrides.location_key ?? 'ocean-beach-dog-beach',
+    location_name: overrides.location_name ?? PLACE_NAME,
     created_at: overrides.created_at ?? '2026-03-18T00:00:00.000Z',
     expires_at: overrides.expires_at ?? '2026-03-18T01:00:00.000Z',
     ended_at: overrides.ended_at ?? null,
@@ -116,15 +120,36 @@ function makeMyCheckin(overrides: Partial<DogLocationCheckin> = {}): DogLocation
     id: overrides.id ?? 'my-checkin-1',
     user_id: overrides.user_id ?? 'viewer-alice',
     dog_id: overrides.dog_id ?? 'dog-mochi',
-    location_key: overrides.location_key ?? DOG_BEACH.locationKey,
-    location_name: overrides.location_name ?? DOG_BEACH.locationName,
+    place_id: overrides.place_id ?? PLACE_ID,
+    location_key: overrides.location_key ?? 'ocean-beach-dog-beach',
+    location_name: overrides.location_name ?? PLACE_NAME,
     created_at: overrides.created_at ?? '2026-03-18T00:00:00.000Z',
     expires_at: overrides.expires_at ?? '2026-03-18T01:00:00.000Z',
     ended_at: overrides.ended_at ?? null,
   };
 }
 
-describe('DogBeachNowScreen', () => {
+const defaultPlace = {
+  id: PLACE_ID,
+  name: PLACE_NAME,
+  slug: 'ocean-beach-dog-beach',
+  place_type: 'dog_beach',
+  city: 'San Francisco',
+  neighborhood: 'Ocean Beach',
+  latitude: 37.7597,
+  longitude: -122.5108,
+  check_in_radius_meters: 400,
+  check_in_duration_minutes: 60,
+  description: null,
+  is_active: true,
+  supports_check_in: true,
+  created_at: '2026-01-01T00:00:00.000Z',
+  updated_at: '2026-01-01T00:00:00.000Z',
+};
+
+const defaultRoute = { params: { placeId: PLACE_ID } };
+
+describe('PlaceCheckinScreen', () => {
   const useQueryMock = useQuery as jest.Mock;
   const useMutationMock = useMutation as jest.Mock;
   const useQueryClientMock = useQueryClient as jest.Mock;
@@ -135,7 +160,7 @@ describe('DogBeachNowScreen', () => {
   const createMutate = jest.fn();
   const endMutate = jest.fn();
   let dogsQueryData: Dog[] = [];
-  let activeCheckinsQueryData: ActiveDogBeachCheckin[] = [];
+  let activeCheckinsQueryData: ActivePlaceCheckin[] = [];
   let myActiveCheckinsQueryData: DogLocationCheckin[] = [];
   let activeCheckinsLoading = false;
   let activeCheckinsError = false;
@@ -168,13 +193,17 @@ describe('DogBeachNowScreen', () => {
         : { mutate: endMutate, isPending: false };
     });
     useQueryMock.mockImplementation(({ queryKey }: { queryKey: unknown[] }) => {
-      const [key] = queryKey;
+      const [key, second] = queryKey;
+
+      if (key === 'place' && second === PLACE_ID) {
+        return { data: defaultPlace, isLoading: false };
+      }
 
       if (key === 'dogs') {
         return { data: dogsQueryData, isLoading: false };
       }
 
-      if (key === 'dogBeachActiveCheckins') {
+      if (key === 'placeActiveCheckins') {
         return {
           data: activeCheckinsQueryData,
           isLoading: activeCheckinsLoading,
@@ -183,7 +212,7 @@ describe('DogBeachNowScreen', () => {
         };
       }
 
-      if (key === 'dogBeachMyCheckins') {
+      if (key === 'placeMyCheckins') {
         return {
           data: myActiveCheckinsQueryData,
           isLoading: false,
@@ -201,13 +230,13 @@ describe('DogBeachNowScreen', () => {
   it('renders the loading state while active check-ins are loading', () => {
     activeCheckinsLoading = true;
 
-    render(<DogBeachNowScreen navigation={{ navigate }} />);
+    render(<PlaceCheckinScreen route={defaultRoute} navigation={{ navigate }} />);
 
     expect(screen.getByText('Loading check-ins...')).toBeTruthy();
   });
 
   it('shows an alert if the viewer tries to check in without a dog profile', () => {
-    render(<DogBeachNowScreen navigation={{ navigate }} />);
+    render(<PlaceCheckinScreen route={defaultRoute} navigation={{ navigate }} />);
 
     fireEvent.press(screen.getByText('Check In'));
 
@@ -220,7 +249,7 @@ describe('DogBeachNowScreen', () => {
       makeDog({ id: 'dog-poppy', name: 'Poppy', breed: 'GOLDEN_RETRIEVER' }),
     ];
 
-    render(<DogBeachNowScreen navigation={{ navigate }} />);
+    render(<PlaceCheckinScreen route={defaultRoute} navigation={{ navigate }} />);
 
     fireEvent.press(screen.getByText('Check In'));
 
@@ -241,13 +270,13 @@ describe('DogBeachNowScreen', () => {
     activeCheckinsQueryData = [makeActiveCheckin()];
     myActiveCheckinsQueryData = [makeMyCheckin()];
 
-    render(<DogBeachNowScreen navigation={{ navigate }} />);
+    render(<PlaceCheckinScreen route={defaultRoute} navigation={{ navigate }} />);
 
-    expect(screen.getByText('Dogs at Dog Beach right now')).toBeTruthy();
+    expect(screen.getByText(`Dogs at ${PLACE_NAME} right now`)).toBeTruthy();
     expect(screen.getByText('1 active check-ins')).toBeTruthy();
     expect(screen.getByText('You currently have 1 dog checked in.')).toBeTruthy();
     expect(screen.getByText('Scout')).toBeTruthy();
-    expect(screen.getByText('metButton:viewer-alice:1:dog-scout:dog_beach:Ocean Beach Dog Beach')).toBeTruthy();
+    expect(screen.getByText(`metButton:viewer-alice:1:dog-scout:dog_beach:${PLACE_NAME}`)).toBeTruthy();
 
     fireEvent.press(screen.getByText('Scout'));
     expect(navigate).toHaveBeenCalledWith('DogProfile', { dogId: 'dog-scout' });

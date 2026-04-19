@@ -45,6 +45,8 @@ export type CompatibilityAnswerEnum = 'yes' | 'no' | 'unsure';
 
 export type DogInteractionSourceTypeEnum = 'dog_beach' | 'meetup' | 'manual';
 
+export type PlaceTypeEnum = 'dog_beach' | 'dog_park' | 'trail' | 'park' | 'other';
+
 export type ReactionEnum =
   | 'LIKE'
   | 'LOVE'
@@ -135,11 +137,65 @@ export interface Database {
           updated_at?: string;
         };
       };
+      places: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          place_type: PlaceTypeEnum;
+          city: string | null;
+          neighborhood: string | null;
+          latitude: number | null;
+          longitude: number | null;
+          check_in_radius_meters: number;
+          check_in_duration_minutes: number;
+          description: string | null;
+          is_active: boolean;
+          supports_check_in: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          slug: string;
+          place_type: PlaceTypeEnum;
+          city?: string | null;
+          neighborhood?: string | null;
+          latitude?: number | null;
+          longitude?: number | null;
+          check_in_radius_meters?: number;
+          check_in_duration_minutes?: number;
+          description?: string | null;
+          is_active?: boolean;
+          supports_check_in?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          slug?: string;
+          place_type?: PlaceTypeEnum;
+          city?: string | null;
+          neighborhood?: string | null;
+          latitude?: number | null;
+          longitude?: number | null;
+          check_in_radius_meters?: number;
+          check_in_duration_minutes?: number;
+          description?: string | null;
+          is_active?: boolean;
+          supports_check_in?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       dog_location_checkins: {
         Row: {
           id: string;
           user_id: string;
           dog_id: string;
+          place_id: string | null;
           location_key: string;
           location_name: string;
           created_at: string;
@@ -150,6 +206,7 @@ export interface Database {
           id?: string;
           user_id: string;
           dog_id: string;
+          place_id?: string | null;
           location_key: string;
           location_name: string;
           created_at?: string;
@@ -160,6 +217,7 @@ export interface Database {
           id?: string;
           user_id?: string;
           dog_id?: string;
+          place_id?: string | null;
           location_key?: string;
           location_name?: string;
           created_at?: string;

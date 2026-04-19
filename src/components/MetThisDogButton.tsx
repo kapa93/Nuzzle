@@ -136,7 +136,7 @@ export function MetThisDogButton({
       ]}
     >
       <Text style={compact ? styles.compactText : styles.text}>
-        {mutation.isPending ? 'Saving...' : 'Met this dog'}
+        {mutation.isPending ? 'Saving...' : 'Met this dog?'}
       </Text>
     </Pressable>
   );
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 30,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     backgroundColor: colors.primarySoft,
     borderWidth: 1,
     borderColor: colors.primary,
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 30,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     backgroundColor: colors.primarySoft,
     borderWidth: 1,
     borderColor: colors.primary,
