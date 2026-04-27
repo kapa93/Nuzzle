@@ -74,10 +74,14 @@ jest.mock('@/components/CreatePostPromptCard', () => ({ CreatePostPromptCard: ()
 jest.mock('@/components/MeetupPromptCard', () => ({ MeetupPromptCard: () => null }));
 jest.mock('@/components/PlaceNearbyAlert', () => ({ PlaceNearbyAlert: () => null }));
 jest.mock('@/components/PlaceNowAlert', () => ({ PlaceNowAlert: () => null }));
+jest.mock('@/components/MyPlacesSheet', () => ({ MyPlacesSheet: () => null }));
 jest.mock('@/ui/BreedHero', () => ({ BreedHero: () => null }));
 jest.mock('@/ui/SwipeableBreedBanner', () => ({ SwipeableBreedBanner: () => null }));
 jest.mock('@/ui/SegmentTabs', () => ({ SegmentTabs: () => null }));
 jest.mock('@/api/dogs', () => ({ getDogsByOwner: jest.fn() }));
+jest.mock('@/hooks/useSavedPlaces', () => ({
+  useSavedPlacesWithActivity: jest.fn(() => ({ savedPlaces: [], dogCounts: {}, isLoading: false })),
+}));
 jest.mock('@/api/breedJoins', () => ({ getJoinedBreeds: jest.fn(), joinBreedFeed: jest.fn(), leaveBreedFeed: jest.fn() }));
 jest.mock('@/api/places', () => ({
   checkIntoPlace: jest.fn(),
@@ -176,19 +180,19 @@ describe('HomeScreen', () => {
 
   it('renders without crashing when user is logged in', () => {
     expect(() => render(
-      <HomeScreen navigation={{ navigate: jest.fn() } as never} />
+      <HomeScreen navigation={{ navigate: jest.fn(), setOptions: jest.fn() } as never} />
     )).not.toThrow();
   });
 
   it('shows "Sign in to see your feed" when user is null', () => {
     setupDefaultMocks({ user: null as never });
-    render(<HomeScreen navigation={{ navigate: jest.fn() } as never} />);
+    render(<HomeScreen navigation={{ navigate: jest.fn(), setOptions: jest.fn() } as never} />);
     expect(screen.getByText('Sign in to see your feed')).toBeTruthy();
   });
 
   it('shows "Add a dog profile" message when user has no dogs and no onboarding dog', () => {
     setupDefaultMocks({ dogs: [] });
-    render(<HomeScreen navigation={{ navigate: jest.fn() } as never} />);
+    render(<HomeScreen navigation={{ navigate: jest.fn(), setOptions: jest.fn() } as never} />);
     expect(screen.getByText(/Add a dog profile/)).toBeTruthy();
   });
 
@@ -211,7 +215,7 @@ describe('HomeScreen', () => {
       renderFeedItem: () => null,
     });
 
-    render(<HomeScreen navigation={{ navigate: jest.fn() } as never} />);
+    render(<HomeScreen navigation={{ navigate: jest.fn(), setOptions: jest.fn() } as never} />);
     const indicators = screen.UNSAFE_getAllByType(require('react-native').ActivityIndicator);
     expect(indicators.length).toBeGreaterThan(0);
   });
@@ -220,7 +224,7 @@ describe('HomeScreen', () => {
     setupDefaultMocks({ user: null as never });
     // If there were a hooks ordering violation, this render would throw
     expect(() => render(
-      <HomeScreen navigation={{ navigate: jest.fn() } as never} />
+      <HomeScreen navigation={{ navigate: jest.fn(), setOptions: jest.fn() } as never} />
     )).not.toThrow();
   });
 });

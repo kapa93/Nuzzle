@@ -190,18 +190,16 @@ describe('ExploreScreen places behavior', () => {
 
   it('shows sectioned default places UI when search is empty', async () => {
     setup();
-    expect(await screen.findByText('Saved Places')).toBeTruthy();
+    expect(await screen.findByText('On Nuzzle')).toBeTruthy();
     expect(screen.getByText('Nearby')).toBeTruthy();
-    expect(screen.getByText('Popular')).toBeTruthy();
     expect(screen.getAllByText('Saved Dog Park')).toHaveLength(1);
   });
 
   it('omits Nearby section when location is unavailable', async () => {
     setup({ locationGranted: false, requestedStatus: 'denied' });
-    expect(await screen.findByText('Saved Places')).toBeTruthy();
+    expect(await screen.findByText('On Nuzzle')).toBeTruthy();
     expect(screen.queryByText('Nearby')).toBeNull();
     expect(screen.getByText('Enable location in Settings to show nearby places.')).toBeTruthy();
-    expect(screen.getByText('Popular')).toBeTruthy();
   });
 
   it('shows grouped search results and hides sectioned browsing while searching', async () => {
@@ -225,9 +223,8 @@ describe('ExploreScreen places behavior', () => {
 
     expect(await screen.findByText('In Nuzzle')).toBeTruthy();
     expect(screen.getByText('More Places')).toBeTruthy();
-    expect(screen.queryByText('Saved Places')).toBeNull();
+    expect(screen.queryByText('On Nuzzle')).toBeNull();
     expect(screen.queryByText('Nearby')).toBeNull();
-    expect(screen.queryByText('Popular')).toBeNull();
   });
 
   it('requests location permission when Places tab is active and status is undetermined', async () => {

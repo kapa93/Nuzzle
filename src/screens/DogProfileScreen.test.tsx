@@ -34,12 +34,15 @@ jest.mock('@/components/ProfileDogCard', () => {
     ProfileDogCard: ({
       dog,
       footer,
+      headerAction,
     }: {
       dog: { name: string };
       footer?: React.ReactNode;
+      headerAction?: React.ReactNode;
     }) => (
       <View>
         <Text>{dog.name}</Text>
+        {headerAction}
         {footer}
       </View>
     ),

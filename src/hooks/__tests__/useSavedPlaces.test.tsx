@@ -9,6 +9,10 @@ jest.mock('@/api/savedPlaces', () => ({
   unsavePlace: jest.fn(),
 }));
 
+jest.mock('@/api/places', () => ({
+  getActivePlaceCheckinCounts: jest.fn(),
+}));
+
 jest.mock('@/store/authStore', () => ({
   useAuthStore: jest.fn(() => ({ user: { id: 'user-1' } })),
 }));

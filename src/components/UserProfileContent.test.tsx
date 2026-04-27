@@ -34,15 +34,18 @@ jest.mock('@/components/ProfileDogCard', () => {
       dog,
       onPress,
       footer,
+      headerAction,
     }: {
       dog: { id: string; name: string };
       onPress?: () => void;
       footer?: React.ReactNode;
+      headerAction?: React.ReactNode;
     }) => (
       <View>
         <Pressable onPress={onPress}>
           <Text>{dog.name}</Text>
         </Pressable>
+        {headerAction}
         {footer}
       </View>
     ),

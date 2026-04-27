@@ -80,7 +80,6 @@ describe('DogsMetSection', () => {
 
     expect(screen.getByText('Friends')).toBeTruthy();
     expect(screen.getByText('Scout')).toBeTruthy();
-    expect(screen.getByText('Met 2 times · Just now')).toBeTruthy();
 
     fireEvent.press(screen.getByText('Scout'));
 

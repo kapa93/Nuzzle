@@ -71,7 +71,7 @@ describe('MetThisDogButton', () => {
       />
     );
 
-    expect(screen.queryByText('Met this dog')).toBeNull();
+    expect(screen.queryByText('Met this dog?')).toBeNull();
   });
 
   it('shows an add-dog alert when the viewer has no dogs', () => {
@@ -83,7 +83,7 @@ describe('MetThisDogButton', () => {
       />
     );
 
-    fireEvent.press(screen.getByText('Met this dog'));
+    fireEvent.press(screen.getByText('Met this dog?'));
 
     expect(Alert.alert).toHaveBeenCalledWith(
       'No dog profile',
@@ -102,7 +102,7 @@ describe('MetThisDogButton', () => {
       />
     );
 
-    fireEvent.press(screen.getByText('Met this dog'));
+    fireEvent.press(screen.getByText('Met this dog?'));
 
     expect(mutate).toHaveBeenCalledWith({
       dogIds: ['dog-mochi'],
@@ -127,7 +127,7 @@ describe('MetThisDogButton', () => {
       />
     );
 
-    fireEvent.press(screen.getByText('Met this dog'));
+    fireEvent.press(screen.getByText('Met this dog?'));
 
     const options = (Alert.alert as jest.Mock).mock.calls[0][2] as Array<{
       text: string;
@@ -168,7 +168,7 @@ describe('MetThisDogButton', () => {
 
     expect(screen.getByLabelText('Already met')).toBeTruthy();
     expect(screen.getByText('icon:checkmark-sharp')).toBeTruthy();
-    expect(screen.queryByText('Met this dog')).toBeNull();
+    expect(screen.queryByText('Met this dog?')).toBeNull();
   });
 
   it('shows a checkmark after a successful interaction save', () => {
@@ -187,7 +187,7 @@ describe('MetThisDogButton', () => {
       />
     );
 
-    fireEvent.press(screen.getByText('Met this dog'));
+    fireEvent.press(screen.getByText('Met this dog?'));
 
     expect(screen.getByLabelText('Interaction saved')).toBeTruthy();
     expect(screen.getByText('icon:checkmark-sharp')).toBeTruthy();
