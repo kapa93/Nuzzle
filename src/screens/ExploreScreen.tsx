@@ -165,7 +165,6 @@ function nearbyScore(candidate: GooglePlaceCandidate, coords: UserCoords): numbe
   };
 
   const typeScore = placeTypeWeight[candidate.placeType] ?? 0;
-  const dogBonus = candidate.name.toLowerCase().includes("dog") ? 0.5 : 0;
   const ratingBonus = Math.log((candidate.userRatingCount ?? 0) + 1) * 0.3;
 
   const distanceMeters =
@@ -174,16 +173,22 @@ function nearbyScore(candidate: GooglePlaceCandidate, coords: UserCoords): numbe
       : 50_000;
   const distancePenalty = distanceMeters / 50_000;
 
-  return typeScore + dogBonus + ratingBonus - distancePenalty;
+  return typeScore + ratingBonus - distancePenalty;
 }
 
 function rankNearbyCandidates(
   candidates: GooglePlaceCandidate[],
   coords: UserCoords
 ): GooglePlaceCandidate[] {
-  const sorted = [...candidates].sort(
-    (a, b) => nearbyScore(b, coords) - nearbyScore(a, coords)
-  );
+  const hasDog = (c: GooglePlaceCandidate) => c.name.toLowerCase().includes("dog");
+
+  const sorted = [...candidates].sort((a, b) => {
+    // Dog-named places always rank above non-dog-named places
+    const aDog = hasDog(a) ? 1 : 0;
+    const bDog = hasDog(b) ? 1 : 0;
+    if (aDog !== bDog) return bDog - aDog;
+    return nearbyScore(b, coords) - nearbyScore(a, coords);
+  });
 
   // Drop candidates that are within the threshold of a higher-ranked candidate —
   // these are duplicate Google Place entries for the same physical location.
