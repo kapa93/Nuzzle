@@ -83,7 +83,7 @@ const mockLocationPosition = Location.getCurrentPositionAsync as jest.Mock;
 const mockUseSavedPlaces = useSavedPlaces as jest.Mock;
 const mockUseToggleSavedPlace = useToggleSavedPlace as jest.Mock;
 const mockUseSavedPlacesWithActivity = useSavedPlacesWithActivity as jest.Mock;
-const mockUseAuthStore = useAuthStore as jest.Mock;
+const mockUseAuthStore = useAuthStore as unknown as jest.Mock;
 
 const places: Place[] = [
   {
@@ -101,6 +101,7 @@ const places: Place[] = [
     description: null,
     is_active: true,
     supports_check_in: true,
+    photos: [],
     created_at: '2026-01-01T00:00:00.000Z',
     updated_at: '2026-01-01T00:00:00.000Z',
   },
@@ -119,6 +120,7 @@ const places: Place[] = [
     description: null,
     is_active: true,
     supports_check_in: true,
+    photos: [],
     created_at: '2026-01-01T00:00:00.000Z',
     updated_at: '2026-01-01T00:00:00.000Z',
   },

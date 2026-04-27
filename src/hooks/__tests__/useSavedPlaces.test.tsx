@@ -45,6 +45,7 @@ const stubPlace = {
   description: null,
   is_active: true,
   supports_check_in: true,
+  photos: [],
   created_at: '2026-01-01T00:00:00.000Z',
   updated_at: '2026-01-01T00:00:00.000Z',
 };
