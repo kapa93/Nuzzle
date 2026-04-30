@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from "react";
 import { Image, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getHeaderTitle, Header } from "@react-navigation/elements";
-import { Ionicons } from "@expo/vector-icons";
+import { Search } from "lucide-react-native/icons";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -15,6 +15,8 @@ import type { NativeStackHeaderProps } from "@react-navigation/native-stack";
 
 const HEADER_HIDE_OFFSET = 120;
 const HEADER_ANIM_DURATION = 220;
+/** Matches header notifications bell / tab bar Lucide stroke weight */
+const HEADER_LUCIDE_STROKE = 2.25;
 const SEARCH_ENABLED_ROUTES = new Set([
   "HomeFeed",
   "ExploreList",
@@ -29,8 +31,8 @@ type Props = NativeStackHeaderProps & {
   includeTopInset?: boolean;
   baseHeaderHeight?: number;
   titleImageMarginTop?: number;
-  /** Light bottom border instead of drop shadow */
-  bottomSeparator?: boolean;
+  /** When true, no hairline under the header bar (e.g. Explore main list). */
+  hideBottomBorder?: boolean;
 };
 
 export function AnimatedStackHeader({
@@ -38,7 +40,7 @@ export function AnimatedStackHeader({
   includeTopInset = true,
   baseHeaderHeight = 44,
   titleImageMarginTop = -9,
-  bottomSeparator = false,
+  hideBottomBorder = false,
   options,
   route,
   navigation,
@@ -110,7 +112,11 @@ export function AnimatedStackHeader({
                   pressed && styles.searchButtonPressed,
                 ]}
               >
-                <Ionicons name="search" size={24} color={colors.textPrimary} />
+                <Search
+                  size={24}
+                  color={colors.textPrimary}
+                  strokeWidth={HEADER_LUCIDE_STROKE}
+                />
               </Pressable>
             ) : null}
             {customHeaderRight}
@@ -160,25 +166,14 @@ export function AnimatedStackHeader({
             {
               backgroundColor: colors.surface,
               height: headerHeight,
-              ...(bottomSeparator
-                ? {
-                    borderBottomWidth: StyleSheet.hairlineWidth,
-                    borderBottomColor: colors.borderStrong,
-                    elevation: 0,
-                    shadowOpacity: 0,
-                    shadowRadius: 0,
-                  }
-                : {
-                    borderBottomWidth: 0,
-                    elevation: 3,
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.12,
-                    shadowRadius: 1,
-                  }),
+              borderBottomWidth: hideBottomBorder ? 0 : StyleSheet.hairlineWidth,
+              borderBottomColor: hideBottomBorder ? "transparent" : "#000000",
+              elevation: 0,
+              shadowOpacity: 0,
+              shadowRadius: 0,
             },
           ]}
-          headerShadowVisible={!bottomSeparator}
+          headerShadowVisible={false}
           headerTitleAlign={options.headerTitleAlign}
           back={back}
         />

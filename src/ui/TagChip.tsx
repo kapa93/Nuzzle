@@ -18,7 +18,7 @@ export type Tone =
 
 export const toneStyles: Record<Tone, { bg: string; text: string }> = {
   neutral:    { bg: colors.chipNeutral, text: colors.chipText },
-  training:   { bg: "#D6F0EC", text: "#339989" },
+  training:   { bg: "#FFE0EB", text: "#8B1A3A" },
   behavior:   { bg: "#D6F3FC", text: "#00a8dd" },
   health:     { bg: "#FDECEA", text: "#CA2D2D" },
   grooming:   { bg: "#F0E4F8", text: "#6B2E8A" },
@@ -28,7 +28,7 @@ export const toneStyles: Record<Tone, { bg: string; text: string }> = {
   adolescent: { bg: "#D4EEE8", text: "#1A4E44" },
   adult:      { bg: "#FAEBD8", text: "#D86722" },
   senior:     { bg: "#EDE4D4", text: "#4A3820" },
-  playdate:   { bg: "#FFE0EB", text: "#8B1A3A" },
+  playdate:   { bg: "#D6F0EC", text: "#339989" },
 };
 
 export function TagChip({ label, tone = "neutral" }: { label: string; tone?: Tone }) {

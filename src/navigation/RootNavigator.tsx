@@ -120,7 +120,6 @@ function HomeTab() {
             <AnimatedStackHeader
               {...props}
               animateOnScroll
-              bottomSeparator
               baseHeaderHeight={CREATE_POST_STACK_HEADER_BAR}
             />
           ),
@@ -147,7 +146,9 @@ function ExploreTab() {
         component={ExploreScreen}
         options={{
           title: 'Explore',
-          header: (props) => <AnimatedStackHeader {...props} animateOnScroll={false} />,
+          header: (props) => (
+            <AnimatedStackHeader {...props} animateOnScroll={false} hideBottomBorder />
+          ),
         }}
       />
       <Stack.Screen
@@ -170,7 +171,6 @@ function ExploreTab() {
             <AnimatedStackHeader
               {...props}
               animateOnScroll
-              bottomSeparator
               baseHeaderHeight={CREATE_POST_STACK_HEADER_BAR}
             />
           ),
@@ -225,7 +225,6 @@ function SavedPlacesTab() {
             <AnimatedStackHeader
               {...props}
               animateOnScroll
-              bottomSeparator
               baseHeaderHeight={CREATE_POST_STACK_HEADER_BAR}
             />
           ),
@@ -410,7 +409,6 @@ export function RootNavigator() {
                       includeTopInset={false}
                       baseHeaderHeight={CREATE_POST_SHEET_MODAL_HEADER_HEIGHT}
                       titleImageMarginTop={3}
-                      bottomSeparator
                     />
                   ),
                   presentation: 'modal',
@@ -453,7 +451,6 @@ export function RootNavigator() {
                       includeTopInset={false}
                       baseHeaderHeight={CREATE_POST_SHEET_MODAL_HEADER_HEIGHT}
                       titleImageMarginTop={3}
-                      bottomSeparator
                     />
                   ),
                   presentation: 'modal',

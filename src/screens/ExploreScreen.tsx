@@ -1102,7 +1102,7 @@ const styles = StyleSheet.create({
   tabText: {
     ...typography.body,
     fontFamily: "Inter_400Regular",
-    color: colors.textMuted,
+    color: colors.textSecondary,
   },
   tabTextActive: {
     fontFamily: "Inter_700Bold",
@@ -1112,8 +1112,8 @@ const styles = StyleSheet.create({
   // Search
   searchWrap: {
     paddingHorizontal: H_PADDING,
-    paddingTop: spacing.md,
-    paddingBottom: 10,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.lg,
   },
   searchRow: {
     height: 42,
@@ -1153,6 +1153,7 @@ const styles = StyleSheet.create({
   gridWrap: {
     alignItems: "center",
     marginLeft: 10,
+    marginTop: -spacing.lg,
   },
   comingSoonText: {
     ...typography.bodyMuted,

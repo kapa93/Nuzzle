@@ -7,6 +7,7 @@ import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@ta
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
   Inter_400Regular,
+  Inter_500Medium,
   Inter_600SemiBold,
   Inter_700Bold,
   Inter_800ExtraBold,
@@ -112,6 +113,7 @@ const queryClient = new QueryClient({
 export default function App() {
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
+    Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
     Inter_800ExtraBold,

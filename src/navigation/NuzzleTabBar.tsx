@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Pressable, StyleSheet, Text, Image } from "react-native";
+import { View, Pressable, StyleSheet, Text, Image, Platform } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -13,17 +13,16 @@ import {
   BottomTabBarProps,
 } from "@react-navigation/bottom-tabs";
 import { useScrollDirection } from "@/context/ScrollDirectionContext";
-import { FontAwesome6 } from "@expo/vector-icons";
-import { MapPinned } from "lucide-react-native";
+import { Compass, MapPinned, CircleUser } from "lucide-react-native";
 import { DogPawIcon } from "@/assets/DogPawIcon";
-import { colors, shadow, spacing } from "@/theme";
+import { colors, spacing } from "@/theme";
 
 const TAB_CONFIG = [
-  { key: "Home", label: "Home", icon: "house" as const },
-  { key: "SavedPlaces", label: "Places", icon: null as null },
-  { key: "Create", label: "Create", icon: "pen" as const },
-  { key: "Explore", label: "Explore", icon: "compass" as const },
-  { key: "Profile", label: "Profile", icon: "user" as const },
+  { key: "Home", label: "Dogs" },
+  { key: "SavedPlaces", label: "Places" },
+  { key: "Create", label: "Create" },
+  { key: "Explore", label: "Explore" },
+  { key: "Profile", label: "Profile" },
 ];
 
 const INDICATOR_ANIMATION = { duration: 60 };
@@ -36,19 +35,22 @@ const CREATE_BUTTON_PRESS_ANIMATION = { duration: 180 };
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const TAB_ICON_COLOR = "#000000";
+/** Lucide stroke weight for Places / Explore / Profile tab icons */
+const TAB_BAR_LUCIDE_STROKE = 1.75;
+const TAB_BAR_LUCIDE_STROKE_ACTIVE = 2;
 const HOME_ICON_INACTIVE = require("../../assets/pup-icon.png");
-const HOME_ICON_SIZE = 31;
+const HOME_ICON_SIZE = 29;
 
 function TabBarItem({
   tabKey,
-  icon,
+  label,
   accessibilityLabel,
   isActive,
   onPress,
   badgeCount,
 }: {
   tabKey: "Home" | "SavedPlaces" | "Explore" | "Profile";
-  icon: "house" | "compass" | "user" | null;
+  label: string;
   accessibilityLabel: string;
   isActive: boolean;
   onPress: () => void;
@@ -69,34 +71,53 @@ function TabBarItem({
       onPress={onPress}
       style={styles.item}
     >
-      <View style={styles.iconWrap}>
-        {tabKey === "Home" ? (
-          <Image
-            source={HOME_ICON_INACTIVE}
-            style={styles.homeIcon}
-            resizeMode="contain"
-          />
-        ) : tabKey === "SavedPlaces" ? (
-          <MapPinned
-            size={24}
-            color={TAB_ICON_COLOR}
-            style={styles.tabIconMap}
-            strokeWidth={1.95}
-          />
-        ) : (
-          <FontAwesome6
-            name={icon as "compass" | "user"}
-            size={22}
-            style={[styles.tabIcon, icon === "user" && styles.tabIconUser]}
-            color={TAB_ICON_COLOR}
-            solid={false}
-          />
-        )}
-        {badgeLabel ? (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{badgeLabel}</Text>
-          </View>
-        ) : null}
+      <View style={styles.tabColumn}>
+        <View style={styles.iconWrap}>
+          {tabKey === "Home" ? (
+            <Image
+              source={HOME_ICON_INACTIVE}
+              style={styles.homeIcon}
+              resizeMode="contain"
+            />
+          ) : tabKey === "SavedPlaces" ? (
+            <MapPinned
+              size={23}
+              color={TAB_ICON_COLOR}
+              style={styles.tabIconMap}
+              strokeWidth={isActive ? TAB_BAR_LUCIDE_STROKE_ACTIVE : TAB_BAR_LUCIDE_STROKE}
+            />
+          ) : tabKey === "Explore" ? (
+            <Compass
+              size={23}
+              color={TAB_ICON_COLOR}
+              style={styles.tabIconMap}
+              strokeWidth={isActive ? TAB_BAR_LUCIDE_STROKE_ACTIVE : TAB_BAR_LUCIDE_STROKE}
+            />
+          ) : (
+            <CircleUser
+              size={24}
+              color={TAB_ICON_COLOR}
+              style={[styles.tabIconMap, styles.tabIconLucideUser]}
+              strokeWidth={isActive ? TAB_BAR_LUCIDE_STROKE_ACTIVE : TAB_BAR_LUCIDE_STROKE}
+            />
+          )}
+          {badgeLabel ? (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{badgeLabel}</Text>
+            </View>
+          ) : null}
+        </View>
+        <Text
+          numberOfLines={1}
+          style={[
+            styles.tabLabel,
+            styles.tabLabelSide,
+            isActive && styles.tabLabelActive,
+          ]}
+          pointerEvents="none"
+        >
+          {label}
+        </Text>
       </View>
     </Pressable>
   );
@@ -226,8 +247,19 @@ export function NuzzleTabBar({ state, navigation }: BottomTabBarProps) {
                   }}
                   style={[styles.centerButton, centerButtonAnimatedStyle]}
                 >
-                  <DogPawIcon size={24} color="#FFFFFF" />
+                  <DogPawIcon size={23} color="#FFFFFF" />
                 </AnimatedPressable>
+                <Text
+                  numberOfLines={1}
+                  pointerEvents="none"
+                  style={[
+                    styles.tabLabel,
+                    styles.tabLabelCenter,
+                    isActive && styles.tabLabelActive,
+                  ]}
+                >
+                  {item.label}
+                </Text>
               </View>
             );
           }
@@ -236,7 +268,7 @@ export function NuzzleTabBar({ state, navigation }: BottomTabBarProps) {
             <TabBarItem
               key={item.key}
               tabKey={item.key as "Home" | "SavedPlaces" | "Explore" | "Profile"}
-              icon={item.icon as "house" | "compass" | "user" | null}
+              label={item.label}
               accessibilityLabel={item.label}
               isActive={isActive}
               onPress={() => navigation.navigate(item.key)}
@@ -262,15 +294,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     backgroundColor: colors.surface,
     paddingHorizontal: WRAP_PADDING_H,
-    paddingTop: spacing.sm,
+    paddingTop: spacing.sm + 1,
     paddingBottom: spacing.lg + 20,
     overflow: "visible",
-    ...shadow.sm,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -1 },
-    shadowOpacity: 0.12,
-    shadowRadius: 1,
-    elevation: 3,
+    elevation: 0,
+    shadowOpacity: 0,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: TAB_ICON_COLOR,
   },
   item: {
     alignItems: "center",
@@ -280,18 +310,56 @@ const styles = StyleSheet.create({
     marginBottom: 1,
     paddingVertical: spacing.sm,
     transform: [{ translateY: 1 }],
+    overflow: "visible",
+  },
+  tabColumn: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    position: "relative",
+    overflow: "visible",
+    top: 1,
+    marginBottom: -5,
+  },
+  /** Typography only; position via tabLabelSide / tabLabelCenter so footer height matches pre-label bar */
+  tabLabel: {
+    marginTop: 0,
+    fontSize: 10,
+    lineHeight: 11,
+    color: TAB_ICON_COLOR,
+    textAlign: "center",
+    ...(Platform.OS === "web"
+      ? { fontFamily: "'Inter', sans-serif", fontWeight: "500" as const }
+      : { fontFamily: "Inter_500Medium" as const }),
+  },
+  tabLabelSide: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: -13,
+  },
+  tabLabelCenter: {
+    position: "absolute",
+    bottom: -15,
+    left: "50%",
+    marginLeft: -60,
+    width: 120,
+  },
+  tabLabelActive: {
+    color: TAB_ICON_COLOR,
+    ...(Platform.OS === "web"
+      ? { fontFamily: "'Inter', sans-serif", fontWeight: "700" as const }
+      : { fontFamily: "Inter_700Bold" as const }),
   },
   iconWrap: {
     position: "relative",
     alignItems: "center",
     justifyContent: "center",
+    top: -7,
   },
-  tabIcon: {
-    transform: [{ translateY: 4 }],
-  },
-  /** Profile icon optical alignment (+1px vs compass from shared tabIcon baseline) */
-  tabIconUser: {
-    transform: [{ translateY: 4 }],
+  /** Profile icon: nudge up 1px vs Explore compass (Lucide optical alignment) */
+  tabIconLucideUser: {
+    transform: [{ translateY: 0 }],
   },
   tabIconMap: {
     position: "relative",
@@ -326,29 +394,25 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     left: 0,
-    height: 3,
+    height: 2,
     backgroundColor: TAB_ICON_COLOR,
     borderRadius: 2,
   },
   centerWrap: {
     flex: 1,
     position: "relative",
+    overflow: "visible",
   },
   centerButton: {
     position: "absolute",
-    bottom: -10,
+    bottom: 2,
     left: "50%",
-    marginLeft: -24.5,
-    width: 49,
-    height: 46,
-    borderRadius: 18,
+    marginLeft: -22.5,
+    width: 45,
+    height: 42,
+    borderRadius: 14,
     backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.12,
-    shadowRadius: 5,
-    elevation: 5,
   },
 });
