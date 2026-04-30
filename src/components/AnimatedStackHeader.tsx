@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     position: "relative",
     bottom: 2,
-    right: 6,
+    right: 7,
     transform: [{ translateX: -1 }],
   },
   searchButtonPressed: {

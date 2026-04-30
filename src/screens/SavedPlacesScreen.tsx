@@ -4,6 +4,8 @@ import {
   Alert,
   Dimensions,
   FlatList,
+  ImageBackground,
+  ImageSourcePropType,
   NativeScrollEvent,
   NativeSyntheticEvent,
   Pressable,
@@ -38,6 +40,7 @@ import type { ActivePlaceCheckin, Dog, Place, PlaceTypeEnum, PostWithDetails, Re
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CAROUSEL_HEIGHT = 230;
+const FIESTA_ISLAND_HERO_IMAGE = require('../../assets/banners/fiesta-island.jpg');
 
 const PLACE_TYPE_LABELS: Record<PlaceTypeEnum, string> = {
   dog_beach: 'Dog Beach',
@@ -53,6 +56,15 @@ const TABS: { key: PlaceDetailTab; label: string }[] = [
   { key: 'dogs', label: 'Dogs' },
   { key: 'meetups', label: 'Meetups' },
 ];
+
+function getPlaceHeroImage(place: Place): ImageSourcePropType | null {
+  const slug = place.slug.toLowerCase();
+  const name = place.name.toLowerCase();
+  if (slug.includes('fiesta-island') || name.includes('fiesta island')) {
+    return FIESTA_ISLAND_HERO_IMAGE;
+  }
+  return null;
+}
 
 type Props = {
   navigation: {
@@ -446,32 +458,44 @@ export function SavedPlacesScreen({ navigation }: Props) {
         {savedPlaces.map((p) => {
           const locationLine = [p.neighborhood, p.city].filter(Boolean).join(', ');
           const isSaved = true;
-          return (
-            <View key={p.id} style={styles.carouselPage}>
+          const heroImage = getPlaceHeroImage(p);
+          const hasHeroImage = heroImage !== null;
+          const pageContent = (
+            <>
+              {hasHeroImage && <View style={styles.carouselImageOverlay} />}
+              <Pressable
+                onPress={() => toggleSave.mutate({ placeId: p.id, isSaved })}
+                hitSlop={10}
+                style={({ pressed }) => [styles.carouselBookmark, pressed && styles.pressed]}
+                accessibilityRole="button"
+                accessibilityLabel="Unsave place"
+                accessibilityState={{ selected: isSaved }}
+              >
+                <Text style={styles.carouselJoinedText}>Joined</Text>
+              </Pressable>
               <View style={styles.carouselPageContent}>
-                {/* Place type chip + location */}
-                <View style={styles.carouselLeft}>
-                  <View style={styles.typeChip}>
-                    <Text style={styles.typeChipText}>{PLACE_TYPE_LABELS[p.place_type]}</Text>
+                <View style={styles.carouselTitleBlock}>
+                  {/* Location */}
+                  <View style={styles.carouselLeft}>
+                    {locationLine ? (
+                      <Text style={[styles.locationText, hasHeroImage && styles.heroLocationText]} numberOfLines={1}>{locationLine}</Text>
+                    ) : null}
                   </View>
-                  {locationLine ? (
-                    <Text style={styles.locationText} numberOfLines={1}>{locationLine}</Text>
-                  ) : null}
-                </View>
 
-                {/* Place name */}
-                <Text style={styles.placeName} numberOfLines={2}>{p.name}</Text>
+                  {/* Place name */}
+                  <Text style={[styles.placeName, hasHeroImage && styles.heroPlaceName]} numberOfLines={2}>{p.name}</Text>
+                </View>
 
                 {/* Action buttons */}
                 <View style={styles.carouselActions}>
                   <Pressable
                     onPress={() => navigation.navigate('CreatePost', { initialPlaceId: p.id, initialPlaceName: p.name })}
-                    style={({ pressed }) => [styles.postHereBtn, pressed && styles.pressed]}
+                    style={({ pressed }) => [styles.postHereBtn, hasHeroImage && styles.heroPostHereBtn, pressed && styles.pressed]}
                     accessibilityRole="button"
                     accessibilityLabel="Post here"
                   >
-                    <Ionicons name="create-outline" size={14} color={colors.primary} />
-                    <Text style={styles.postHereBtnText}>Post here</Text>
+                    <Ionicons name="create-outline" size={14} color={colors.textPrimary} />
+                    <Text style={[styles.postHereBtnText, hasHeroImage && styles.heroPostHereBtnText]}>Post here</Text>
                   </Pressable>
                   {p.supports_check_in && (
                     <Pressable
@@ -480,21 +504,25 @@ export function SavedPlacesScreen({ navigation }: Props) {
                       accessibilityRole="button"
                       accessibilityLabel="Check in at this place"
                     >
+                      <Ionicons name="paw" size={14} color={colors.surface} />
                       <Text style={styles.checkinBtnText}>Check In</Text>
                     </Pressable>
                   )}
-                  <Pressable
-                    onPress={() => toggleSave.mutate({ placeId: p.id, isSaved })}
-                    hitSlop={10}
-                    style={({ pressed }) => pressed && styles.pressed}
-                    accessibilityRole="button"
-                    accessibilityLabel="Unsave place"
-                    accessibilityState={{ selected: isSaved }}
-                  >
-                    <Ionicons name="bookmark" size={22} color={colors.primary} />
-                  </Pressable>
                 </View>
               </View>
+            </>
+          );
+          return (
+            <View key={p.id} style={styles.carouselPage}>
+              {hasHeroImage ? (
+                <ImageBackground source={heroImage} style={styles.carouselPageInner} resizeMode="cover">
+                  {pageContent}
+                </ImageBackground>
+              ) : (
+                <View style={styles.carouselPageInner}>
+                  {pageContent}
+                </View>
+              )}
             </View>
           );
         })}
@@ -641,15 +669,30 @@ const styles = StyleSheet.create({
   },
   carouselScrollContent: {},
   carouselPage: {
+    position: 'relative',
     width: SCREEN_WIDTH,
     height: CAROUSEL_HEIGHT,
     justifyContent: 'center',
+    overflow: 'hidden',
+    backgroundColor: colors.background,
+  },
+  carouselPageInner: {
+    flex: 1,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingTop: spacing.md + 5,
+    paddingBottom: spacing.md,
+  },
+  carouselImageOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.24)',
   },
   carouselPageContent: {
     flex: 1,
     justifyContent: 'space-between',
+  },
+  carouselTitleBlock: {
+    gap: spacing.xxs,
+    paddingRight: spacing.xxl,
   },
   carouselLeft: {
     flexDirection: 'row',
@@ -658,18 +701,58 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   placeName: {
-    ...typography.title,
+    fontSize: 32,
+    lineHeight: 35,
+    letterSpacing: 0.1,
+    ...Platform.select({
+      ios: { fontFamily: 'System', fontWeight: '700' as const },
+      android: { fontFamily: 'sans-serif', fontWeight: '700' as const },
+      default: {
+        fontFamily:
+          'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+        fontWeight: '700' as const,
+      },
+    }),
     color: colors.textPrimary,
     flexShrink: 1,
+    maxWidth: '72%',
+    marginBottom: spacing.xxs,
+  },
+  heroPlaceName: {
+    textShadowColor: 'rgba(0,0,0,0.4)',
+    textShadowOffset: { width: 0, height: 0.75 },
+    textShadowRadius: 1.5,
+    color: '#FFFFFF',
+  },
+  heroLocationText: {
+    color: 'rgba(255,255,255,0.88)',
   },
   carouselActions: {
+    alignSelf: 'stretch',
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: spacing.sm,
+    marginBottom: 5,
+  },
+  carouselBookmark: {
+    position: 'absolute',
+    top: spacing.md + 10,
+    right: spacing.lg,
+    zIndex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.88)',
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+  },
+  carouselJoinedText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#2E3834',
   },
   dotsRow: {
     position: 'absolute',
-    bottom: spacing.sm,
+    bottom: spacing.md,
     left: 0,
     right: 0,
     flexDirection: 'row',
@@ -681,13 +764,13 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.border,
+    backgroundColor: 'rgba(255,255,255,0.5)',
   },
   dotActive: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.textPrimary,
+    backgroundColor: '#FFFFFF',
   },
 
   // Sticky header (tabs — full width; list rows keep their own horizontal inset if needed)
@@ -727,7 +810,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_700Bold',
   },
   locationText: {
-    ...typography.caption,
+    ...typography.bodyMuted,
+    fontFamily: 'Inter_700Bold',
     color: colors.textMuted,
     flexShrink: 1,
   },
@@ -736,17 +820,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     borderWidth: 1,
-    borderColor: colors.primary,
-    borderRadius: radius.pill,
+    borderColor: colors.surface,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
   },
+  heroPostHereBtn: {
+    borderColor: colors.surface,
+    backgroundColor: colors.surface,
+  },
   postHereBtnText: {
     ...typography.caption,
-    color: colors.primary,
+    color: colors.textPrimary,
     fontFamily: 'Inter_700Bold',
   },
+  heroPostHereBtnText: {
+    color: colors.textPrimary,
+  },
   checkinBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     backgroundColor: colors.primary,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.md,
