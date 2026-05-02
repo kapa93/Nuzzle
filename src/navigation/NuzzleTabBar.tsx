@@ -39,7 +39,7 @@ const TAB_ICON_COLOR = "#000000";
 const TAB_BAR_LUCIDE_STROKE = 1.75;
 const TAB_BAR_LUCIDE_STROKE_ACTIVE = 2;
 const HOME_ICON_INACTIVE = require("../../assets/pup-icon.png");
-const HOME_ICON_SIZE = 29;
+const HOME_ICON_SIZE = 30;
 
 function TabBarItem({
   tabKey,
@@ -81,14 +81,14 @@ function TabBarItem({
             />
           ) : tabKey === "SavedPlaces" ? (
             <MapPinned
-              size={23}
+              size={24}
               color={TAB_ICON_COLOR}
               style={styles.tabIconMap}
               strokeWidth={isActive ? TAB_BAR_LUCIDE_STROKE_ACTIVE : TAB_BAR_LUCIDE_STROKE}
             />
           ) : tabKey === "Explore" ? (
             <Compass
-              size={23}
+              size={24}
               color={TAB_ICON_COLOR}
               style={styles.tabIconMap}
               strokeWidth={isActive ? TAB_BAR_LUCIDE_STROKE_ACTIVE : TAB_BAR_LUCIDE_STROKE}

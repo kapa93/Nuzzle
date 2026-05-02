@@ -41,6 +41,7 @@ import type { ActivePlaceCheckin, Dog, Place, PlaceTypeEnum, PostWithDetails, Re
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CAROUSEL_HEIGHT = 230;
 const FIESTA_ISLAND_HERO_IMAGE = require('../../assets/banners/fiesta-island.jpg');
+const OB_DOG_BEACH_HERO_IMAGE = require('../../assets/banners/ob-dogbeach.jpg');
 
 const PLACE_TYPE_LABELS: Record<PlaceTypeEnum, string> = {
   dog_beach: 'Dog Beach',
@@ -62,6 +63,9 @@ function getPlaceHeroImage(place: Place): ImageSourcePropType | null {
   const name = place.name.toLowerCase();
   if (slug.includes('fiesta-island') || name.includes('fiesta island')) {
     return FIESTA_ISLAND_HERO_IMAGE;
+  }
+  if (slug.includes('ocean-beach-dog-beach') || name.includes('ocean beach dog beach')) {
+    return OB_DOG_BEACH_HERO_IMAGE;
   }
   return null;
 }
@@ -110,7 +114,15 @@ export function SavedPlacesScreen({ navigation }: Props) {
   const selectedPlace: Place | undefined = savedPlaces[selectedIndex];
   const placeId = selectedPlace?.id ?? null;
 
-  // Sync carousel scroll position when selectedIndex changes programmatically
+  // Keep the visible carousel page aligned with selectedIndex if the header remounts.
+  React.useEffect(() => {
+    if (savedPlaces.length === 0) return;
+    scrollRef.current?.scrollTo({
+      x: selectedIndex * SCREEN_WIDTH,
+      animated: false,
+    });
+  }, [savedPlaces.length, selectedIndex]);
+
   const handleCarouselMomentumEnd = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
       if (!userScrollingRef.current) return;
@@ -139,7 +151,7 @@ export function SavedPlacesScreen({ navigation }: Props) {
     refetchInterval: 60_000,
   });
 
-  const { data: placePosts = [], isLoading: feedLoading, isFetched: feedFetched } = useQuery({
+  const { data: placePosts = [], isLoading: feedLoading } = useQuery({
     queryKey: ['placePosts', placeId],
     queryFn: () => getPlacePosts(placeId!, user?.id ?? null),
     enabled: !!placeId,
@@ -427,7 +439,7 @@ export function SavedPlacesScreen({ navigation }: Props) {
     );
   }
 
-  const showFullScreenLoader = savedPlacesLoading || (!!placeId && !feedFetched);
+  const showFullScreenLoader = savedPlacesLoading;
 
   if (showFullScreenLoader) {
     return (
@@ -515,7 +527,12 @@ export function SavedPlacesScreen({ navigation }: Props) {
           return (
             <View key={p.id} style={styles.carouselPage}>
               {hasHeroImage ? (
-                <ImageBackground source={heroImage} style={styles.carouselPageInner} resizeMode="cover">
+                <ImageBackground
+                  source={heroImage}
+                  style={styles.carouselPageInner}
+                  imageStyle={styles.carouselHeroImage}
+                  resizeMode="cover"
+                >
                   {pageContent}
                 </ImageBackground>
               ) : (
@@ -682,6 +699,10 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md + 5,
     paddingBottom: spacing.md,
   },
+  carouselHeroImage: {
+    top: -10,
+    height: CAROUSEL_HEIGHT + 10,
+  },
   carouselImageOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.24)',
@@ -742,11 +763,11 @@ const styles = StyleSheet.create({
     zIndex: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.88)',
     borderRadius: radius.lg,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs,
   },
   carouselJoinedText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     color: '#2E3834',
   },
@@ -819,12 +840,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.surface,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
+    paddingBottom: spacing.xs + 1,
   },
   heroPostHereBtn: {
     borderColor: colors.surface,
@@ -846,6 +868,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
+    paddingBottom: spacing.xs + 1,
+    transform: [{ translateY: 1 }],
   },
   checkinBtnText: {
     ...typography.caption,
