@@ -23,7 +23,7 @@ import { DogAvatar } from '@/components/DogAvatar';
 import { FeedItem } from '@/components/FeedItem';
 import { MetThisDogButton } from '@/components/MetThisDogButton';
 import { useAuthStore } from '@/store/authStore';
-import { getActivePlaceCheckins, getPlaceById } from '@/api/places';
+import { checkIntoPlace, getActivePlaceCheckins, getMyActivePlaceCheckins, getPlaceById } from '@/api/places';
 import { deletePost, getPlaceMeetupPosts, getPlacePosts } from '@/api/posts';
 import { rsvpMeetup, unrsvpMeetup } from '@/api/meetups';
 import { setReaction } from '@/api/reactions';
@@ -34,6 +34,7 @@ import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
 import { useScrollDirectionUpdater, useScrollDirection } from '@/context/ScrollDirectionContext';
 import { BREED_LABELS, PLAY_STYLE_LABELS, formatRelativeTime } from '@/utils/breed';
 import { colors, radius, shadow, spacing, typography } from '@/theme';
+import { captureHandledError } from '@/lib/sentry';
 import { NotificationsSheet } from '@/components/NotificationsSheet';
 import { Bell } from 'lucide-react-native';
 import type { ActivePlaceCheckin, Dog, Place, PlaceTypeEnum, PostWithDetails, ReactionEnum } from '@/types';
@@ -169,6 +170,13 @@ export function SavedPlacesScreen({ navigation }: Props) {
     enabled: !!user?.id,
   });
 
+  const { data: myActiveCheckins = [] } = useQuery({
+    queryKey: ['placeMyCheckins', user?.id, placeId],
+    queryFn: () => getMyActivePlaceCheckins(placeId!, user!.id),
+    enabled: !!user?.id && !!placeId,
+    refetchInterval: 60_000,
+  });
+
   const toggleSave = useToggleSavedPlace();
   const queryClient = useQueryClient();
 
@@ -261,6 +269,57 @@ export function SavedPlacesScreen({ navigation }: Props) {
       queryClient.invalidateQueries({ queryKey: ['post'] });
     },
   });
+
+  const checkinMutation = useMutation({
+    mutationFn: ({ targetPlaceId, dogIds, durationMinutes }: { targetPlaceId: string; dogIds: string[]; durationMinutes?: number }) =>
+      checkIntoPlace(targetPlaceId, user!.id, dogIds, durationMinutes),
+    onSuccess: (_data, { targetPlaceId }) => {
+      queryClient.invalidateQueries({ queryKey: ['placeActiveCheckins', targetPlaceId] });
+      queryClient.invalidateQueries({ queryKey: ['placeMyCheckins', user?.id, targetPlaceId] });
+    },
+    onError: (error, { targetPlaceId }) => {
+      captureHandledError(error, {
+        area: 'place.check-in',
+        tags: { screen: 'saved-places', placeId: targetPlaceId },
+      });
+      Alert.alert('Could not check in', 'Please try again in a moment.');
+    },
+  });
+
+  const handleHeroCheckIn = useCallback((targetPlace: Place) => {
+    const checkedInDogIds = new Set(myActiveCheckins.map((c) => c.dog_id));
+    const available = myDogs.filter((dog) => !checkedInDogIds.has(dog.id));
+
+    if (myDogs.length === 0) {
+      Alert.alert('No dog profile', 'Add a dog profile before checking in.');
+      return;
+    }
+    if (available.length === 0) {
+      Alert.alert('All set', 'All of your dogs are already checked in.');
+      return;
+    }
+    if (available.length === 1) {
+      checkinMutation.mutate({ targetPlaceId: targetPlace.id, dogIds: [available[0].id], durationMinutes: targetPlace.check_in_duration_minutes });
+      return;
+    }
+
+    const allDogsLabel = available.length === 2 ? 'Both dogs' : 'All my dogs';
+    Alert.alert(
+      'Choose dogs',
+      'Which of your dogs are here right now?',
+      [
+        {
+          text: allDogsLabel,
+          onPress: () => checkinMutation.mutate({ targetPlaceId: targetPlace.id, dogIds: available.map((d) => d.id), durationMinutes: targetPlace.check_in_duration_minutes }),
+        },
+        ...available.map((dog) => ({
+          text: dog.name,
+          onPress: () => checkinMutation.mutate({ targetPlaceId: targetPlace.id, dogIds: [dog.id], durationMinutes: targetPlace.check_in_duration_minutes }),
+        })),
+        { text: 'Cancel', style: 'cancel' as const },
+      ],
+    );
+  }, [myDogs, myActiveCheckins, checkinMutation]);
 
   const handleDogPress = useCallback((dogId: string) => navigation.navigate('DogProfile', { dogId }), [navigation]);
   const handlePostPress = useCallback((postId: string) => navigation.navigate('PostDetail', { postId }), [navigation]);
@@ -506,17 +565,17 @@ export function SavedPlacesScreen({ navigation }: Props) {
                     accessibilityRole="button"
                     accessibilityLabel="Post here"
                   >
-                    <Ionicons name="create-outline" size={14} color={colors.textPrimary} />
+                    <Ionicons name="create-outline" size={15} color={colors.textPrimary} />
                     <Text style={[styles.postHereBtnText, hasHeroImage && styles.heroPostHereBtnText]}>Post here</Text>
                   </Pressable>
                   {p.supports_check_in && (
                     <Pressable
-                      onPress={() => navigation.navigate('PlaceNow', { placeId: p.id })}
+                      onPress={() => handleHeroCheckIn(p)}
                       style={({ pressed }) => [styles.checkinBtn, pressed && styles.pressed]}
                       accessibilityRole="button"
                       accessibilityLabel="Check in at this place"
                     >
-                      <Ionicons name="paw" size={14} color={colors.surface} />
+                      <Ionicons name="paw" size={12} color={colors.surface} />
                       <Text style={styles.checkinBtnText}>Check In</Text>
                     </Pressable>
                   )}
@@ -722,8 +781,8 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   placeName: {
-    fontSize: 32,
-    lineHeight: 35,
+    fontSize: 31,
+    lineHeight: 34,
     letterSpacing: 0.1,
     ...Platform.select({
       ios: { fontFamily: 'System', fontWeight: '700' as const },
@@ -746,13 +805,13 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   heroLocationText: {
-    color: 'rgba(255,255,255,0.88)',
+    color: '#FFFFFF',
   },
   carouselActions: {
     alignSelf: 'stretch',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: 'column-reverse',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-end',
     gap: spacing.sm,
     marginBottom: 5,
   },
@@ -831,7 +890,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_700Bold',
   },
   locationText: {
-    ...typography.bodyMuted,
+    ...typography.caption,
     fontFamily: 'Inter_700Bold',
     color: colors.textMuted,
     flexShrink: 1,
@@ -839,14 +898,14 @@ const styles = StyleSheet.create({
   postHereBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 2,
     borderWidth: 0,
     borderColor: colors.surface,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    paddingBottom: spacing.xs + 1,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs - 1,
+    paddingBottom: spacing.xs - 1,
   },
   heroPostHereBtn: {
     borderColor: colors.surface,
@@ -854,6 +913,7 @@ const styles = StyleSheet.create({
   },
   postHereBtnText: {
     ...typography.caption,
+    fontSize: 12,
     color: colors.textPrimary,
     fontFamily: 'Inter_700Bold',
   },
@@ -863,16 +923,17 @@ const styles = StyleSheet.create({
   checkinBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
     backgroundColor: colors.primary,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    paddingBottom: spacing.xs + 1,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs - 1,
+    paddingBottom: spacing.xs - 1,
     transform: [{ translateY: 1 }],
   },
   checkinBtnText: {
     ...typography.caption,
+    fontSize: 12,
     color: colors.surface,
     fontFamily: 'Inter_700Bold',
   },
@@ -968,6 +1029,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },

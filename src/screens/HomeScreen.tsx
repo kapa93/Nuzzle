@@ -24,7 +24,6 @@ import { useUIStore } from "@/store/uiStore";
 import { getDogsByOwner } from "@/api/dogs";
 import { getJoinedBreeds, joinBreedFeed, leaveBreedFeed } from "@/api/breedJoins";
 import { checkIntoPlace,
-  getActivePlaceCheckins,
   getMyActivePlaceCheckins,
   getPlaceBySlug,
 } from '@/api/places';
@@ -32,7 +31,6 @@ import { BreedHero } from "@/ui/BreedHero";
 import { SwipeableBreedBanner } from "@/ui/SwipeableBreedBanner";
 import { SegmentTabs } from "@/ui/SegmentTabs";
 import { PlaceNearbyAlert } from '@/components/PlaceNearbyAlert';
-import { PlaceNowAlert } from '@/components/PlaceNowAlert';
 import { getBreedHeroImageSource, getBreedHeroImageStyle, getBreedHeroTitle } from "@/utils/breedAssets";
 import { BREED_LABELS } from "@/utils/breed";
 import {
@@ -130,13 +128,6 @@ export function HomeScreen({
     queryFn: () => getPlaceBySlug(OB_DOG_BEACH_SLUG),
     enabled: !!user?.id,
     staleTime: 10 * 60_000,
-  });
-
-  const { data: activePlaceCheckins = [] } = useQuery({
-    queryKey: ['placeActiveCheckins', obPlace?.id],
-    queryFn: () => getActivePlaceCheckins(obPlace!.id),
-    enabled: !!user?.id && !!obPlace?.id,
-    refetchInterval: 60_000,
   });
 
   const { data: myPlaceCheckins = [] } = useQuery({
@@ -530,7 +521,7 @@ export function HomeScreen({
               <Text style={styles.devSentryButtonText}>Test Sentry</Text>
             </Pressable>
           ) : null}
-          {(showNearbyCheckinCard || activePlaceCheckins.length > 0) ? (
+          {showNearbyCheckinCard ? (
             <Animated.View style={[styles.placeAlertOverlay, { top: headerHeight + 12 }, placeAlertAnimatedStyle]}>
               {showNearbyCheckinCard ? (
                 <PlaceNearbyAlert
@@ -538,15 +529,6 @@ export function HomeScreen({
                   onCheckIn={handlePlaceCheckIn}
                   disabled={checkinMutation.isPending}
                 />
-              ) : null}
-              {activePlaceCheckins.length > 0 ? (
-                <View style={showNearbyCheckinCard ? styles.secondaryAlert : undefined}>
-                  <PlaceNowAlert
-                    placeName={obPlace?.name ?? ''}
-                    activeCount={activePlaceCheckins.length}
-                    onPressView={() => navigation.navigate('PlaceNow', { placeId: obPlace!.id })}
-                  />
-                </View>
               ) : null}
             </Animated.View>
           ) : null}

@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
   searchChrome: {
     paddingBottom: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: 'rgba(231, 226, 216, 0.5)',
     gap: spacing.md,
     backgroundColor: colors.surface,
   },
@@ -339,9 +339,7 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   chipText: { ...typography.caption, color: colors.textPrimary, fontWeight: '600' },
   chipTextActive: { color: colors.surface },
-  resultsList: {
-    paddingTop: spacing.xs,
-  },
+  resultsList: {},
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { ...typography.bodyMuted, textAlign: 'center', paddingHorizontal: spacing.xl },
 });

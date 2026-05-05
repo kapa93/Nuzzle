@@ -76,8 +76,8 @@ const styles = StyleSheet.create({
   joinedPill: {
     backgroundColor: "rgba(255, 255, 255, 0.88)",
     borderRadius: radius.lg,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs,
     marginTop: 5,
   },
   joinedPillPressed: { opacity: 0.85 },
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   titlePressed: { opacity: 0.9 },
   title: {
     fontSize: 32,
-    lineHeight: 35,
+    lineHeight: 34,
     letterSpacing: 0.1,
     ...Platform.select({
       ios: { fontFamily: "System", fontWeight: "700" as const },

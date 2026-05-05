@@ -877,6 +877,7 @@ export function ExploreScreen({
                 {coords ? (
                   <PlacesSection
                     title="Nearby"
+                    style={{ marginTop: spacing.md }}
                     isEmpty={
                       !nearbyPlacesQuery.isFetching &&
                       !nearbyPlacesQuery.isError &&
@@ -1033,14 +1034,16 @@ function PlacesSection({
   children,
   isEmpty,
   emptyMessage,
+  style,
 }: {
   title: string;
   children: React.ReactNode;
   isEmpty: boolean;
   emptyMessage: string;
+  style?: import('react-native').ViewStyle;
 }) {
   return (
-    <View style={styles.googleSection}>
+    <View style={[styles.googleSection, style]}>
       <Text style={styles.googleSectionTitle}>{title}</Text>
       {isEmpty ? <Text style={styles.placesEmptyText}>{emptyMessage}</Text> : children}
     </View>

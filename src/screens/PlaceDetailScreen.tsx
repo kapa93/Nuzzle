@@ -691,7 +691,7 @@ const styles = StyleSheet.create({
   },
   heroImageOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.24)',
+    backgroundColor: 'rgba(0,0,0,0.14)',
   },
   heroPageContent: {
     flex: 1,
@@ -702,17 +702,17 @@ const styles = StyleSheet.create({
     paddingRight: spacing.xxl,
   },
   locationText: {
-    ...typography.bodyMuted,
+    ...typography.caption,
     fontFamily: 'Inter_700Bold',
     color: colors.textMuted,
     flexShrink: 1,
   },
   heroLocationText: {
-    color: 'rgba(255,255,255,0.88)',
+    color: '#FFFFFF',
   },
   placeName: {
-    fontSize: 32,
-    lineHeight: 35,
+    fontSize: 31,
+    lineHeight: 34,
     letterSpacing: 0.1,
     ...Platform.select({
       ios: { fontFamily: 'System', fontWeight: '700' as const },
@@ -736,9 +736,9 @@ const styles = StyleSheet.create({
   },
   heroActions: {
     alignSelf: 'stretch',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: 'column-reverse',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-end',
     gap: spacing.sm,
     marginBottom: 5,
   },
