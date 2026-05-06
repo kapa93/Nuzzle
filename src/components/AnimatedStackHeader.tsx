@@ -166,8 +166,8 @@ export function AnimatedStackHeader({
             {
               backgroundColor: colors.surface,
               height: headerHeight,
-              borderBottomWidth: hideBottomBorder ? 0 : StyleSheet.hairlineWidth,
-              borderBottomColor: hideBottomBorder ? "transparent" : "#000000",
+              borderBottomWidth: hideBottomBorder ? 0 : 1,
+              borderBottomColor: hideBottomBorder ? "transparent" : "rgba(231, 226, 216, 0.5)",
               elevation: 0,
               shadowOpacity: 0,
               shadowRadius: 0,

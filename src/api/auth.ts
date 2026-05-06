@@ -30,15 +30,20 @@ export async function signUp(email: string, password: string, name: string, city
   if (authError) throw authError;
   if (!authData.user) throw new Error('Sign up failed');
 
-  // Profile is created via trigger, but we can upsert to ensure
-  const { error: profileError } = await supabase.from('profiles').upsert({
-    id: authData.user.id,
-    name: name || authData.user.email?.split('@')[0],
-    email: authData.user.email ?? email,
-    city: city ?? null,
-  });
+  // Only upsert the profile when we have an active session (i.e. email
+  // confirmation is disabled). When confirmation is required there is no
+  // session yet, so the RLS policy would reject the write — the database
+  // trigger handles profile creation once the user confirms their email.
+  if (authData.session) {
+    const { error: profileError } = await supabase.from('profiles').upsert({
+      id: authData.user.id,
+      name: name || authData.user.email?.split('@')[0],
+      email: authData.user.email ?? email,
+      city: city ?? null,
+    });
 
-  if (profileError) throw profileError;
+    if (profileError) throw profileError;
+  }
 
   return authData;
 }

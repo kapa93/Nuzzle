@@ -299,8 +299,8 @@ const styles = StyleSheet.create({
     overflow: "visible",
     elevation: 0,
     shadowOpacity: 0,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: TAB_ICON_COLOR,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(231, 226, 216, 0.5)',
   },
   item: {
     alignItems: "center",

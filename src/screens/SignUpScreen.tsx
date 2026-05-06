@@ -116,10 +116,12 @@ export function SignUpScreen() {
     try {
       const authData = await signUp(email, password, name.trim(), city.trim() || undefined);
       if (!authData.session) {
-        useOnboardingStore.getState().setNeedsOnboarding(false);
+        // Leave needsOnboarding: true — it is persisted and will route the
+        // user through onboarding once they confirm their email and a session
+        // is established via the deep link.
         setError('');
         (navigation as any).navigate('SignIn', {
-          message: 'Account created. Sign in to continue.',
+          message: 'Check your email to confirm your account.',
         });
       }
     } catch (err: unknown) {
