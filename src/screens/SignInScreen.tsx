@@ -26,6 +26,7 @@ import { ScreenWithWallpaper } from '@/components/ScreenWithWallpaper';
 import { AuthLegalNotice } from '@/components/AuthLegalNotice';
 import { colors } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
+import { useOnboardingStore } from '@/store/onboardingStore';
 import { signInSchema } from '@/utils/validation';
 import type { AuthStackParamList } from '@/navigation/types';
 import { Lock, Mail } from 'lucide-react-native';
@@ -40,7 +41,7 @@ const MARQUEE_DURATION_MS = 103818;
 const INPUT_MUTED = colors.textMuted;
 const INPUT_BORDER = colors.border;
 type RuntimePlatform = 'ios' | 'android' | 'web';
-type SocialButtonVariant = 'apple-native';
+type SocialButtonVariant = 'apple-native' | 'google';
 type SocialProviderConfig = {
   provider: SocialAuthProvider;
   label: string;
@@ -55,6 +56,12 @@ const SOCIAL_PROVIDER_CONFIGS: SocialProviderConfig[] = [
     visibleOn: ['ios'],
     buttonVariant: 'apple-native',
   },
+  {
+    provider: 'google',
+    label: 'Google',
+    visibleOn: ['ios', 'android'],
+    buttonVariant: 'google',
+  },
 ];
 
 export function SignInScreen() {
@@ -66,6 +73,8 @@ export function SignInScreen() {
   const [socialLoading, setSocialLoading] = useState<SocialAuthProvider | null>(null);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [emailEmpty, setEmailEmpty] = useState(false);
+  const [passwordEmpty, setPasswordEmpty] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const marqueeX = useSharedValue(0);
 
@@ -112,6 +121,13 @@ export function SignInScreen() {
 
   const handleSignIn = async () => {
     setError('');
+
+    const isEmailEmpty = email.trim() === '';
+    const isPasswordEmpty = password === '';
+    setEmailEmpty(isEmailEmpty);
+    setPasswordEmpty(isPasswordEmpty);
+    if (isEmailEmpty || isPasswordEmpty) return;
+
     const parsed = signInSchema.safeParse({ email, password });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? 'Invalid input');
@@ -143,6 +159,9 @@ export function SignInScreen() {
     setSocialLoading(provider);
     try {
       const data = await signInWithProvider(provider);
+      if (data.isNewUser) {
+        useOnboardingStore.getState().setNeedsOnboarding(true);
+      }
       useAuthStore.getState().setSession(data.session);
     } catch (err: unknown) {
       captureHandledError(err, {
@@ -176,27 +195,27 @@ export function SignInScreen() {
           <Text style={styles.successMessage}>{successMessage}</Text>
         ) : null}
 
-        <View style={styles.inputRow}>
-          <Mail size={20} color={INPUT_MUTED} strokeWidth={2} />
+        <View style={[styles.inputRow, emailEmpty && styles.inputRowError]}>
+          <Mail size={20} color={emailEmpty ? colors.danger : INPUT_MUTED} strokeWidth={2} />
           <TextInput
             style={styles.inputField}
             placeholder="Email"
-            placeholderTextColor={INPUT_MUTED}
+            placeholderTextColor={emailEmpty ? colors.danger : INPUT_MUTED}
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(v) => { setEmail(v); if (emailEmpty) setEmailEmpty(false); }}
             autoCapitalize="none"
             keyboardType="email-address"
             autoComplete="email"
           />
         </View>
-        <View style={styles.inputRow}>
-          <Lock size={20} color={INPUT_MUTED} strokeWidth={2} />
+        <View style={[styles.inputRow, passwordEmpty && styles.inputRowError]}>
+          <Lock size={20} color={passwordEmpty ? colors.danger : INPUT_MUTED} strokeWidth={2} />
           <TextInput
             style={styles.inputField}
             placeholder="Password"
-            placeholderTextColor={INPUT_MUTED}
+            placeholderTextColor={passwordEmpty ? colors.danger : INPUT_MUTED}
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(v) => { setPassword(v); if (passwordEmpty) setPasswordEmpty(false); }}
             secureTextEntry
             autoComplete="password"
           />
@@ -233,6 +252,18 @@ export function SignInScreen() {
                 style={styles.appleButton}
                 onPress={() => handleSocialSignIn(config.provider, config.label)}
               />
+            ) : null}
+            {config.buttonVariant === 'google' ? (
+              <TouchableOpacity
+                style={styles.googleButton}
+                onPress={() => handleSocialSignIn(config.provider, config.label)}
+                activeOpacity={0.85}
+              >
+                <View style={styles.googleIconContainer}>
+                  <Text style={styles.googleIconText}>G</Text>
+                </View>
+                <Text style={styles.googleButtonText}>Sign in with Google</Text>
+              </TouchableOpacity>
             ) : null}
             {socialLoading === config.provider ? (
               <ActivityIndicator style={styles.appleLoading} color={colors.primary} />
@@ -343,6 +374,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     gap: 10,
   },
+  inputRowError: {
+    borderColor: colors.danger,
+  },
   inputField: {
     flex: 1,
     fontSize: 16,
@@ -399,6 +433,36 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 14,
     top: 12,
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#dadce0',
+    borderRadius: 8,
+    height: 46,
+    width: '100%',
+    gap: 10,
+  },
+  googleIconContainer: {
+    width: 20,
+    height: 20,
+    borderRadius: 2,
+    backgroundColor: '#4285F4',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  googleIconText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  googleButtonText: {
+    color: '#3c4043',
+    fontSize: 16,
+    fontWeight: '600',
   },
   linkText: {
     color: colors.primary,

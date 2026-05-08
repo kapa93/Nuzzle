@@ -1,5 +1,7 @@
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
+import { makeRedirectUri } from 'expo-auth-session';
 import { Platform } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import type { Profile } from '@/types';
@@ -7,7 +9,7 @@ import type { Profile } from '@/types';
 const AUTH_CALLBACK_PATH = 'auth/callback';
 const FALLBACK_PROFILE_NAME = 'Dog Lover';
 
-export type SocialAuthProvider = 'apple';
+export type SocialAuthProvider = 'apple' | 'google';
 
 export function getAuthCallbackUrl() {
   return Linking.createURL(AUTH_CALLBACK_PATH);
@@ -116,13 +118,52 @@ export async function signInWithApple() {
 
   await upsertSocialProfile(data.user.id, profileEmail, profileName);
 
-  return data;
+  const { count } = await supabase
+    .from('dogs')
+    .select('id', { count: 'exact', head: true })
+    .eq('owner_id', data.user.id);
+
+  return { ...data, isNewUser: count === 0 };
+}
+
+export async function signInWithGoogle() {
+  const redirectUri = makeRedirectUri({ scheme: 'nuzzle', path: 'auth/callback' });
+
+  const { data: oauthData, error: oauthError } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: redirectUri, skipBrowserRedirect: true },
+  });
+  if (oauthError) throw oauthError;
+  if (!oauthData.url) throw new Error('Google sign in failed to return a URL');
+
+  const result = await WebBrowser.openAuthSessionAsync(oauthData.url, redirectUri);
+  if (result.type !== 'success') throw new Error('Google sign in was cancelled');
+
+  const code = new URL(result.url).searchParams.get('code');
+  if (!code) throw new Error('No authorization code received');
+
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+  if (error) throw error;
+  if (!data.user) throw new Error('Google sign in failed');
+
+  const profileName =
+    data.user.user_metadata?.full_name ?? data.user.user_metadata?.name ?? null;
+  await upsertSocialProfile(data.user.id, data.user.email ?? null, profileName);
+
+  const { count } = await supabase
+    .from('dogs')
+    .select('id', { count: 'exact', head: true })
+    .eq('owner_id', data.user.id);
+
+  return { ...data, isNewUser: count === 0 };
 }
 
 export async function signInWithProvider(provider: SocialAuthProvider) {
   switch (provider) {
     case 'apple':
       return signInWithApple();
+    case 'google':
+      return signInWithGoogle();
     default:
       throw new Error(`Unsupported auth provider: ${provider}`);
   }

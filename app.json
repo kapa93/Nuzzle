@@ -15,10 +15,11 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.kapa.nuzzle-dev",
-      "usesAppleSignIn": false,
+      "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "appleTeamId": "L3VDBFUD7G"
     },
     "android": {
       "adaptiveIcon": {
@@ -31,7 +32,8 @@
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
-      ]
+      ],
+      "package": "com.kapa.nuzzledev"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -44,7 +46,12 @@
           "locationWhenInUsePermission": "Nuzzle uses your location to find dog parks, beaches, and trails near you."
         }
       ],
-      ["@sentry/react-native", { "disableAutoUpload": true }]
+      [
+        "@sentry/react-native",
+        {
+          "disableAutoUpload": true
+        }
+      ]
     ],
     "extra": {
       "eas": {

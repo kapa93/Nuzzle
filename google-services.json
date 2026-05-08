@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "60180933738",
+    "project_id": "nuzzle-493807",
+    "storage_bucket": "nuzzle-493807.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:60180933738:android:76a1a7936d472c2d692e13",
+        "android_client_info": {
+          "package_name": "com.kapa.nuzzledev"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "60180933738-238mlqbak34tg4g4mmb4if4idl3er8b2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kapa.nuzzledev",
+            "certificate_hash": "e2467c66c5eef706d7be9c928bca7e3d57ac4256"
+          }
+        },
+        {
+          "client_id": "60180933738-67575sv8tlp59hjpp95l3i12ma3mp28p.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDT1ZvvV7YhLhr3zAxU1D8Nr3rMj3Ia7YU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "60180933738-67575sv8tlp59hjpp95l3i12ma3mp28p.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "60180933738-el14pp20h71oitrj4ok4u6f8kjb1un9b.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.kapa.nuzzle"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
