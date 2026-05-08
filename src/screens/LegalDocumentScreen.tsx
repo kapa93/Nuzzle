@@ -56,7 +56,7 @@ export function LegalDocumentScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: headerHeight + 8 },
+          { paddingTop: headerHeight + 25 },
         ]}
       >
         <Text style={styles.title}>{document.title}</Text>
@@ -116,7 +116,7 @@ export function LegalDocumentScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#ffffff',
   },
   notFound: {
     flex: 1,

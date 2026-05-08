@@ -3,6 +3,7 @@ import { Image, Pressable, StyleSheet, useWindowDimensions, View } from "react-n
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getHeaderTitle, Header } from "@react-navigation/elements";
 import { Search } from "lucide-react-native/icons";
+import { ChevronLeft } from "lucide-react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -81,6 +82,32 @@ export function AnimatedStackHeader({
     />
   );
 
+  const mergedHeaderLeft = useMemo(
+    () =>
+      options.headerLeft ??
+      (back
+        ? () => (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              hitSlop={8}
+              onPress={navigation.goBack}
+              style={({ pressed }) => [
+                styles.backButton,
+                pressed && styles.backButtonPressed,
+              ]}
+            >
+              <ChevronLeft
+                size={26}
+                color={options.headerTintColor ?? "#000000"}
+                strokeWidth={HEADER_LUCIDE_STROKE}
+              />
+            </Pressable>
+          )
+        : undefined),
+    [back, navigation, options.headerLeft, options.headerTintColor]
+  );
+
   const mergedHeaderRight = useMemo(
     () =>
       (props: any) => {
@@ -155,7 +182,7 @@ export function AnimatedStackHeader({
           layout={{ width, height: screenHeight }}
           title={getHeaderTitle(options, route.name)}
           headerTitle={options.headerTitle ?? defaultHeaderTitle}
-          headerLeft={options.headerLeft}
+          headerLeft={mergedHeaderLeft}
           headerRight={mergedHeaderRight}
           headerTransparent={false}
           headerTintColor={options.headerTintColor ?? "#000000"}
@@ -187,6 +214,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
+  },
+  backButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 2,
+  },
+  backButtonPressed: {
+    opacity: 0.6,
   },
   searchButton: {
     width: 34,
