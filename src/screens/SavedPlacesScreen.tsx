@@ -19,6 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { useScrollToTop } from '@react-navigation/native';
 import { DogAvatar } from '@/components/DogAvatar';
 import { FeedItem } from '@/components/FeedItem';
 import { MetThisDogButton } from '@/components/MetThisDogButton';
@@ -108,6 +109,8 @@ export function SavedPlacesScreen({ navigation }: Props) {
 
   const scrollRef = useRef<ScrollView>(null);
   const userScrollingRef = useRef(false);
+  const flatListRef = useRef<FlatList>(null);
+  useScrollToTop(flatListRef);
   const { onScroll } = useScrollDirectionUpdater();
   const { scrollDirection } = useScrollDirection();
   const bottomPad = scrollDirection === 'down' ? spacing.sm : tabBarScrollPad;
@@ -624,6 +627,7 @@ export function SavedPlacesScreen({ navigation }: Props) {
       <SafeAreaView style={styles.safe} edges={['left', 'right']}>
 
         <FlatList
+          ref={flatListRef}
           data={tabData}
           keyExtractor={tabKeyExtractor}
           extraData={activeTab}

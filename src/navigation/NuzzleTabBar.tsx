@@ -271,7 +271,17 @@ export function NuzzleTabBar({ state, navigation }: BottomTabBarProps) {
               label={item.label}
               accessibilityLabel={item.label}
               isActive={isActive}
-              onPress={() => navigation.navigate(item.key)}
+              onPress={() => {
+                const route = state.routes.find((r) => r.name === item.key);
+                const event = navigation.emit({
+                  type: "tabPress",
+                  target: route?.key,
+                  canPreventDefault: true,
+                });
+                if (!isActive && !event.defaultPrevented) {
+                  navigation.navigate(item.key);
+                }
+              }}
             />
           );
         })}

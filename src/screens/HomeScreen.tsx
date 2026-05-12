@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
+import { useScrollToTop } from "@react-navigation/native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Location from 'expo-location';
@@ -86,6 +87,8 @@ export function HomeScreen({
   const { onScroll } = useScrollDirectionUpdater();
   const { scrollDirection } = useScrollDirection();
   const headerHeight = useStackHeaderHeight();
+  const flatListRef = useRef<FlatList>(null);
+  useScrollToTop(flatListRef);
   const { feedFilter, setFeedFilter } = useUIStore();
   const queryClient = useQueryClient();
   const [selectedDogIndex, setSelectedDogIndex] = useState(0);
@@ -535,6 +538,7 @@ export function HomeScreen({
             </Animated.View>
           ) : null}
           <FlatList
+          ref={flatListRef}
           data={posts}
           keyExtractor={(item) => item.id}
           ListHeaderComponent={renderHeader}
