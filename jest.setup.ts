@@ -53,6 +53,9 @@ jest.mock('react-native-reanimated', () => {
     useSharedValue: (initialValue: unknown) => ({ value: initialValue }),
     useAnimatedStyle: (updater: () => object) => updater(),
     withTiming: (toValue: unknown) => toValue,
+    withRepeat: (value: unknown) => value,
+    cancelAnimation: jest.fn(),
+    Easing: { linear: jest.fn((t: number) => t) },
     interpolateColor: (
       _value: number,
       _inputRange: number[],
