@@ -129,6 +129,7 @@ function makeProfile(overrides: Partial<Profile> = {}): Profile {
     email: overrides.email ?? 'ben@example.com',
     city: overrides.city ?? 'San Francisco',
     profile_image_url: overrides.profile_image_url ?? null,
+    is_admin: overrides.is_admin ?? false,
     created_at: overrides.created_at ?? '2026-03-18T00:00:00.000Z',
     updated_at: overrides.updated_at ?? '2026-03-18T00:00:00.000Z',
   };

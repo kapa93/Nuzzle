@@ -95,6 +95,7 @@ jest.mock('@/components/DogsMetSection', () => {
 });
 
 import React from 'react';
+import { ActivityIndicator } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { UserProfileContent } from '@/components/UserProfileContent';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -127,6 +128,7 @@ function makeProfile(overrides: Partial<Profile> = {}): Profile {
     email: overrides.email ?? 'ben@example.com',
     city: overrides.city ?? 'San Francisco',
     profile_image_url: overrides.profile_image_url ?? null,
+    is_admin: overrides.is_admin ?? false,
     created_at: overrides.created_at ?? '2026-03-18T00:00:00.000Z',
     updated_at: overrides.updated_at ?? '2026-03-18T00:00:00.000Z',
   };
@@ -189,7 +191,7 @@ describe('UserProfileContent', () => {
 
     render(<UserProfileContent profileUserId="owner-ben" viewerUserId="viewer-alice" />);
 
-    expect(screen.getByText('Loading profile...')).toBeTruthy();
+    expect(screen.UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
   });
 
   it('renders the error state and retries', () => {
