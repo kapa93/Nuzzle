@@ -35,6 +35,7 @@ import { AnimatedStackHeader } from '@/components/AnimatedStackHeader';
 import { useScrollDirection } from '@/context/ScrollDirectionContext';
 import { colors } from '@/theme';
 import { registerSentryNavigationContainer } from '@/lib/sentry';
+import { posthog } from '@/lib/posthog';
 import {
   CREATE_POST_SHEET_MODAL_HEADER_HEIGHT,
   CREATE_POST_STACK_HEADER_BAR,
@@ -322,6 +323,18 @@ export function RootNavigator() {
   const { session, setSession, user, setProfile } = useAuthStore();
   const { hasHydrated, needsOnboarding, onboardingDog } = useOnboardingStore();
   const [loading, setLoading] = React.useState(true);
+  const navRef = React.useRef<any>(null);
+
+  useEffect(() => {
+    if (user) {
+      posthog.identify(user.id, {
+        ...(user.email ? { email: user.email } : {}),
+        ...(user.app_metadata?.provider ? { auth_provider: String(user.app_metadata.provider) } : {}),
+      });
+    } else {
+      posthog.reset();
+    }
+  }, [user]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -364,10 +377,13 @@ export function RootNavigator() {
   return (
     <NavigationContainer
       theme={theme}
-      ref={(navigationContainerRef) => {
-        if (navigationContainerRef) {
-          registerSentryNavigationContainer(navigationContainerRef);
-        }
+      ref={(ref) => {
+        navRef.current = ref;
+        if (ref) registerSentryNavigationContainer(ref);
+      }}
+      onStateChange={() => {
+        const route = navRef.current?.getCurrentRoute();
+        if (route?.name) posthog.screen(route.name);
       }}
     >
       <RootStack.Navigator

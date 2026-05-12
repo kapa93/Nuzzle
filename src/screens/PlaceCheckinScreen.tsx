@@ -19,6 +19,7 @@ import { useAuthStore } from '@/store/authStore';
 import { BREED_LABELS, formatRelativeTime, PLAY_STYLE_LABELS } from '@/utils/breed';
 import { colors, radius, shadow, spacing, typography } from '@/theme';
 import { captureHandledError } from '@/lib/sentry';
+import { track } from '@/lib/posthog';
 
 type Props = {
   route: { params: { placeId: string } };
@@ -60,7 +61,11 @@ export function PlaceCheckinScreen({ route, navigation }: Props) {
   const createMutation = useMutation({
     mutationFn: (dogIds: string[]) =>
       checkIntoPlace(placeId, user!.id, dogIds, place?.check_in_duration_minutes),
-    onSuccess: () => {
+    onSuccess: (_, dogIds) => {
+      track('place_checkin_completed', {
+        place_name: place?.name ?? '',
+        dog_count: dogIds.length,
+      });
       queryClient.invalidateQueries({ queryKey: ['placeActiveCheckins', placeId] });
       queryClient.invalidateQueries({ queryKey: ['placeMyCheckins', user?.id, placeId] });
     },

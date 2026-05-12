@@ -11,13 +11,20 @@ import { ScreenWithWallpaper } from '@/components/ScreenWithWallpaper';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import { colors } from '@/theme';
 import type { OnboardingStackParamList } from '@/navigation/types';
+import { track } from '@/lib/posthog';
 
 type OnboardingNav = NativeStackNavigationProp<OnboardingStackParamList, 'OnboardingWelcome'>;
 
 export function OnboardingScreen() {
   const navigation = useNavigation<OnboardingNav>();
 
+  React.useEffect(() => {
+    track('onboarding_started', {});
+  }, []);
+
   const handleSkip = () => {
+    track('onboarding_skipped', {});
+    track('onboarding_completed', { added_dog: false });
     useOnboardingStore.getState().setNeedsOnboarding(false);
   };
 

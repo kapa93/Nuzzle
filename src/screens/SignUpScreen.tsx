@@ -21,6 +21,7 @@ import { colors } from '@/theme';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import { signUpSchema } from '@/utils/validation';
 import { captureHandledError } from '@/lib/sentry';
+import { track } from '@/lib/posthog';
 
 const INPUT_MUTED = colors.textMuted;
 const INPUT_BORDER = colors.border;
@@ -115,6 +116,7 @@ export function SignUpScreen() {
     useOnboardingStore.getState().setNeedsOnboarding(true);
     try {
       const authData = await signUp(email, password, name.trim(), city.trim() || undefined);
+      track('sign_up_completed', { method: 'email' });
       if (!authData.session) {
         // Leave needsOnboarding: true — it is persisted and will route the
         // user through onboarding once they confirm their email and a session

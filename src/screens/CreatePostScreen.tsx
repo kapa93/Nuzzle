@@ -28,6 +28,7 @@ import { colors, shadow, spacing } from '@/theme';
 import type { BreedEnum, PostTypeEnum, PostTagEnum, MeetupKind } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { captureHandledError } from '@/lib/sentry';
+import { track } from '@/lib/posthog';
 
 type CreatePostRoute = {
   CreatePost: { breed?: BreedEnum; initialType?: PostTypeEnum; initialPlaceId?: string; initialPlaceName?: string };
@@ -115,6 +116,15 @@ export function CreatePostScreen() {
 
   const isMeetup = type === 'MEETUP';
 
+  React.useEffect(() => {
+    const trigger =
+      route.name === 'CreatePostModal' ? 'tab' :
+      route.params?.initialType === 'MEETUP' ? 'meetup_prompt' :
+      'home_prompt';
+    track('create_post_opened', { trigger });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const mutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error('Not authenticated');
@@ -169,6 +179,12 @@ export function CreatePostScreen() {
       return post;
     },
     onSuccess: () => {
+      track('create_post_submitted', {
+        type,
+        has_image: imageUris.length > 0,
+        has_place: attachedPlaceId != null,
+        breed,
+      });
       queryClient.invalidateQueries({ queryKey: ['feed'] });
       queryClient.invalidateQueries({ queryKey: ['posts'] });
       if (attachedPlaceId) {
@@ -297,7 +313,10 @@ export function CreatePostScreen() {
             <TouchableOpacity
               key={t}
               style={[styles.chip, type === t && styles.chipSelected]}
-              onPress={() => setType(t)}
+              onPress={() => {
+                setType(t);
+                if (t !== type) track('create_post_type_selected', { type: t });
+              }}
             >
               <Text style={[styles.chipText, type === t && styles.chipTextSelected]}>
                 {POST_TYPE_LABELS[t]}

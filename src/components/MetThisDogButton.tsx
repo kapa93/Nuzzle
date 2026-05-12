@@ -5,6 +5,7 @@ import { useDogInteractionMutation } from '@/hooks/useDogInteractionMutation';
 import { useRecentDogMeetingStatus } from '@/hooks/useRecentDogMeetingStatus';
 import { colors, radius, spacing, typography } from '@/theme';
 import type { Dog, DogInteractionSourceType } from '@/types';
+import { track } from '@/lib/posthog';
 
 type Props = {
   viewerUserId?: string | null;
@@ -51,6 +52,7 @@ export function MetThisDogButton({
       return;
     }
 
+    track('met_this_dog_tapped', { source_type: sourceType });
     mutation.mutate({
       dogIds,
       metDogId: targetDog.id,

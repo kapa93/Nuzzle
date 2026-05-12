@@ -40,6 +40,7 @@ import { useStackHeaderHeight } from "@/hooks/useStackHeaderHeight";
 import { colors, MENU_DOTS_PRESS_IN_MS, MENU_DOTS_PRESS_OUT_MS, radius, spacing, typography } from "@/theme";
 import type { ReactionEnum } from "@/types";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import { track } from "@/lib/posthog";
 
 function getBarksText(count: number) {
   return count === 1 ? "1 Bark" : `${count} Barks`;
@@ -98,6 +99,17 @@ export function PostDetailScreen() {
     enabled: !!postId,
   });
 
+  const hasTrackedView = useRef(false);
+  useEffect(() => {
+    if (post && !hasTrackedView.current) {
+      hasTrackedView.current = true;
+      track('post_viewed', {
+        post_type: post.type,
+        source: routeParams?.source ?? 'feed',
+      });
+    }
+  }, [post, routeParams?.source]);
+
   const { data: comments } = useQuery({
     queryKey: ["comments", postId],
     queryFn: () => getCommentsByPost(postId),
@@ -109,7 +121,8 @@ export function PostDetailScreen() {
   const rsvpMutation = useMutation({
     mutationFn: (rsvped: boolean) =>
       rsvped ? unrsvpMeetup(postId, user!.id) : rsvpMeetup(postId, user!.id),
-    onSuccess: () => {
+    onSuccess: (_, rsvped) => {
+      track('meetup_rsvp', { action: rsvped ? 'cancel' : 'rsvp' });
       queryClient.invalidateQueries({ queryKey: ["post", postId] });
     },
   });
@@ -122,6 +135,7 @@ export function PostDetailScreen() {
         post!.author_id
       ),
     onSuccess: async () => {
+      if (post) track('post_comment_added', { post_type: post.type });
       await queryClient.refetchQueries({ queryKey: ["comments", postId], type: "active" });
       await queryClient.refetchQueries({ queryKey: ["post", postId], type: "active" });
       setCommentText("");
@@ -135,6 +149,7 @@ export function PostDetailScreen() {
   });
 
   const handleReactionSelect = (reaction: ReactionEnum | null) => {
+    if (reaction && post) track('post_reaction_added', { reaction_type: reaction, post_type: post.type });
     reactionMutation.mutate({ postId, userId: user!.id, reaction });
   };
 
@@ -202,6 +217,7 @@ export function PostDetailScreen() {
               reportable_id: postId,
               reason: "User reported",
             });
+            if (post) track('post_reported', { post_type: post.type });
             Alert.alert("Thank you", "Your report has been submitted.");
           },
         },

@@ -1,5 +1,25 @@
 import '@testing-library/jest-native/extend-expect';
 
+jest.mock('posthog-react-native', () => {
+  const React = require('react');
+  const noop = () => {};
+  const MockPostHog = jest.fn().mockImplementation(() => ({
+    capture: noop,
+    identify: noop,
+    reset: noop,
+    screen: noop,
+    optIn: noop,
+    optOut: noop,
+  }));
+  return {
+    __esModule: true,
+    default: MockPostHog,
+    PostHog: MockPostHog,
+    PostHogProvider: ({ children }: { children: React.ReactNode }) => children,
+    usePostHog: () => ({ capture: noop, identify: noop, reset: noop, screen: noop }),
+  };
+});
+
 jest.mock('react-native-url-polyfill/auto', () => ({}));
 
 jest.mock('expo-web-browser', () => ({

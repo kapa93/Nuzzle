@@ -5,6 +5,8 @@ import { StatusBar } from 'expo-status-bar';
 import * as Sentry from '@sentry/react-native';
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { PostHogProvider } from 'posthog-react-native';
+import { posthog } from '@/lib/posthog';
 import {
   Inter_400Regular,
   Inter_500Medium,
@@ -135,16 +137,18 @@ export default function App() {
 
   return (
     <Sentry.ErrorBoundary fallback={<AppErrorFallback />}>
-      <QueryClientProvider client={queryClient}>
-        <SafeAreaProvider>
-          <ScrollDirectionProvider>
-            <View style={styles.root}>
-              <RootNavigator />
-            </View>
-          </ScrollDirectionProvider>
-          <StatusBar style="auto" />
-        </SafeAreaProvider>
-      </QueryClientProvider>
+      <PostHogProvider client={posthog} autocapture={{ captureScreens: false }}>
+        <QueryClientProvider client={queryClient}>
+          <SafeAreaProvider>
+            <ScrollDirectionProvider>
+              <View style={styles.root}>
+                <RootNavigator />
+              </View>
+            </ScrollDirectionProvider>
+            <StatusBar style="auto" />
+          </SafeAreaProvider>
+        </QueryClientProvider>
+      </PostHogProvider>
     </Sentry.ErrorBoundary>
   );
 }
