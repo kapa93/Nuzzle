@@ -64,7 +64,7 @@ const mockUseQuery = useQuery as jest.Mock;
 const mockUseQueryClient = useQueryClient as jest.Mock;
 const mockUseNavigation = useNavigation as jest.Mock;
 const mockUseRoute = useRoute as jest.Mock;
-const mockUseAuthStore = useAuthStore as jest.Mock;
+const mockUseAuthStore = useAuthStore as unknown as jest.Mock;
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 

@@ -9,7 +9,7 @@ const mockFrom = supabase.from as jest.Mock;
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
-function buildChain(finalResult: object) {
+function buildChain(finalResult: object | null) {
   const chain = {
     select: jest.fn().mockReturnThis(),
     insert: jest.fn().mockReturnThis(),
