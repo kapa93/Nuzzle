@@ -44,7 +44,7 @@ import type { ProfileStackParamList } from '@/navigation/types';
 const mockUseMutation = useMutation as jest.Mock;
 const mockUseQueryClient = useQueryClient as jest.Mock;
 const mockUseAuthStore = useAuthStore as unknown as jest.Mock;
-const fakeNav = { navigate: jest.fn() } as unknown as NativeStackNavigationProp<ProfileStackParamList, 'ProfileMain'>;
+const fakeNav = { navigate: jest.fn(), setOptions: jest.fn() } as unknown as NativeStackNavigationProp<ProfileStackParamList, 'ProfileMain'>;
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
@@ -53,6 +53,7 @@ describe('ProfileScreen', () => {
     jest.clearAllMocks();
     mockUseQueryClient.mockReturnValue({ invalidateQueries: jest.fn() });
     mockUseMutation.mockReturnValue({ mutate: jest.fn(), isPending: false });
+    (fakeNav.setOptions as jest.Mock).mockClear();
   });
 
   it('renders null when userId is falsy — hooks order is correct', () => {

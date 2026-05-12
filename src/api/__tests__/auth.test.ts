@@ -50,7 +50,8 @@ describe('signUp', () => {
 
   it('throws when the profiles upsert fails', async () => {
     const fakeUser = { id: 'u1', email: 'a@b.com' };
-    mockAuth.signUp.mockResolvedValue({ data: { user: fakeUser } as never, error: null });
+    const fakeSession = { access_token: 'tok' };
+    mockAuth.signUp.mockResolvedValue({ data: { user: fakeUser, session: fakeSession } as never, error: null });
     buildChain({ error: new Error('DB error') });
 
     await expect(signUp('a@b.com', 'pass123', 'Alice')).rejects.toThrow('DB error');

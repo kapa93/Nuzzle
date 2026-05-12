@@ -99,6 +99,7 @@ jest.mock('@/components/DogAvatar', () => {
 // ─── Imports ──────────────────────────────────────────────────────────────────
 
 import React from 'react';
+import { ActivityIndicator } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
@@ -287,12 +288,12 @@ describe('PlaceDetailScreen', () => {
     expect(setOptions).toHaveBeenCalledWith(expect.objectContaining({ title: 'Ocean Beach Dog Beach' }));
   });
 
-  it('renders the place type chip', () => {
+  it('renders the place name', () => {
     setup();
     render(
       <PlaceDetailScreen route={defaultRoute} navigation={{ navigate, setOptions }} />,
     );
-    expect(screen.getByText('Dog Beach')).toBeTruthy();
+    expect(screen.getByText('Ocean Beach Dog Beach')).toBeTruthy();
   });
 
   it('renders the neighborhood and city', () => {
@@ -410,7 +411,7 @@ describe('PlaceDetailScreen', () => {
       <PlaceDetailScreen route={defaultRoute} navigation={{ navigate, setOptions }} />,
     );
     fireEvent.press(screen.getByText('Dogs'));
-    expect(screen.getByText('Loading...')).toBeTruthy();
+    expect(screen.UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
   });
 
   // ── Save / unsave ────────────────────────────────────────────────────────────
@@ -497,7 +498,7 @@ describe('PlaceDetailScreen', () => {
       <PlaceDetailScreen route={defaultRoute} navigation={{ navigate, setOptions }} />,
     );
     fireEvent.press(screen.getByText('Meetups'));
-    expect(screen.getByText('Loading...')).toBeTruthy();
+    expect(screen.UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
   });
 
   // ── Feed tab ─────────────────────────────────────────────────────────────────
@@ -554,7 +555,7 @@ describe('PlaceDetailScreen', () => {
     render(
       <PlaceDetailScreen route={defaultRoute} navigation={{ navigate, setOptions }} />,
     );
-    expect(screen.getByText('Loading...')).toBeTruthy();
+    expect(screen.UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
   });
 
   // ── "Post here" header button ─────────────────────────────────────────────────
