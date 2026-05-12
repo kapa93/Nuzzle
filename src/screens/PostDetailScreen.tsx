@@ -37,7 +37,7 @@ import { BREED_LABELS, POST_TYPE_LABELS, POST_TAG_LABELS, MEETUP_KIND_LABELS } f
 import { commentSchema } from "@/utils/validation";
 import { useScrollDirection } from "@/context/ScrollDirectionContext";
 import { useStackHeaderHeight } from "@/hooks/useStackHeaderHeight";
-import { colors, MENU_DOTS_PRESS_IN_MS, MENU_DOTS_PRESS_OUT_MS, radius, shadow, spacing, typography } from "@/theme";
+import { colors, MENU_DOTS_PRESS_IN_MS, MENU_DOTS_PRESS_OUT_MS, radius, spacing, typography } from "@/theme";
 import type { ReactionEnum } from "@/types";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 
@@ -678,7 +678,6 @@ const styles = StyleSheet.create({
   postButton: {
     minHeight: 44,
     paddingVertical: spacing.sm,
-    ...shadow.sm,
   },
   input: {
     flex: 1,
@@ -691,6 +690,5 @@ const styles = StyleSheet.create({
     ...typography.body,
     borderWidth: 1,
     borderColor: colors.border,
-    ...shadow.sm,
   },
 });

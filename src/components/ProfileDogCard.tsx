@@ -8,7 +8,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { DogAvatar } from '@/components/DogAvatar';
-import { colors, radius, shadow, spacing, typography } from '@/theme';
+import { colors, radius, spacing, typography } from '@/theme';
 import type { Dog } from '@/types';
 import {
   AGE_GROUP_LABELS,
@@ -159,7 +159,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.lg,
     gap: spacing.md,
-    ...shadow.sm,
   },
   pressed: {
     opacity: 0.94,

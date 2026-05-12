@@ -140,6 +140,8 @@ export function BreedFeedScreen() {
     );
   }, [isFetchingNextPage]);
 
+  const renderSeparator = useCallback(() => <View style={styles.feedSeparator} />, []);
+
   const showSwipeable =
     user && joinedBreeds.length >= 1 && joinedBreeds.includes(breed);
 
@@ -187,6 +189,7 @@ export function BreedFeedScreen() {
           maxToRenderPerBatch={8}
           windowSize={11}
           renderItem={renderFeedItem}
+          ItemSeparatorComponent={renderSeparator}
           ListEmptyComponent={isLoading ? (
             <View style={[styles.initialLoader, { paddingBottom: tabBarScrollPad }]}>
               <ActivityIndicator size="large" color={colors.primary} />
@@ -220,6 +223,7 @@ export function BreedFeedScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.surface },
+  feedSeparator: { height: 0, borderBottomWidth: 1.5, borderBottomColor: colors.border },
   safe: { flex: 1 },
   container: { flex: 1 },
   tabsSection: {},

@@ -410,13 +410,12 @@ export function SavedPlacesScreen({ navigation }: Props) {
     );
   }, []); // empty deps — function reference never changes, no remount ever
 
-  const renderTabItem = useCallback(({ item: tabItem, index }: { item: AnyTabItem; index: number }) => {
+  const renderTabItem = useCallback(({ item: tabItem }: { item: AnyTabItem }) => {
     if (tabItem._tab === 'dogs') return renderDogRow(tabItem.item);
     if (tabItem._tab === 'meetups') {
       return (
         <FeedItem
           item={tabItem.item}
-          showBottomBorder={index < placeMeetups.length - 1}
           onPostPress={handlePostPress}
           onAuthorPress={handleAuthorPress}
           onReactionSelect={handleReactionSelect}
@@ -431,7 +430,6 @@ export function SavedPlacesScreen({ navigation }: Props) {
     return (
       <FeedItem
         item={tabItem.item}
-        showBottomBorder={index < placePosts.length - 1}
         onPostPress={handlePostPress}
         onAuthorPress={handleAuthorPress}
         onReactionSelect={handleReactionSelect}
@@ -442,7 +440,9 @@ export function SavedPlacesScreen({ navigation }: Props) {
         onDelete={handleDeletePost}
       />
     );
-  }, [placePosts.length, placeMeetups.length, renderDogRow, handlePostPress, handleAuthorPress, handleReactionSelect, handleRsvpToggle, handleEditPost, handleDeletePost, user?.id]);
+  }, [renderDogRow, handlePostPress, handleAuthorPress, handleReactionSelect, handleRsvpToggle, handleEditPost, handleDeletePost, user?.id]);
+
+  const renderTabSeparator = useCallback(() => <View style={styles.feedSeparator} />, []);
 
   const tabEmptyComponent = useMemo(() => {
     if (isCurrentlyLoading) {
@@ -634,6 +634,7 @@ export function SavedPlacesScreen({ navigation }: Props) {
           scrollEventThrottle={16}
           ListHeaderComponent={ListHeader}
           renderItem={renderTabItem}
+          ItemSeparatorComponent={renderTabSeparator}
           initialNumToRender={8}
           maxToRenderPerBatch={8}
           windowSize={11}
@@ -727,6 +728,7 @@ const styles = StyleSheet.create({
   screenRoot: { flex: 1, backgroundColor: colors.surface },
   safe: { flex: 1 },
   centered: { alignItems: 'center', justifyContent: 'center' },
+  feedSeparator: { height: 0, borderBottomWidth: 1.5, borderBottomColor: colors.border },
   headerButton: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,

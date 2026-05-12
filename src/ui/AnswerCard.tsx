@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { colors, radius, shadow, spacing, typography } from "../theme";
+import { colors, radius, spacing, typography } from "../theme";
 import { Avatar } from "./Avatar";
 import { ReactionPill } from "./ReactionPill";
 
@@ -19,13 +19,15 @@ export function AnswerCard({ author, body, avatarUri, timestamp, helpfulCount = 
       <View style={styles.header}>
         <Pressable style={styles.authorPressable} disabled={!onAuthorPress} onPress={onAuthorPress}>
           <Avatar
-            size={40}
+            size={32}
             source={avatarUri ? { uri: avatarUri } : undefined}
             fallback={author?.[0]?.toUpperCase() ?? "🐶"}
           />
-          <Text style={styles.author}>{author}</Text>
+          <View style={styles.authorTextColumn}>
+            <Text style={styles.author}>{author}</Text>
+            {timestamp ? <Text style={styles.timestamp}>{timestamp}</Text> : null}
+          </View>
         </Pressable>
-        {timestamp ? <Text style={styles.timestamp}>{timestamp}</Text> : null}
       </View>
       <Text style={styles.body}>{body}</Text>
       {helpfulCount > 0 && (
@@ -39,12 +41,13 @@ export function AnswerCard({ author, body, avatarUri, timestamp, helpfulCount = 
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.md, ...shadow.sm },
-  header: { flexDirection: "row", alignItems: "center", marginBottom: spacing.sm },
-  authorPressable: { flex: 1, flexDirection: "row", alignItems: "center" },
-  author: { ...typography.subtitle, flex: 1, marginLeft: spacing.md },
-  timestamp: { ...typography.caption },
-  body: { ...typography.body },
+  card: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.md },
+  header: { flexDirection: "row", alignItems: "flex-start", marginBottom: spacing.sm },
+  authorPressable: { flex: 1, flexDirection: "row", alignItems: "flex-start" },
+  authorTextColumn: { flex: 1, marginLeft: spacing.md },
+  author: { ...typography.subtitle, fontSize: 15, lineHeight: 20 },
+  timestamp: { ...typography.caption, fontSize: 12, lineHeight: 14, marginTop: 1 },
+  body: { ...typography.body, fontSize: 14, lineHeight: 19 },
   footer: { flexDirection: "row", alignItems: "center", marginTop: spacing.md },
   count: { ...typography.bodyMuted, marginLeft: spacing.sm, fontWeight: "700" },
 });

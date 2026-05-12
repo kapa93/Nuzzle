@@ -165,10 +165,9 @@ export function SearchScreen() {
   );
 
   const renderFeedItem = useCallback(
-    ({ item, index }: { item: PostWithDetails; index: number }) => (
+    ({ item }: { item: PostWithDetails }) => (
       <FeedItem
         item={item}
-        showBottomBorder={index < posts.length - 1}
         onPostPress={handlePostPress}
         onAuthorPress={handleAuthorPress}
         onReactionSelect={handleReactionSelect}
@@ -186,10 +185,11 @@ export function SearchScreen() {
       handlePostPress,
       handleReactionSelect,
       handleRsvpToggle,
-      posts.length,
       user?.id,
     ]
   );
+
+  const renderFeedSeparator = useCallback(() => <View style={styles.feedSeparator} />, []);
 
   const placeholderMessage = useMemo(() => {
     if (!hasStartedSearch) {
@@ -273,6 +273,7 @@ export function SearchScreen() {
             data={posts}
             keyExtractor={(p) => p.id}
             renderItem={renderFeedItem}
+            ItemSeparatorComponent={renderFeedSeparator}
             scrollEnabled={!reactionMenuOpen}
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
@@ -289,6 +290,7 @@ export function SearchScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface },
+  feedSeparator: { height: 0, borderBottomWidth: 1.5, borderBottomColor: colors.border },
   searchChrome: {
     paddingBottom: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,

@@ -263,10 +263,9 @@ export function PlaceDetailScreen({ route, navigation }: Props) {
   const dogListData = useMemo(() => activeCheckins, [activeCheckins]);
 
   const renderFeedItem = useCallback(
-    ({ item, index }: { item: PostWithDetails; index: number }) => (
+    ({ item }: { item: PostWithDetails }) => (
       <FeedItem
         item={item}
-        showBottomBorder={index < placePosts.length - 1}
         onPostPress={handlePostPress}
         onAuthorPress={handleAuthorPress}
         onReactionSelect={handleReactionSelect}
@@ -278,7 +277,6 @@ export function PlaceDetailScreen({ route, navigation }: Props) {
       />
     ),
     [
-      placePosts.length,
       handlePostPress,
       handleAuthorPress,
       handleReactionSelect,
@@ -290,10 +288,9 @@ export function PlaceDetailScreen({ route, navigation }: Props) {
   );
 
   const renderMeetupFeedItem = useCallback(
-    ({ item, index }: { item: PostWithDetails; index: number }) => (
+    ({ item }: { item: PostWithDetails }) => (
       <FeedItem
         item={item}
-        showBottomBorder={index < placeMeetups.length - 1}
         onPostPress={handlePostPress}
         onAuthorPress={handleAuthorPress}
         onReactionSelect={handleReactionSelect}
@@ -305,7 +302,6 @@ export function PlaceDetailScreen({ route, navigation }: Props) {
       />
     ),
     [
-      placeMeetups.length,
       handlePostPress,
       handleAuthorPress,
       handleReactionSelect,
@@ -315,6 +311,8 @@ export function PlaceDetailScreen({ route, navigation }: Props) {
       user?.id,
     ],
   );
+
+  const renderFeedSeparator = useCallback(() => <View style={styles.feedSeparator} />, []);
 
   const keyExtractPost = useCallback((item: PostWithDetails) => item.id, []);
 
@@ -435,6 +433,7 @@ export function PlaceDetailScreen({ route, navigation }: Props) {
               )
             }
             renderItem={renderFeedItem}
+            ItemSeparatorComponent={renderFeedSeparator}
             initialNumToRender={8}
             maxToRenderPerBatch={8}
             windowSize={11}
@@ -495,6 +494,7 @@ export function PlaceDetailScreen({ route, navigation }: Props) {
               )
             }
             renderItem={renderMeetupFeedItem}
+            ItemSeparatorComponent={renderFeedSeparator}
             initialNumToRender={8}
             maxToRenderPerBatch={8}
             windowSize={11}
@@ -664,6 +664,7 @@ function DogRow({ item, userId, myDogs, placeName, onDogPress }: DogRowProps) {
 const styles = StyleSheet.create({
   screenRoot: { flex: 1, backgroundColor: colors.surface },
   safe: { flex: 1 },
+  feedSeparator: { height: 0, borderBottomWidth: 1.5, borderBottomColor: colors.border },
 
   heroContainer: {
     width: SCREEN_WIDTH,
