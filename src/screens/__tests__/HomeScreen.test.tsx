@@ -13,6 +13,7 @@ jest.mock('@react-navigation/bottom-tabs', () => ({
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: jest.fn(() => ({ navigate: jest.fn() })),
+  useScrollToTop: jest.fn(),
 }));
 
 jest.mock('@/hooks/useStackHeaderHeight', () => ({
