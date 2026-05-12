@@ -462,6 +462,8 @@ export function HomeScreen({
     );
   }, [isFetchingNextPage]);
 
+  const renderSeparator = useCallback(() => <View style={styles.feedSeparator} />, []);
+
   if (!user) {
     return (
       <View style={styles.screen}>
@@ -541,6 +543,7 @@ export function HomeScreen({
           maxToRenderPerBatch={8}
           windowSize={11}
           renderItem={renderFeedItem}
+          ItemSeparatorComponent={renderSeparator}
           ListEmptyComponent={isLoading ? (
             <View style={[styles.initialLoader, { paddingBottom: tabBarHeight }]}>
               <ActivityIndicator size="large" color={colors.primary} />
@@ -605,6 +608,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   emptyList: { flexGrow: 1 },
+  feedSeparator: { height: 0, borderBottomWidth: 1.5, borderBottomColor: colors.border },
   emptyEmoji: { fontSize: 48, marginBottom: spacing.lg },
   emptyTitle: {
     ...typography.subtitle,

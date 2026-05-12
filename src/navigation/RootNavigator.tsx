@@ -7,6 +7,7 @@ import * as Sentry from '@sentry/react-native';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { useOnboardingStore } from '@/store/onboardingStore';
+import { getProfile } from '@/api/auth';
 import type { RootStackParamList, AuthStackParamList, MainTabParamList, OnboardingStackParamList } from './types';
 import { SignInScreen } from '@/screens/SignInScreen';
 import { SignUpScreen } from '@/screens/SignUpScreen';
@@ -318,22 +319,34 @@ function MainTabs() {
 }
 
 export function RootNavigator() {
-  const { session, setSession, user } = useAuthStore();
+  const { session, setSession, user, setProfile } = useAuthStore();
   const { hasHydrated, needsOnboarding, onboardingDog } = useOnboardingStore();
   const [loading, setLoading] = React.useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setLoading(false);
+      if (session?.user) {
+        getProfile(session.user.id).then((profile) => {
+          setProfile(profile);
+          setLoading(false);
+        });
+      } else {
+        setLoading(false);
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (session?.user) {
+        getProfile(session.user.id).then(setProfile);
+      } else {
+        setProfile(null);
+      }
     });
 
     return () => subscription.unsubscribe();
-  }, [setSession]);
+  }, [setSession, setProfile]);
 
   if (loading || !hasHydrated) {
     return (

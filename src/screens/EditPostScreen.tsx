@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -19,7 +20,9 @@ import { BREED_LABELS, POST_TYPE_LABELS, POST_TAG_LABELS } from '@/utils/breed';
 import { colors, shadow } from '@/theme';
 import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
 import { postSchema } from '@/utils/validation';
-import type { PostTypeEnum, PostTagEnum } from '@/types';
+import { pickImages, uploadPostImage } from '@/lib/imageUpload';
+import { supabase } from '@/lib/supabase';
+import type { PostTypeEnum, PostTagEnum, PostImage } from '@/types';
 
 type EditPostRoute = {
   EditPost: { postId: string };
@@ -29,7 +32,7 @@ export function EditPostScreen() {
   const navigation = useNavigation();
   const route = useRoute<RouteProp<EditPostRoute, 'EditPost'>>();
   const postId = route.params?.postId ?? '';
-  const { user } = useAuthStore();
+  const { user, profile } = useAuthStore();
   const queryClient = useQueryClient();
   const headerHeight = useStackHeaderHeight();
   const scrollViewRef = useRef<ScrollView>(null);
@@ -39,6 +42,11 @@ export function EditPostScreen() {
   const [type, setType] = useState<PostTypeEnum>('UPDATE_STORY');
   const [tag, setTag] = useState<PostTagEnum>('TRAINING');
   const [error, setError] = useState('');
+
+  // Image state
+  const [existingImages, setExistingImages] = useState<PostImage[]>([]);
+  const [removedImageIds, setRemovedImageIds] = useState<string[]>([]);
+  const [newImageUris, setNewImageUris] = useState<Array<{ uri: string; base64?: string }>>([]);
 
   const { data: post, isLoading } = useQuery({
     queryKey: ['post', postId],
@@ -52,19 +60,65 @@ export function EditPostScreen() {
       setContent(post.content_text);
       setType(post.type);
       setTag(post.tag);
+      setExistingImages(post.post_images ?? []);
     }
   }, [post]);
+
+  const totalImageCount = existingImages.filter(img => !removedImageIds.includes(img.id)).length + newImageUris.length;
+
+  const handlePickImages = async () => {
+    try {
+      const picked = await pickImages(5 - totalImageCount);
+      if (picked.length > 0) {
+        setNewImageUris(prev => [...prev, ...picked].slice(0, 5 - existingImages.filter(img => !removedImageIds.includes(img.id)).length));
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Could not access photo library');
+    }
+  };
+
+  const removeExistingImage = (imageId: string) => {
+    setRemovedImageIds(prev => [...prev, imageId]);
+  };
+
+  const removeNewImage = (index: number) => {
+    setNewImageUris(prev => prev.filter((_, i) => i !== index));
+  };
 
   const mutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error('Not authenticated');
       const parsed = postSchema.parse({ content_text: content, type, tag, breed: post!.breed });
-      return updatePost(postId, user.id, {
+      await updatePost(postId, profile?.is_admin ? undefined : user.id, {
         content_text: parsed.content_text,
         title: title.trim() || null,
         type: parsed.type as PostTypeEnum,
         tag: parsed.tag as PostTagEnum,
       });
+
+      // Delete removed images
+      if (removedImageIds.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('post_images')
+          .delete()
+          .in('id', removedImageIds);
+        if (deleteError) throw deleteError;
+      }
+
+      // Upload and insert new images
+      if (newImageUris.length > 0) {
+        const keptExistingCount = existingImages.filter(img => !removedImageIds.includes(img.id)).length;
+        for (let i = 0; i < newImageUris.length; i++) {
+          const img = newImageUris[i];
+          if (!img.base64) continue;
+          const sortOrder = keptExistingCount + i;
+          const url = await uploadPostImage(user.id, postId, img.base64, sortOrder);
+          const { error: insertError } = await supabase
+            .from('post_images')
+            .insert({ post_id: postId, image_url: url, sort_order: sortOrder });
+          if (insertError) throw insertError;
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feed'] });
@@ -99,7 +153,7 @@ export function EditPostScreen() {
     setTimeout(scrollToFocusedInput, 320);
   };
 
-  const isUnauthorized = !isLoading && !!post && !!user && post.author_id !== user.id;
+  const isUnauthorized = !isLoading && !!post && !!user && post.author_id !== user.id && !profile?.is_admin;
 
   useEffect(() => {
     if (isUnauthorized) {
@@ -121,6 +175,7 @@ export function EditPostScreen() {
   if (isUnauthorized) return null;
 
   const breed = post.breed;
+  const visibleExistingImages = existingImages.filter(img => !removedImageIds.includes(img.id));
 
   return (
     <View style={styles.background}>
@@ -190,6 +245,31 @@ export function EditPostScreen() {
         textAlignVertical="top"
       />
 
+      <Text style={styles.label}>Images (optional)</Text>
+      <View style={styles.imageRow}>
+        {visibleExistingImages.map((img) => (
+          <TouchableOpacity key={img.id} style={styles.thumb} onPress={() => removeExistingImage(img.id)}>
+            <Image source={{ uri: img.image_url }} style={styles.thumbImage} resizeMode="cover" />
+            <View style={styles.removeOverlay}>
+              <Text style={styles.removeText}>×</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+        {newImageUris.map((img, i) => (
+          <TouchableOpacity key={`new-${i}`} style={styles.thumb} onPress={() => removeNewImage(i)}>
+            <Image source={{ uri: img.uri }} style={styles.thumbImage} resizeMode="cover" />
+            <View style={styles.removeOverlay}>
+              <Text style={styles.removeText}>×</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+        {totalImageCount < 5 && (
+          <TouchableOpacity key="add-image" style={styles.addImage} onPress={handlePickImages}>
+            <Text style={styles.addImageText}>+ Add</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <TouchableOpacity
@@ -247,6 +327,41 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     ...shadow.sm,
   },
+  imageRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  thumb: {
+    width: 72,
+    height: 72,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: colors.border,
+    position: 'relative',
+    ...shadow.sm,
+  },
+  thumbImage: { width: 72, height: 72 },
+  removeOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 24,
+    height: 24,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  removeText: { fontSize: 18, fontWeight: '700', color: colors.surface },
+  addImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+  },
+  addImageText: { fontSize: 14, color: colors.textSecondary },
   error: { color: colors.danger, marginTop: 12, fontSize: 14 },
   submit: {
     backgroundColor: colors.primary,

@@ -10,7 +10,6 @@ import { tagTone } from "@/utils/postToQuestionCard";
 
 type Props = {
   item: PostWithDetails;
-  showBottomBorder?: boolean;
   onPostPress: (postId: string) => void;
   onAuthorPress?: (userId: string) => void;
   onReactionSelect: (postId: string, reaction: ReactionEnum | null) => void;
@@ -23,7 +22,6 @@ type Props = {
 
 function FeedItemInner({
   item,
-  showBottomBorder = true,
   onPostPress,
   onAuthorPress,
   onReactionSelect,
@@ -53,7 +51,7 @@ function FeedItemInner({
 
   if (item.type === "MEETUP") {
     return (
-      <View style={[styles.cardWrap, { borderLeftColor: borderColor }, !showBottomBorder && styles.cardWrapNoBorder]}>
+      <View style={[styles.cardWrap, { borderLeftColor: borderColor }]}>
         <MeetupCard
           post={item}
           onPress={handlePress}
@@ -70,7 +68,7 @@ function FeedItemInner({
   }
 
   return (
-    <View style={[styles.cardWrap, { borderLeftColor: borderColor }, !showBottomBorder && styles.cardWrapNoBorder]}>
+    <View style={[styles.cardWrap, { borderLeftColor: borderColor }]}>
       <QuestionCard
         data={postToQuestionCardData(item)}
         onPress={handlePress}
@@ -87,7 +85,6 @@ function FeedItemInner({
 
 function feedItemPropsAreEqual(prev: Props, next: Props): boolean {
   if (prev.item.id !== next.item.id) return false;
-  if (prev.showBottomBorder !== next.showBottomBorder) return false;
   if (prev.item.user_reaction !== next.item.user_reaction) return false;
   if (prev.item.user_rsvped !== next.item.user_rsvped) return false;
   if (prev.item.attendee_count !== next.item.attendee_count) return false;
@@ -111,12 +108,6 @@ const styles = StyleSheet.create({
   cardWrap: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
-    borderBottomWidth: 1.5,
-    borderBottomColor: colors.border,
     borderLeftWidth: 4,
-  },
-
-  cardWrapNoBorder: {
-    borderBottomWidth: 0,
   },
 });

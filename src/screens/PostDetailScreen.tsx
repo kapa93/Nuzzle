@@ -51,7 +51,7 @@ export function PostDetailScreen() {
   const routeParams = (route.params as { postId: string; source?: "search" } | undefined) ?? undefined;
   const postId = routeParams?.postId ?? "";
   const isFromSearch = routeParams?.source === "search";
-  const { user } = useAuthStore();
+  const { user, profile } = useAuthStore();
   const queryClient = useQueryClient();
   const { setScrollDirection } = useScrollDirection();
   const headerHeight = useStackHeaderHeight();
@@ -151,8 +151,10 @@ export function PostDetailScreen() {
     navigation.navigate("UserProfile", { userId: authorId });
   };
 
+  const canManagePost = user?.id === post?.author_id || profile?.is_admin === true;
+
   const deleteMutation = useMutation({
-    mutationFn: () => deletePost(postId, user!.id),
+    mutationFn: () => deletePost(postId, profile?.is_admin ? undefined : user!.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["feed"] });
       queryClient.invalidateQueries({ queryKey: ["post"] });
@@ -279,7 +281,7 @@ export function PostDetailScreen() {
                 </View>
               </Pressable>
               <View style={styles.headerRight}>
-                {user?.id === post.author_id ? (
+                {canManagePost ? (
                   <>
                     <Pressable
                       ref={menuBtnRef}

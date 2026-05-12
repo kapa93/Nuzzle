@@ -86,7 +86,7 @@ export function PostCard({ post, onPress, onReactionSelect, onAuthorPress }: Pos
 
       {post.images && post.images.length > 0 ? (
         <View style={styles.images}>
-          <PostImageCarousel images={post.images} imageHeight={220} />
+          <PostImageCarousel images={post.images} imageHeight={200} />
         </View>
       ) : null}
 

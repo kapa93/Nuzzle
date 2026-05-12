@@ -192,10 +192,9 @@ export function useFeedData({
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const renderFeedItem = useCallback(
-    ({ item, index }: { item: PostWithDetails; index: number }) =>
+    ({ item }: { item: PostWithDetails }) =>
       React.createElement(FeedItem, {
         item,
-        showBottomBorder: index < posts.length - 1,
         onPostPress: handlePostPress,
         onAuthorPress: handleAuthorPress,
         onReactionSelect: handleReactionSelect,
@@ -206,7 +205,6 @@ export function useFeedData({
         onDelete: handleDeletePost,
       }),
     [
-      posts.length,
       handlePostPress,
       handleAuthorPress,
       handleReactionSelect,

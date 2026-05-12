@@ -94,7 +94,7 @@ async function enrichPosts(rawPosts: RawPostRow[], userId: string | null): Promi
       }
     }
 
-    const images = ((post.post_images ?? []) as Array<{ image_url: string; sort_order: number }>)
+    const images = ((post.post_images ?? []) as Array<{ id: string; image_url: string; sort_order: number }>)
       .sort((a, b) => a.sort_order - b.sort_order)
       .map((pi) => pi.image_url);
 
@@ -129,7 +129,7 @@ type RawPostRow = {
   created_at: string;
   updated_at: string;
   profiles?: { id: string; name: string } | null;
-  post_images?: Array<{ image_url: string; sort_order: number }>;
+  post_images?: Array<{ id: string; image_url: string; sort_order: number }>;
   post_reactions?: Array<{ user_id: string; reaction_type: ReactionEnum }>;
 };
 
@@ -187,7 +187,7 @@ export async function getPostById(
       `
       *,
       profiles:author_id (id, name),
-      post_images (image_url, sort_order),
+      post_images (id, image_url, sort_order),
       post_reactions (user_id, reaction_type)
     `
     )
@@ -292,28 +292,32 @@ export async function createPost(
 
 export async function updatePost(
   postId: string,
-  authorId: string,
+  authorId: string | undefined,
   updates: Partial<Pick<Post, 'content_text' | 'title' | 'type' | 'tag'>>
 ) {
-  const { data, error } = await supabase
+  let q = supabase
     .from('posts')
     .update(updates)
-    .eq('id', postId)
-    .eq('author_id', authorId)
-    .select()
-    .single();
+    .eq('id', postId);
+
+  if (authorId) {
+    q = q.eq('author_id', authorId);
+  }
+
+  const { data, error } = await q.select().single();
 
   if (error) throw error;
   return data as Post;
 }
 
-export async function deletePost(postId: string, authorId: string) {
-  const { error } = await supabase
-    .from('posts')
-    .delete()
-    .eq('id', postId)
-    .eq('author_id', authorId);
+export async function deletePost(postId: string, authorId?: string) {
+  let q = supabase.from('posts').delete().eq('id', postId);
 
+  if (authorId) {
+    q = q.eq('author_id', authorId);
+  }
+
+  const { error } = await q;
   if (error) throw error;
 }
 

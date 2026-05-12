@@ -175,7 +175,7 @@ const QuestionCardInner = ({ data, onPress, onAuthorPress, onReactionSelect, onR
       ) : (
         <ExpandablePostBody text={data.fullContent} style={styles.title} onMorePress={onPress} />
       )}
-      {!!data.images?.length && <PostImageCarousel images={data.images} imageHeight={220} />}
+      {!!data.images?.length && <PostImageCarousel images={data.images} imageHeight={200} />}
       <View style={styles.actionRow}>
         {onReactionSelect ? (
           <ReactionBar

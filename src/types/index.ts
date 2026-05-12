@@ -86,6 +86,7 @@ export interface Profile {
   email: string;
   city: string | null;
   profile_image_url: string | null;
+  is_admin: boolean;
   created_at: string;
   updated_at: string;
 }

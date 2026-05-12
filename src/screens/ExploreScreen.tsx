@@ -337,7 +337,7 @@ export function ExploreScreen({
   const { user } = useAuthStore();
   const { width } = useWindowDimensions();
   const headerHeight = useStackHeaderHeight();
-  const cardWidth = (width - H_PADDING * 2 - CARD_GAP * (NUM_COLUMNS - 1)) / NUM_COLUMNS;
+  const cardWidth = (width - H_PADDING * 2 - CARD_GAP * (NUM_COLUMNS - 1)) / NUM_COLUMNS + 1;
   const packItems = getPackItems();
   const [activeTab, setActiveTab] = useState<Tab>(route.params?.initialTab ?? "breeds");
   const [searchQuery, setSearchQuery] = useState("");
@@ -691,7 +691,7 @@ export function ExploreScreen({
             style={styles.container}
             contentContainerStyle={[
               styles.breedsContent,
-              { paddingTop: scrollChromePadding + spacing.xl - 5 },
+              { paddingTop: scrollChromePadding + spacing.xl + 5 },
             ]}
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}
@@ -1116,7 +1116,7 @@ const styles = StyleSheet.create({
   searchWrap: {
     paddingHorizontal: H_PADDING,
     paddingTop: spacing.lg,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.sm,
   },
   searchRow: {
     height: 42,

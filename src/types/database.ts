@@ -64,6 +64,7 @@ export interface Database {
           name: string;
           email: string;
           city: string | null;
+          is_admin: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -72,6 +73,7 @@ export interface Database {
           name: string;
           email: string;
           city?: string | null;
+          is_admin?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -80,6 +82,7 @@ export interface Database {
           name?: string;
           email?: string;
           city?: string | null;
+          is_admin?: boolean;
           created_at?: string;
           updated_at?: string;
         };
