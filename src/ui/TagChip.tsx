@@ -18,10 +18,10 @@ export type Tone =
 
 export const toneStyles: Record<Tone, { bg: string; text: string }> = {
   neutral:    { bg: colors.chipNeutral, text: colors.chipText },
-  training:   { bg: "#FFE0EB", text: "#8B1A3A" },
+  training:   { bg: "#F0E4F8", text: "#6B2E8A" },
   behavior:   { bg: "#D6F3FC", text: "#00a8dd" },
   health:     { bg: "#FDECEA", text: "#CA2D2D" },
-  grooming:   { bg: "#F0E4F8", text: "#6B2E8A" },
+  grooming:   { bg: "#FFE0EB", text: "#8B1A3A" },
   food:       { bg: "#EDE4F2", text: "#654B8C" },
   gear:       { bg: "#DDE8F5", text: "#1A3E6B" },
   puppy:      { bg: "#FFF0CC", text: "#FFA500" },
