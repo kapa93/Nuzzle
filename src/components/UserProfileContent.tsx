@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -14,6 +15,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { CalendarDays, MessageSquareText, UserPen } from 'lucide-react-native';
 import { DogsMetSection } from '@/components/DogsMetSection';
 import { MetThisDogButton } from '@/components/MetThisDogButton';
 import { DogAvatar } from '@/components/DogAvatar';
@@ -90,25 +92,27 @@ function TapFeedbackPressable({
 
 function formatJoinedDate(createdAt?: string) {
   if (!createdAt) return null;
-  return new Date(createdAt).toLocaleDateString(undefined, {
-    month: 'short',
-    year: 'numeric',
-  });
+  const d = new Date(createdAt);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yy = String(d.getFullYear()).slice(-2);
+  return `${mm}/${yy}`;
 }
 
 function Section({
   title,
+  titleStyle,
   rightLabel,
   children,
 }: {
   title: string;
+  titleStyle?: object;
   rightLabel?: string;
   children: React.ReactNode;
 }) {
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>{title}</Text>
+        <Text style={[styles.sectionTitle, titleStyle]}>{title}</Text>
         {rightLabel ? <Text style={styles.sectionMeta}>{rightLabel}</Text> : null}
       </View>
       {children}
@@ -119,14 +123,19 @@ function Section({
 function QuickStat({
   icon,
   label,
+  value,
 }: {
-  icon: React.ComponentProps<typeof Ionicons>['name'];
+  icon: React.ReactElement;
   label: string;
+  value: string | number;
 }) {
   return (
     <View style={styles.quickStat}>
-      <Ionicons name={icon} size={16} color={colors.primaryDark} />
-      <Text style={styles.quickStatText}>{label}</Text>
+      <View style={styles.quickStatLabelRow}>
+        {icon}
+        <Text style={styles.quickStatLabel}>{label}</Text>
+      </View>
+      <Text style={styles.quickStatValue}>{value}</Text>
     </View>
   );
 }
@@ -271,9 +280,9 @@ export function UserProfileContent({
           ) : null}
 
           <View style={styles.quickStatsRow}>
-            <QuickStat icon="paw-outline" label={`${dogs.length} ${dogs.length === 1 ? 'dog' : 'dogs'}`} />
-            <QuickStat icon="chatbubble-ellipses-outline" label={`${posts.length} recent posts`} />
-            {joinedLabel ? <QuickStat icon="calendar-outline" label={`Joined ${joinedLabel}`} /> : null}
+            <QuickStat icon={<Ionicons name="paw-outline" size={18} color={colors.primaryDark} />} label={dogs.length === 1 ? 'Dog' : 'Dogs'} value={dogs.length} />
+            <QuickStat icon={<MessageSquareText size={16} color={colors.primaryDark} />} label="Posts" value={posts.length} />
+            {joinedLabel ? <QuickStat icon={<CalendarDays size={16} color={colors.primaryDark} />} label="Joined" value={joinedLabel} /> : null}
           </View>
 
           {canManageProfile && (onEditProfile || onAddDog) ? (
@@ -286,6 +295,7 @@ export function UserProfileContent({
                   toBackgroundColor={colors.primaryDark}
                 >
                   <Text style={styles.heroActionPrimaryText}>Edit Profile</Text>
+                  <UserPen size={20} color="#FFFFFF" strokeWidth={1.85} />
                 </TapFeedbackPressable>
               ) : null}
               {onAddDog ? (
@@ -296,21 +306,16 @@ export function UserProfileContent({
                   toBackgroundColor={colors.border}
                 >
                   <Text style={styles.heroActionSecondaryText}>Add Dog</Text>
+                  <Image source={require('../../assets/dog-white.png')} style={styles.addDogIcon} />
                 </TapFeedbackPressable>
               ) : null}
             </View>
           ) : null}
         </View>
 
-        {showPrivateAccountInfo ? (
-          <Section title="Account">
-            <Text style={styles.accountValue}>{profile.email}</Text>
-          </Section>
-        ) : null}
-
         <Section
           title={canManageProfile ? 'My Dogs' : 'Dogs'}
-          rightLabel={dogs.length > 0 ? `${dogs.length}` : undefined}
+          titleStyle={{ marginLeft: 5 }}
         >
           {dogsLoading ? (
             <View style={styles.inlineLoading}>
@@ -485,10 +490,10 @@ const styles = StyleSheet.create({
   },
   heroCard: {
     paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    marginHorizontal: -spacing.lg,
     alignItems: 'center',
     gap: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
   },
   heroAvatarWrap: {
     position: 'relative',
@@ -522,35 +527,51 @@ const styles = StyleSheet.create({
   },
   quickStatsRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
     justifyContent: 'center',
-    gap: spacing.sm,
+    gap: spacing.xs - 2,
+    width: '100%',
+    marginVertical: spacing.xs,
   },
   quickStat: {
-    flexDirection: 'row',
+    flex: 1,
+    flexDirection: 'column',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: 2,
     backgroundColor: colors.primarySoft,
-    borderRadius: radius.pill,
+    borderRadius: 7,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
-  quickStatText: {
+  quickStatLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  quickStatLabel: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.primaryDark,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  quickStatValue: {
     ...typography.caption,
     color: colors.primaryDark,
-    fontWeight: '700',
+    fontSize: 14,
+    fontFamily: 'Inter_500Medium',
   },
   heroActions: {
     width: '100%',
     flexDirection: 'row',
     gap: spacing.xs,
     marginTop: 0,
+    marginBottom: 0,
   },
   section: {
     paddingBottom: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    marginHorizontal: -spacing.lg,
     gap: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -607,9 +628,9 @@ const styles = StyleSheet.create({
   },
   postCard: {
     paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    marginHorizontal: -spacing.lg,
     gap: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
   },
   postMetaRow: {
     flexDirection: 'row',
@@ -683,21 +704,36 @@ const styles = StyleSheet.create({
     minHeight: 38,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
+    borderRadius: 7,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   heroActionSecondary: {
     minHeight: 38,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
+    borderRadius: 7,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  addDogIcon: {
+    width: 23,
+    height: 23,
+    resizeMode: 'contain',
   },
   heroActionPrimaryText: {
-    ...typography.caption,
+    fontSize: 14,
+    lineHeight: 18,
     color: '#FFFFFF',
-    fontWeight: '700',
+    fontFamily: 'Inter_500Medium',
   },
   heroActionSecondaryText: {
-    ...typography.caption,
+    fontSize: 14,
+    lineHeight: 18,
     color: colors.textPrimary,
-    fontWeight: '700',
+    fontFamily: 'Inter_500Medium',
   },
   signOutButton: {
     marginTop: spacing.sm,

@@ -88,7 +88,7 @@ export function ProfileDogCard({ dog, showDetails = true, onEdit, onDelete, onPr
     <>
       <View style={styles.headerRow}>
         <View style={styles.identityRow}>
-          <DogAvatar imageUrl={dog.dog_image_url} name={dog.name} size={68} roundedSquare />
+          <DogAvatar imageUrl={dog.dog_image_url} name={dog.name} size={68} />
           <View style={styles.identityText}>
             <Text style={styles.name}>{dog.name}</Text>
             <Text style={styles.breed}>{BREED_LABELS[dog.breed] ?? dog.breed}</Text>
@@ -154,7 +154,7 @@ export function ProfileDogCard({ dog, showDetails = true, onEdit, onDelete, onPr
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
+    borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.lg,
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
   detailChipText: {
     ...typography.caption,
     color: colors.primaryDark,
-    fontWeight: '700',
+    fontFamily: 'Inter_500Medium',
   },
   notes: {
     ...typography.bodyMuted,

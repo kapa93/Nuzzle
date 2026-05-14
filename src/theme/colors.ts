@@ -1,7 +1,7 @@
 export const colors = {
   background: "#F5F6F1",
   surface: "#FFFFFF",
-  surfaceMuted: "#F5F5F5",
+  surfaceMuted: "#F7F7F5",
   border: "#E7E2D8",
   /** Hairlines and separators where border needs a bit more contrast */
   borderStrong: "#CAC2B4",
