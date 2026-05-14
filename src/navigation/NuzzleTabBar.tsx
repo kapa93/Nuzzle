@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
   },
   indicator: {
     position: "absolute",
-    top: -1,
+    top: -0.5,
     left: 0,
     height: 2,
     backgroundColor: TAB_ICON_COLOR,
