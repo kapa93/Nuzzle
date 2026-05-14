@@ -21,10 +21,11 @@ import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
 
 type NotificationItem = {
   id: string;
-  type: 'COMMENT' | 'REACTION' | 'MEETUP_RSVP' | 'DOG_INTERACTION';
+  type: 'COMMENT' | 'REACTION' | 'MEETUP_RSVP' | 'DOG_INTERACTION' | 'NEW_BREED_POST' | 'NEW_PLACE_POST';
   actor_name?: string;
   post_id: string | null;
   content_preview?: string;
+  place_name?: string | null;
   created_at: string;
   read_at: string | null;
 };
@@ -58,12 +59,13 @@ export function NotificationsScreen() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] }),
   });
 
-  const items: NotificationItem[] = (notifications ?? []).map((n: { id: string; type: 'COMMENT' | 'REACTION' | 'MEETUP_RSVP' | 'DOG_INTERACTION'; actor?: { name?: string }; post_id: string | null; post?: { content_text?: string }; created_at: string; read_at: string | null }) => ({
+  const items: NotificationItem[] = (notifications ?? []).map((n: any) => ({
     id: n.id,
     type: n.type,
     actor_name: n.actor?.name,
     post_id: n.post_id,
     content_preview: n.post?.content_text?.slice(0, 50),
+    place_name: n.post?.place?.name ?? null,
     created_at: n.created_at,
     read_at: n.read_at,
   }));
@@ -88,7 +90,11 @@ export function NotificationsScreen() {
             ? ' joined your meetup'
             : item.type === 'DOG_INTERACTION'
               ? ' marked that your dog met their dog'
-            : ' reacted to your post'}
+              : item.type === 'NEW_BREED_POST'
+                ? ' posted in a breed feed you follow'
+                : item.type === 'NEW_PLACE_POST'
+                  ? (item.place_name ? ` posted at ${item.place_name}` : ' posted at a place you saved')
+                  : ' reacted to your post'}
       </Text>
       {item.content_preview ? (
         <Text style={styles.preview} numberOfLines={1}>

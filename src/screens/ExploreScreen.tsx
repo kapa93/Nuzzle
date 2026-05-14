@@ -967,6 +967,22 @@ export function ExploreScreen({
   );
 }
 
+const GOOGLE_PLACE_TYPE_ICONS: Record<string, React.ComponentProps<typeof Ionicons>['name']> = {
+  dog_beach: 'water-outline',
+  dog_park: 'paw-outline',
+  trail: 'leaf-outline',
+  park: 'leaf-outline',
+  other: 'location-outline',
+};
+
+function getGooglePlaceIcon(candidate: GooglePlaceCandidate): React.ComponentProps<typeof Ionicons>['name'] {
+  const lower = candidate.name.toLowerCase();
+  if (lower.includes('beach')) return 'water-outline';
+  if (lower.includes('trail') || lower.includes('hike') || lower.includes('hiking')) return 'leaf-outline';
+  if (lower.includes('park') || lower.includes('dog park')) return 'paw-outline';
+  return GOOGLE_PLACE_TYPE_ICONS[candidate.placeType] ?? 'location-outline';
+}
+
 function GooglePlaceRow({
   candidate,
   onPress,
@@ -990,7 +1006,11 @@ function GooglePlaceRow({
       accessibilityLabel={`Preview ${candidate.name}`}
     >
       <View style={styles.googlePlaceIconWrap}>
-        <Ionicons name="chevron-forward" size={22} color={colors.primary} />
+        <Ionicons
+          name={getGooglePlaceIcon(candidate)}
+          size={22}
+          color={colors.primary}
+        />
       </View>
       <View style={styles.googlePlaceBody}>
         <Text style={styles.googlePlaceName} numberOfLines={1}>

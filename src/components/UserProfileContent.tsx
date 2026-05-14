@@ -248,8 +248,7 @@ export function UserProfileContent({
             <DogAvatar
               imageUrl={profile.profile_image_url ?? primaryDog?.dog_image_url}
               name={profile.name ?? primaryDog?.name}
-              size={96}
-              roundedSquare
+              size={135}
             />
             {canManageProfile && onChangePhoto ? (
               <View style={styles.heroAvatarBadge}>
@@ -496,8 +495,8 @@ const styles = StyleSheet.create({
   },
   heroAvatarBadge: {
     position: 'absolute',
-    right: -2,
-    bottom: -2,
+    right: 3,
+    bottom: 3,
     width: 30,
     height: 30,
     borderRadius: radius.pill,
@@ -510,11 +509,13 @@ const styles = StyleSheet.create({
   heroName: {
     ...typography.titleMD,
     textAlign: 'center',
+    letterSpacing: -0.4,
   },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+    marginTop: -spacing.xs,
   },
   locationText: {
     ...typography.bodyMuted,

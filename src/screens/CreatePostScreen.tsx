@@ -630,7 +630,7 @@ const styles = StyleSheet.create({
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    backgroundColor: colors.border,
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 20,
   },
   chipSelected: {
@@ -639,7 +639,7 @@ const styles = StyleSheet.create({
   tagChip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    backgroundColor: colors.border,
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 20,
     marginRight: spacing.xxs,
   },
@@ -656,7 +656,7 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 15,
     minHeight: 44,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceMuted,
   },
   textArea: { minHeight: 120 },
   dateButton: {
@@ -667,7 +667,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: 12,
     padding: 12,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceMuted,
     ...shadow.sm,
     marginBottom: 8,
   },
@@ -680,7 +680,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: 12,
     padding: 12,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceMuted,
     marginBottom: 8,
   },
   placePickerText: {

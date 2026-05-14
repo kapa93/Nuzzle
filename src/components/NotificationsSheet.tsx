@@ -19,10 +19,12 @@ import { formatRelativeTime } from '@/utils/breed';
 
 type NotificationItem = {
   id: string;
-  type: 'COMMENT' | 'REACTION' | 'MEETUP_RSVP' | 'DOG_INTERACTION';
+  type: 'COMMENT' | 'REACTION' | 'MEETUP_RSVP' | 'DOG_INTERACTION' | 'NEW_BREED_POST' | 'NEW_PLACE_POST';
   actor_name?: string;
   post_id: string | null;
   content_preview?: string;
+  breed?: string | null;
+  place_name?: string | null;
   created_at: string;
   read_at: string | null;
 };
@@ -62,6 +64,8 @@ export function NotificationsSheet({ visible, onClose, onPostPress }: Props) {
     actor_name: n.actor?.name,
     post_id: n.post_id,
     content_preview: n.post?.content_text?.slice(0, 50),
+    breed: n.post?.breed ?? null,
+    place_name: n.post?.place?.name ?? null,
     created_at: n.created_at,
     read_at: n.read_at,
   }));
@@ -121,10 +125,14 @@ export function NotificationsSheet({ visible, onClose, onPostPress }: Props) {
     }
   }, [visible, slideAnim]);
 
-  const notificationLabel = (type: NotificationItem['type']) => {
-    if (type === 'COMMENT') return ' commented on your post';
-    if (type === 'MEETUP_RSVP') return ' joined your meetup';
-    if (type === 'DOG_INTERACTION') return ' marked that your dog met their dog';
+  const notificationLabel = (item: NotificationItem) => {
+    if (item.type === 'COMMENT') return ' commented on your post';
+    if (item.type === 'MEETUP_RSVP') return ' joined your meetup';
+    if (item.type === 'DOG_INTERACTION') return ' marked that your dog met their dog';
+    if (item.type === 'NEW_BREED_POST') return ' posted in a breed feed you follow';
+    if (item.type === 'NEW_PLACE_POST') {
+      return item.place_name ? ` posted at ${item.place_name}` : ' posted at a place you saved';
+    }
     return ' reacted to your post';
   };
 
@@ -145,7 +153,7 @@ export function NotificationsSheet({ visible, onClose, onPostPress }: Props) {
       >
         <Text style={styles.itemText}>
           <Text style={styles.actorName}>{item.actor_name ?? 'Someone'}</Text>
-          {notificationLabel(item.type)}
+          {notificationLabel(item)}
         </Text>
         {item.content_preview ? (
           <Text style={styles.preview} numberOfLines={1}>
@@ -205,7 +213,7 @@ export function NotificationsSheet({ visible, onClose, onPostPress }: Props) {
             <View style={styles.stateBox}>
               <Text style={styles.emptyTitle}>No notifications yet</Text>
               <Text style={styles.emptyBody}>
-                You&apos;ll be notified when someone comments, reacts, or meets your dog.
+                You&apos;ll be notified when someone comments, reacts, meets your dog, or posts in a feed you follow.
               </Text>
             </View>
           ) : (

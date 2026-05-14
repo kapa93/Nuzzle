@@ -8,7 +8,7 @@ export async function getNotifications(userId: string, limit = 50) {
       `
       *,
       actor:profiles!actor_id (id, name),
-      post:posts (id, content_text, breed)
+      post:posts (id, content_text, breed, place:places (name))
     `
     )
     .eq('user_id', userId)

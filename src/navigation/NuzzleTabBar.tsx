@@ -247,7 +247,7 @@ export function NuzzleTabBar({ state, navigation }: BottomTabBarProps) {
                   }}
                   style={[styles.centerButton, centerButtonAnimatedStyle]}
                 >
-                  <DogPawIcon size={23} color="#FFFFFF" />
+                  <DogPawIcon size={22} color="#FFFFFF" />
                 </AnimatedPressable>
                 <Text
                   numberOfLines={1}
@@ -415,11 +415,11 @@ const styles = StyleSheet.create({
   },
   centerButton: {
     position: "absolute",
-    bottom: 2,
+    bottom: 3,
     left: "50%",
     marginLeft: -22.5,
-    width: 45,
-    height: 42,
+    width: 46,
+    height: 44,
     borderRadius: 14,
     backgroundColor: colors.primary,
     alignItems: "center",

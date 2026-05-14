@@ -54,13 +54,15 @@ export function PlaceRow({
       accessibilityRole="button"
       accessibilityLabel={place.name}
     >
-      <View style={styles.iconWrap}>
-        <Ionicons
-          name={PLACE_TYPE_ICONS[place.place_type]}
-          size={22}
-          color={colors.primary}
-        />
-      </View>
+      {showTypeChip ? (
+        <View style={styles.iconWrap}>
+          <Ionicons
+            name={PLACE_TYPE_ICONS[place.place_type]}
+            size={22}
+            color={colors.primary}
+          />
+        </View>
+      ) : null}
 
       <View style={styles.body}>
         <Text style={styles.name} numberOfLines={1}>{place.name}</Text>
@@ -118,6 +120,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderRadius: 0,
     paddingHorizontal: spacing.lg,
+    paddingLeft: spacing.xl,
     paddingTop: spacing.xs,
     paddingBottom: spacing.md + 1,
   },

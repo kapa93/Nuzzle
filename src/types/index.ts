@@ -283,14 +283,14 @@ export interface Notification {
   id: string;
   user_id: string;
   actor_id: string;
-  type: 'COMMENT' | 'REACTION' | 'MEETUP_RSVP' | 'DOG_INTERACTION';
+  type: 'COMMENT' | 'REACTION' | 'MEETUP_RSVP' | 'DOG_INTERACTION' | 'NEW_BREED_POST' | 'NEW_PLACE_POST';
   post_id: string | null;
   comment_id: string | null;
   dog_interaction_id?: string | null;
   created_at: string;
   read_at: string | null;
   actor?: Profile;
-  post?: Post;
+  post?: Post & { place?: { name: string } | null };
 }
 
 export interface Report {
