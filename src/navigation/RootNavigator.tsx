@@ -2,7 +2,8 @@ import React, { useEffect } from 'react';
 import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text, ActivityIndicator, StyleSheet, Platform } from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet, Platform, Pressable } from 'react-native';
+import { X } from 'lucide-react-native';
 import * as Sentry from '@sentry/react-native';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
@@ -411,9 +412,13 @@ export function RootNavigator() {
                   headerTransparent: true,
                   contentStyle: {
                     backgroundColor: colors.surface,
-                    borderTopLeftRadius: 28,
-                    borderTopRightRadius: 28,
-                    overflow: 'hidden',
+                    // Rounded top corners only on iOS where the sheet sits above the
+                    // previous screen. On Android it's full-screen so no rounding needed.
+                    ...(Platform.OS !== 'android' && {
+                      borderTopLeftRadius: 28,
+                      borderTopRightRadius: 28,
+                      overflow: 'hidden',
+                    }),
                   },
                   header: (props) => (
                     <AnimatedStackHeader
@@ -423,24 +428,39 @@ export function RootNavigator() {
                         headerTitleAlign: 'center',
                         headerTitle: () => (
                           <View style={styles.modalHeaderTitleBlock}>
-                            <View
-                              style={styles.modalSheetGrabber}
-                              accessibilityLabel="Sheet"
-                              accessibilityHint="Swipe down to close"
-                            />
+                            {Platform.OS !== 'android' && (
+                              <View
+                                style={styles.modalSheetGrabber}
+                                accessibilityLabel="Sheet"
+                                accessibilityHint="Swipe down to close"
+                              />
+                            )}
                             <Text style={styles.modalHeaderTitle}>New post</Text>
                           </View>
                         ),
                         headerLeft: () => null,
-                        headerRight: () => null,
+                        headerRight: Platform.OS === 'android'
+                          ? ({ tintColor }: { tintColor?: string }) => (
+                              <Pressable
+                                accessibilityRole="button"
+                                accessibilityLabel="Close"
+                                hitSlop={12}
+                                onPress={() => props.navigation.goBack()}
+                                style={({ pressed }) => [styles.modalCloseButton, pressed && styles.modalCloseButtonPressed]}
+                              >
+                                <X size={22} color={tintColor ?? '#111827'} strokeWidth={2.25} />
+                              </Pressable>
+                            )
+                          : () => null,
                       }}
                       animateOnScroll={false}
-                      includeTopInset={false}
+                      includeTopInset={Platform.OS === 'android'}
                       baseHeaderHeight={CREATE_POST_SHEET_MODAL_HEADER_HEIGHT}
                       titleImageMarginTop={3}
                     />
                   ),
-                  presentation: 'modal',
+                  // iOS: slide-up sheet. Android: full-screen modal dismissed via back button.
+                  presentation: Platform.OS === 'android' ? 'fullScreenModal' : 'modal',
                   animation: 'slide_from_bottom',
                 }}
               />
@@ -453,9 +473,11 @@ export function RootNavigator() {
                   headerTransparent: true,
                   contentStyle: {
                     backgroundColor: colors.surface,
-                    borderTopLeftRadius: 28,
-                    borderTopRightRadius: 28,
-                    overflow: 'hidden',
+                    ...(Platform.OS !== 'android' && {
+                      borderTopLeftRadius: 28,
+                      borderTopRightRadius: 28,
+                      overflow: 'hidden',
+                    }),
                   },
                   header: (props) => (
                     <AnimatedStackHeader
@@ -465,24 +487,38 @@ export function RootNavigator() {
                         headerTitleAlign: 'center',
                         headerTitle: () => (
                           <View style={styles.modalHeaderTitleBlock}>
-                            <View
-                              style={styles.modalSheetGrabber}
-                              accessibilityLabel="Sheet"
-                              accessibilityHint="Swipe down to close"
-                            />
+                            {Platform.OS !== 'android' && (
+                              <View
+                                style={styles.modalSheetGrabber}
+                                accessibilityLabel="Sheet"
+                                accessibilityHint="Swipe down to close"
+                              />
+                            )}
                             <Text style={styles.modalHeaderTitle}>Search</Text>
                           </View>
                         ),
                         headerLeft: () => null,
-                        headerRight: () => null,
+                        headerRight: Platform.OS === 'android'
+                          ? ({ tintColor }: { tintColor?: string }) => (
+                              <Pressable
+                                accessibilityRole="button"
+                                accessibilityLabel="Close"
+                                hitSlop={12}
+                                onPress={() => props.navigation.goBack()}
+                                style={({ pressed }) => [styles.modalCloseButton, pressed && styles.modalCloseButtonPressed]}
+                              >
+                                <X size={22} color={tintColor ?? '#111827'} strokeWidth={2.25} />
+                              </Pressable>
+                            )
+                          : () => null,
                       }}
                       animateOnScroll={false}
-                      includeTopInset={false}
+                      includeTopInset={Platform.OS === 'android'}
                       baseHeaderHeight={CREATE_POST_SHEET_MODAL_HEADER_HEIGHT}
                       titleImageMarginTop={3}
                     />
                   ),
-                  presentation: 'modal',
+                  presentation: Platform.OS === 'android' ? 'fullScreenModal' : 'modal',
                   animation: 'slide_from_bottom',
                 }}
               />
@@ -535,5 +571,17 @@ const styles = StyleSheet.create({
       : { fontFamily: 'Inter_700Bold' as const }),
     fontSize: 19,
     color: '#111827',
+  },
+  modalCloseButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 6,
+    marginTop: 4,
+  },
+  modalCloseButtonPressed: {
+    opacity: 0.6,
   },
 });

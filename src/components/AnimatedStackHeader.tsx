@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from "react";
-import { Image, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
+import { Image, Platform, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getHeaderTitle, Header } from "@react-navigation/elements";
 import { Search } from "lucide-react-native/icons";
@@ -181,7 +181,13 @@ export function AnimatedStackHeader({
         <Header
           layout={{ width, height: screenHeight }}
           title={getHeaderTitle(options, route.name)}
-          headerTitle={options.headerTitle ?? defaultHeaderTitle}
+          headerTitle={
+            // On Android suppress the logo from Header's layout so we can render it
+            // as a true full-width overlay below, unaffected by asymmetric button widths.
+            Platform.OS === 'android' && !options.headerTitle
+              ? () => null
+              : options.headerTitle ?? defaultHeaderTitle
+          }
           headerLeft={mergedHeaderLeft}
           headerRight={mergedHeaderRight}
           headerTransparent={false}
@@ -201,9 +207,31 @@ export function AnimatedStackHeader({
             },
           ]}
           headerShadowVisible={false}
-          headerTitleAlign={options.headerTitleAlign}
+          headerTitleAlign={options.headerTitleAlign ?? 'center'}
           back={back}
         />
+        {/* Android logo overlay — spans the full Animated.View width so centering
+            is unaffected by asymmetric left/right button container widths. */}
+        {Platform.OS === 'android' && !options.headerTitle && (
+          <View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              top: topInset,
+              height: baseHeaderHeight,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Image
+              source={require("../../assets/breeds/nuzzle-logo.png")}
+              style={{ width: 178.79, height: 41.58, marginTop: titleImageMarginTop }}
+              resizeMode="contain"
+            />
+          </View>
+        )}
       </Animated.View>
     </View>
   );
