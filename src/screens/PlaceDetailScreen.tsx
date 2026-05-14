@@ -890,11 +890,13 @@ const styles = StyleSheet.create({
 
   // Empty state
   emptyState: {
+    flex: 1,
+    alignSelf: 'stretch',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.sm,
-    maxWidth: 260,
-    alignSelf: 'center',
-    padding: spacing.xl,
+    paddingHorizontal: spacing.xxl,
+    marginBottom: 20,
   },
   emptyTitle: {
     ...typography.subtitle,

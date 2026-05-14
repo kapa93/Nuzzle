@@ -44,7 +44,7 @@ export function ReactionBar({ reactions, userReaction, onSelect, wrapperStyle }:
       >
         <View style={styles.iconWrap} pointerEvents="none">
           <Bone
-            size={20}
+            size={18}
             color={userReaction ? colors.primary : colors.textSecondary}
           />
         </View>
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
   likeButton: {
     flexDirection: "row",
     alignItems: "center",
-    height: 36,
+    height: 35,
     paddingVertical: 0,
     paddingLeft: spacing.md,
     paddingRight: spacing.sm,
@@ -92,8 +92,8 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginLeft: 1,
     ...(Platform.OS === "web"
-      ? { fontFamily: "'Inter', sans-serif", fontWeight: "700" as const }
-      : { fontFamily: "Inter_700Bold" }),
+      ? { fontFamily: "Inter_600SemiBold" as const }
+      : { fontFamily: "Inter_600SemiBold" }),
   },
   countActive: {
     color: colors.primary,

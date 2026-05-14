@@ -10,6 +10,7 @@ import {
   View,
   type ImageStyle,
 } from "react-native";
+import { MapPinCheck } from "lucide-react-native";
 import { colors, radius, spacing } from "../theme";
 
 const HERO_HEIGHT = 230;
@@ -45,11 +46,13 @@ export function BreedHero({
             style={({ pressed }) => [styles.joinedPill, pressed && styles.joinedPillPressed]}
           >
             <Text style={styles.joinedText}>{joined ? "Joined" : "Join"}</Text>
+            {joined && <MapPinCheck size={15} color="#2E3834" strokeWidth={2.4} style={styles.joinedIcon} />}
           </Pressable>
         )}
         {!onJoinPress && (
           <View style={styles.joinedPill}>
             <Text style={styles.joinedText}>{joined ? "Joined" : "Join"}</Text>
+            {joined && <MapPinCheck size={15} color="#2E3834" strokeWidth={2.4} style={styles.joinedIcon} />}
           </View>
         )}
       </View>
@@ -74,6 +77,8 @@ const styles = StyleSheet.create({
   },
   topRow: { flexDirection: "row", justifyContent: "flex-start", marginTop: 2 },
   joinedPill: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "rgba(255, 255, 255, 0.88)",
     borderRadius: radius.lg,
     paddingHorizontal: spacing.sm + 2,
@@ -82,6 +87,7 @@ const styles = StyleSheet.create({
   },
   joinedPillPressed: { opacity: 0.85 },
   joinedText: { fontSize: 15, fontWeight: "700", color: "#2E3834" },
+  joinedIcon: { marginLeft: 4 },
   titleWrap: {},
   titlePressed: { opacity: 0.9 },
   title: {

@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   answersPill: {
-    height: 36,
+    height: 35,
     justifyContent: "center",
     backgroundColor: colors.surfaceMuted,
     borderRadius: radius.pill,

@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
       : { fontFamily: "Inter_400Regular" as const }),
   },
   actionRow: { flexDirection: "row", alignItems: "center", marginTop: spacing.md, gap: spacing.sm, flexWrap: "wrap" },
-  answersPill: { height: 36, justifyContent: "center", backgroundColor: colors.surfaceMuted, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md },
+  answersPill: { height: 35, justifyContent: "center", backgroundColor: colors.surfaceMuted, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md },
   answersPillRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   answersText: {
     ...typography.bodyMuted,
