@@ -1,0 +1,6 @@
+[auth.email]
+enable_confirmations = true
+
+[auth.email.template.confirmation]
+subject = "Confirm your Nuzzle account"
+content_path = "./supabase/templates/confirm_signup.html"

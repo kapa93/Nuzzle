@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Confirm your Nuzzle account</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #F5F6F1; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #F5F6F1; padding: 48px 16px;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 480px; background-color: #FFFFFF; border-radius: 20px; overflow: hidden; border: 1px solid #E7E2D8;">
+
+          <!-- Header -->
+          <tr style="background-color: #389157;">
+            <td style="padding: 24px 40px; text-align: center;">
+              <img
+                src="https://kpdvjbuwwrpmqgljoixw.supabase.co/storage/v1/object/public/dog-images/brand/nuzzle-logo.png"
+                alt="Nuzzle"
+                width="140"
+                style="display: block; margin: 0 auto; max-width: 140px; border-radius: 12px;"
+              />
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding: 40px 40px 32px;">
+              <h1 style="margin: 0 0 12px; font-size: 22px; font-weight: 700; color: #1B2A22; letter-spacing: -0.3px;">
+                Welcome to Nuzzle!
+              </h1>
+              <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: #5B6A61;">
+                You're almost in. Tap the button below to confirm your email address and start finding dog-friendly spots and meetups near you.
+              </p>
+
+              <!-- CTA Button -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding-bottom: 32px;">
+                    <a href="{{ .ConfirmationURL }}"
+                       style="display: inline-block; background-color: #389157; color: #FFFFFF; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 36px; border-radius: 99px; letter-spacing: -0.1px;">
+                      Confirm my email
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Divider -->
+              <hr style="border: none; border-top: 1px solid #E7E2D8; margin: 0 0 24px;" />
+
+              <!-- Fallback link -->
+              <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #87928B;">
+                Button not working? Copy and paste this link into your browser:
+              </p>
+              <p style="margin: 8px 0 0; font-size: 13px; word-break: break-all;">
+                <a href="{{ .ConfirmationURL }}" style="color: #389157; text-decoration: underline;">{{ .ConfirmationURL }}</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #F5F6F1; padding: 24px 40px; border-top: 1px solid #E7E2D8;">
+              <p style="margin: 0; font-size: 12px; color: #87928B; line-height: 1.6; text-align: center;">
+                If you didn't create a Nuzzle account, you can safely ignore this email.<br />
+                This link expires in 24 hours.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
