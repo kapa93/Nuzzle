@@ -138,9 +138,9 @@ export function getGooglePlacePhotoUrl(photoName: string, accessToken: string): 
   return `${supabaseUrl}/functions/v1/google-places?${params.toString()}`;
 }
 
-export async function importGooglePlace(googlePlaceId: string): Promise<Place> {
+export async function importGooglePlace(googlePlaceId: string, bannerPhotoName?: string | null): Promise<Place> {
   const { data, error } = await supabase.functions.invoke<{ place: Place }>('google-places', {
-    body: { action: 'import', googlePlaceId },
+    body: { action: 'import', googlePlaceId, bannerPhotoName: bannerPhotoName ?? null },
   });
 
   if (error) await throwFunctionError(error);

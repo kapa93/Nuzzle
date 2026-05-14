@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Check, MapPinPlus } from 'lucide-react-native';
 import { colors, radius, shadow, spacing, typography } from '@/theme';
 import type { Place, PlaceTypeEnum } from '@/types';
 
@@ -83,11 +84,14 @@ export function PlaceRow({
         accessibilityLabel={isSaved ? 'Unsave place' : 'Save place'}
         accessibilityState={{ selected: isSaved }}
       >
-        <Ionicons
-          name={isSaved ? 'bookmark' : 'bookmark-outline'}
-          size={20}
-          color={isSaved ? colors.primary : colors.textMuted}
-        />
+        {isSaved ? (
+          <View style={styles.joinedPill}>
+            <Text style={styles.joinedPillText}>Joined</Text>
+            <Check size={13} color={colors.primaryDark} strokeWidth={3.5} />
+          </View>
+        ) : (
+          <MapPinPlus size={25} color={colors.primaryDark} />
+        )}
       </Pressable>
     </Pressable>
   );
@@ -151,6 +155,23 @@ const styles = StyleSheet.create({
   },
   typeChipText: {
     ...typography.caption,
+    color: colors.primaryDark,
+    fontWeight: '700',
+  },
+  joinedPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.primaryDark,
+    paddingHorizontal: spacing.sm + 1,
+    paddingVertical: spacing.xs - 2,
+  },
+  joinedPillText: {
+    fontSize: 13,
+    lineHeight: 18,
     color: colors.primaryDark,
     fontWeight: '700',
   },

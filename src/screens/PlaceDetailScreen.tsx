@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -16,12 +16,14 @@ import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { NUZZLE_TAB_BAR_LAYOUT_EXTENDS_BELOW_SCREEN } from '@/navigation/NuzzleTabBar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { MapPinCheck, MapPinPlus } from 'lucide-react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DogAvatar } from '@/components/DogAvatar';
 import { MetThisDogButton } from '@/components/MetThisDogButton';
 import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
 import { useSavedPlaces, useToggleSavedPlace } from '@/hooks/useSavedPlaces';
-import { getActivePlaceCheckins, getPlaceById } from '@/api/places';
+import { getActivePlaceCheckins, getGooglePlacePhotoUrl, getPlaceById } from '@/api/places';
+import { supabase } from '@/lib/supabase';
 import { deletePost, getPlaceMeetupPosts, getPlacePosts } from '@/api/posts';
 import { rsvpMeetup, unrsvpMeetup } from '@/api/meetups';
 import { setReaction } from '@/api/reactions';
@@ -76,6 +78,18 @@ export function PlaceDetailScreen({ route, navigation }: Props) {
     queryKey: ['place', placeId],
     queryFn: () => getPlaceById(placeId),
   });
+
+  const [photoAccessToken, setPhotoAccessToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setPhotoAccessToken(session?.access_token ?? null);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setPhotoAccessToken(session?.access_token ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   const { data: activeCheckins = [], isLoading: checkinsLoading } = useQuery({
     queryKey: ['placeActiveCheckins', placeId],
@@ -316,6 +330,58 @@ export function PlaceDetailScreen({ route, navigation }: Props) {
 
   const keyExtractPost = useCallback((item: PostWithDetails) => item.id, []);
 
+  // ── Stable single-FlatList header (prevents hero flicker on tab switch) ─────
+  type AnyTabItem =
+    | { _tab: 'feed'; item: PostWithDetails }
+    | { _tab: 'dogs'; item: ActivePlaceCheckin }
+    | { _tab: 'meetups'; item: PostWithDetails };
+
+  const activeTabRef = useRef(activeTab);
+  const placeHeaderRef = useRef<React.ReactNode>(null);
+
+  const tabData = useMemo<AnyTabItem[]>(() => {
+    if (activeTab === 'feed') return (feedLoading ? [] : placePosts).map(item => ({ _tab: 'feed' as const, item }));
+    if (activeTab === 'dogs') return (checkinsLoading ? [] : activeCheckins).map(item => ({ _tab: 'dogs' as const, item }));
+    return (meetupsLoading ? [] : placeMeetups).map(item => ({ _tab: 'meetups' as const, item }));
+  }, [activeTab, feedLoading, placePosts, checkinsLoading, activeCheckins, meetupsLoading, placeMeetups]);
+
+  const tabKeyExtractor = useCallback((tabItem: AnyTabItem) => tabItem.item.id, []);
+
+  const tabItemSeparator = useCallback(() => <View style={styles.feedSeparator} />, []);
+
+  const renderTabItem = useCallback(({ item: tabItem }: { item: AnyTabItem }) => {
+    if (tabItem._tab === 'dogs') {
+      return (
+        <View style={styles.dogRowWrap}>
+          <DogRow
+            item={tabItem.item}
+            userId={user?.id ?? null}
+            myDogs={myDogs}
+            placeName={place?.name ?? ''}
+            onDogPress={handleDogPress}
+          />
+        </View>
+      );
+    }
+    return (
+      <FeedItem
+        item={tabItem.item}
+        onPostPress={handlePostPress}
+        onAuthorPress={handleAuthorPress}
+        onReactionSelect={handleReactionSelect}
+        onReactionMenuOpenChange={setReactionMenuOpen}
+        onRsvpToggle={handleRsvpToggle}
+        currentUserId={user?.id ?? null}
+        onEdit={handleEditPost}
+        onDelete={handleDeletePost}
+      />
+    );
+  }, [place?.name, user?.id, myDogs, handleDogPress, handlePostPress, handleAuthorPress, handleReactionSelect, handleRsvpToggle, handleEditPost, handleDeletePost]);
+
+  const ListHeader = useCallback(function PlaceDetailListHeader() {
+    return <>{placeHeaderRef.current}</>;
+  }, []); // empty deps — stable reference so FlatList never remounts the hero
+
   if (placeLoading) {
     return (
       <View style={styles.screenRoot}>
@@ -340,15 +406,23 @@ export function PlaceDetailScreen({ route, navigation }: Props) {
     );
   }
 
+  // Sync refs after early-return guards
+  activeTabRef.current = activeTab;
+
   const locationLine = [place.neighborhood, place.city].filter(Boolean).join(', ');
-  const heroImage = getPlaceHeroImage(place);
-  const hasHeroImage = heroImage !== null;
+  const bundledHeroImage = getPlaceHeroImage(place);
+  const googleHeroUri =
+    !bundledHeroImage && place.photos[0] && photoAccessToken
+      ? getGooglePlacePhotoUrl(place.photos[0], photoAccessToken)
+      : null;
+  const heroImageSource: ImageSourcePropType | null = bundledHeroImage ?? (googleHeroUri ? { uri: googleHeroUri } : null);
+  const hasHeroImage = heroImageSource !== null;
   const placeHeader = (
     <View style={[styles.heroContainer, { paddingTop: headerHeight }]}>
       <View style={styles.heroPage}>
         {hasHeroImage ? (
           <ImageBackground
-            source={heroImage}
+            source={heroImageSource}
             style={styles.heroPageInner}
             imageStyle={styles.heroImage}
             resizeMode="cover"
@@ -389,12 +463,12 @@ export function PlaceDetailScreen({ route, navigation }: Props) {
           {TABS.map(({ key, label }) => (
             <Pressable
               key={key}
-              style={[styles.tab, activeTab === key && styles.tabActive]}
+              style={[styles.tab, activeTabRef.current === key && styles.tabActive]}
               onPress={() => setActiveTab(key)}
               accessibilityRole="tab"
-              accessibilityState={{ selected: activeTab === key }}
+              accessibilityState={{ selected: activeTabRef.current === key }}
             >
-              <Text style={[styles.tabText, activeTab === key && styles.tabTextActive]}>
+              <Text style={[styles.tabText, activeTabRef.current === key && styles.tabTextActive]}>
                 {label}
               </Text>
             </Pressable>
@@ -403,103 +477,53 @@ export function PlaceDetailScreen({ route, navigation }: Props) {
       </View>
     </View>
   );
+  placeHeaderRef.current = placeHeader;
 
   return (
     <View style={styles.screenRoot}>
       <SafeAreaView style={styles.safe} edges={['left', 'right']}>
-        {/* Feed tab — posts with posts.place_id = this place */}
-        {activeTab === 'feed' && (
-          <FlatList
-            data={feedLoading ? [] : placePosts}
-            keyExtractor={keyExtractPost}
-            contentContainerStyle={[styles.tabContent, { paddingBottom: tabBarScrollPad }]}
-            scrollEnabled={!reactionMenuOpen}
-            showsVerticalScrollIndicator={false}
-            ListHeaderComponent={placeHeader}
-            ListEmptyComponent={
-              feedLoading ? (
-                <InlineLoader />
-              ) : (
-                <EmptyState
-                  icon="newspaper-outline"
-                  title="No posts here yet"
-                  body="Be the first to post at this place."
-                  cta="Post here"
-                  onCtaPress={() => navigation.navigate('CreatePost', {
-                    initialPlaceId: place.id,
-                    initialPlaceName: place.name,
-                  })}
-                />
-              )
-            }
-            renderItem={renderFeedItem}
-            ItemSeparatorComponent={renderFeedSeparator}
-            initialNumToRender={8}
-            maxToRenderPerBatch={8}
-            windowSize={11}
-          />
-        )}
-
-        {/* Dogs tab — live check-in data */}
-        {activeTab === 'dogs' && (
-          <FlatList
-            data={checkinsLoading ? [] : dogListData}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={[styles.tabContent, { paddingBottom: tabBarScrollPad }]}
-            showsVerticalScrollIndicator={false}
-            ListHeaderComponent={placeHeader}
-            ListEmptyComponent={
-              checkinsLoading ? (
-                <InlineLoader />
-              ) : (
-                <EmptyState
-                  icon="paw-outline"
-                  title="No dogs here right now"
-                  body="Check back soon — dogs who check in will appear here."
-                />
-              )
-            }
-            renderItem={({ item }) => (
-              <View style={styles.dogRowWrap}>
-                <DogRow
-                  item={item}
-                  userId={user?.id ?? null}
-                  myDogs={myDogs}
-                  placeName={place.name}
-                  onDogPress={handleDogPress}
-                />
-              </View>
-            )}
-          />
-        )}
-
-        {/* Meetups tab — place-linked meetup posts */}
-        {activeTab === 'meetups' && (
-          <FlatList
-            data={meetupsLoading ? [] : placeMeetups}
-            keyExtractor={keyExtractPost}
-            contentContainerStyle={[styles.tabContent, { paddingBottom: tabBarScrollPad }]}
-            scrollEnabled={!reactionMenuOpen}
-            showsVerticalScrollIndicator={false}
-            ListHeaderComponent={placeHeader}
-            ListEmptyComponent={
-              meetupsLoading ? (
-                <InlineLoader />
-              ) : (
-                <EmptyState
-                  icon="calendar-outline"
-                  title="No meetups scheduled here"
-                  body="Meetups at this place will show up here once they're added."
-                />
-              )
-            }
-            renderItem={renderMeetupFeedItem}
-            ItemSeparatorComponent={renderFeedSeparator}
-            initialNumToRender={8}
-            maxToRenderPerBatch={8}
-            windowSize={11}
-          />
-        )}
+        <FlatList
+          data={tabData}
+          keyExtractor={tabKeyExtractor}
+          extraData={activeTab}
+          contentContainerStyle={[styles.tabContent, { paddingBottom: tabBarScrollPad }]}
+          scrollEnabled={!reactionMenuOpen}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={ListHeader}
+          renderItem={renderTabItem}
+          ItemSeparatorComponent={activeTab === 'dogs' ? undefined : tabItemSeparator}
+          ListEmptyComponent={
+            (activeTab === 'feed' ? feedLoading : activeTab === 'dogs' ? checkinsLoading : meetupsLoading) ? (
+              <InlineLoader />
+            ) : activeTab === 'feed' ? (
+              <EmptyState
+                icon="newspaper-outline"
+                title="No posts here yet"
+                body="Be the first to post at this place."
+                cta="Post here"
+                onCtaPress={() => navigation.navigate('CreatePost', {
+                  initialPlaceId: place.id,
+                  initialPlaceName: place.name,
+                })}
+              />
+            ) : activeTab === 'dogs' ? (
+              <EmptyState
+                icon="paw-outline"
+                title="No dogs here right now"
+                body="Check back soon — dogs who check in will appear here."
+              />
+            ) : (
+              <EmptyState
+                icon="calendar-outline"
+                title="No meetups scheduled here"
+                body="Meetups at this place will show up here once they're added."
+              />
+            )
+          }
+          initialNumToRender={8}
+          maxToRenderPerBatch={8}
+          windowSize={11}
+        />
       </SafeAreaView>
     </View>
   );
@@ -536,7 +560,11 @@ function PlaceHeroContent({
         accessibilityLabel={isSaved ? 'Unsave place' : 'Save place'}
         accessibilityState={{ selected: isSaved }}
       >
-        <Text style={styles.heroBookmarkText}>{isSaved ? 'Joined' : 'Join'}</Text>
+        <Text style={isSaved ? styles.heroBookmarkText : styles.heroBookmarkTextJoin}>{isSaved ? 'Joined' : 'Join'}</Text>
+          {isSaved
+            ? <MapPinCheck size={15} color="#2E3834" strokeWidth={2.5} />
+            : <MapPinPlus size={17} color="#2E3834" strokeWidth={2.5} />
+          }
       </Pressable>
 
       <View style={styles.heroPageContent}>
@@ -546,7 +574,7 @@ function PlaceHeroContent({
               {locationLine}
             </Text>
           ) : null}
-          <Text style={[styles.placeName, hasHeroImage && styles.heroPlaceName]} numberOfLines={2}>
+          <Text style={[styles.placeName, hasHeroImage && styles.heroPlaceName]} numberOfLines={2} allowFontScaling={false}>
             {place.name}
           </Text>
         </View>
@@ -558,7 +586,7 @@ function PlaceHeroContent({
             accessibilityRole="button"
             accessibilityLabel="Post here"
           >
-            <Ionicons name="create-outline" size={14} color={colors.textPrimary} />
+            <Ionicons name="create-outline" size={15} color={colors.textPrimary} />
             <Text style={[styles.postHereBtnText, hasHeroImage && styles.heroPostHereBtnText]}>Post here</Text>
           </Pressable>
           {place.supports_check_in && (
@@ -568,7 +596,7 @@ function PlaceHeroContent({
               accessibilityRole="button"
               accessibilityLabel="Check in at this place"
             >
-              <Ionicons name="paw" size={14} color={colors.surface} />
+              <Ionicons name="paw" size={12} color={colors.surface} />
               <Text style={styles.checkinBtnText}>Check In</Text>
             </Pressable>
           )}
@@ -692,7 +720,7 @@ const styles = StyleSheet.create({
   },
   heroImageOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.14)',
+    backgroundColor: 'rgba(0,0,0,0.24)',
   },
   heroPageContent: {
     flex: 1,
@@ -748,6 +776,9 @@ const styles = StyleSheet.create({
     top: spacing.md + 10,
     right: spacing.lg,
     zIndex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
     backgroundColor: 'rgba(255, 255, 255, 0.88)',
     borderRadius: radius.lg,
     paddingHorizontal: spacing.sm + 2,
@@ -758,17 +789,22 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#2E3834',
   },
+  heroBookmarkTextJoin: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#2E3834',
+  },
   postHereBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 2,
     borderWidth: 0,
     borderColor: colors.surface,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    paddingBottom: spacing.xs + 1,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs - 1,
+    paddingBottom: spacing.xs - 1,
   },
   heroPostHereBtn: {
     borderColor: colors.surface,
@@ -776,6 +812,7 @@ const styles = StyleSheet.create({
   },
   postHereBtnText: {
     ...typography.caption,
+    fontSize: 12,
     color: colors.textPrimary,
     fontFamily: 'Inter_700Bold',
   },
@@ -785,16 +822,17 @@ const styles = StyleSheet.create({
   checkinBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
     backgroundColor: colors.primary,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    paddingBottom: spacing.xs + 1,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs - 1,
+    paddingBottom: spacing.xs - 1,
     transform: [{ translateY: 1 }],
   },
   checkinBtnText: {
     ...typography.caption,
+    fontSize: 12,
     color: colors.surface,
     fontFamily: 'Inter_700Bold',
   },
@@ -814,18 +852,23 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     paddingTop: spacing.sm + 3,
-    paddingBottom: spacing.sm + 1,
+    paddingBottom: spacing.sm + 1.5,
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
-    marginBottom: -1,
+    marginBottom: -1.5,
   },
   tabActive: {
     borderBottomColor: colors.primary,
   },
   tabText: {
     ...typography.body,
-    fontFamily: 'Inter_400Regular',
-    color: colors.textMuted,
+    ...typography.caption,
+    fontSize: 14,
+    lineHeight: 19,
+    color: colors.textSecondary,
+    ...(Platform.OS === 'web'
+      ? { fontFamily: "'Inter', sans-serif", fontWeight: '600' as const }
+      : { fontFamily: 'Inter_600SemiBold' as const }),
   },
   tabTextActive: {
     fontFamily: 'Inter_700Bold',

@@ -37,7 +37,7 @@ import { BREED_LABELS, PLAY_STYLE_LABELS, formatRelativeTime } from '@/utils/bre
 import { colors, radius, shadow, spacing, typography } from '@/theme';
 import { captureHandledError } from '@/lib/sentry';
 import { NotificationsSheet } from '@/components/NotificationsSheet';
-import { Bell } from 'lucide-react-native';
+import { Bell, MapPinCheck } from 'lucide-react-native';
 import type { ActivePlaceCheckin, Dog, Place, PlaceTypeEnum, PostWithDetails, ReactionEnum } from '@/types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -546,6 +546,7 @@ export function SavedPlacesScreen({ navigation }: Props) {
                 accessibilityState={{ selected: isSaved }}
               >
                 <Text style={styles.carouselJoinedText}>Joined</Text>
+                <MapPinCheck size={15} color="#2E3834" strokeWidth={2.5} />
               </Pressable>
               <View style={styles.carouselPageContent}>
                 <View style={styles.carouselTitleBlock}>
@@ -826,6 +827,9 @@ const styles = StyleSheet.create({
     top: spacing.md + 10,
     right: spacing.lg,
     zIndex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
     backgroundColor: 'rgba(255, 255, 255, 0.88)',
     borderRadius: radius.lg,
     paddingHorizontal: spacing.sm + 2,

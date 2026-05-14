@@ -346,7 +346,7 @@ export function ExploreScreen({
   const [coords, setCoords] = useState<UserCoords>(null);
   const [placesLocationState, setPlacesLocationState] = useState<PlacesLocationState>("unknown");
   const [nearbyDisplayCount, setNearbyDisplayCount] = useState(NEARBY_INITIAL_COUNT);
-  const [nuzzleUnbookmarkedDisplayCount, setNuzzleUnbookmarkedDisplayCount] = useState(NUZZLE_UNBOOKMARKED_INITIAL_COUNT);
+  const [nuzzleDisplayCount, setNuzzleDisplayCount] = useState(NUZZLE_UNBOOKMARKED_INITIAL_COUNT);
   const hasRequestedPlacesPermissionRef = useRef(false);
   const [tabsSearchHeight, setTabsSearchHeight] = useState(TABS_SEARCH_ESTIMATED_HEIGHT);
   const [scrollDirection, setScrollDirection] = useState<LocalScrollDirection>("up");
@@ -594,19 +594,10 @@ export function ExploreScreen({
     return { inNuzzle: inNuzzleSearchResults, morePlaces };
   }, [places, inNuzzleSearchResults, googleCandidates, normalizedQuery, coords]);
 
-  const nuzzleBookmarkedPlaces = useMemo(
-    () =>
-      places
-        .filter((place) => savedPlaceIds.has(place.id))
-        .sort((a, b) => a.name.localeCompare(b.name)),
-    [places, savedPlaceIds]
-  );
-
-  const nuzzleUnbookmarkedPlaces = useMemo(
+  const nuzzlePlaces = useMemo(
     () =>
       places
         .filter((place) => {
-          if (savedPlaceIds.has(place.id)) return false;
           if (coords && place.latitude != null && place.longitude != null) {
             return (
               getDistanceMeters(coords.latitude, coords.longitude, place.latitude, place.longitude) <=
@@ -628,7 +619,7 @@ export function ExploreScreen({
           }
           return a.name.localeCompare(b.name);
         }),
-    [places, savedPlaceIds, coords]
+    [places, coords]
   );
 
   const nearbyPlacesQuery = useQuery({
@@ -670,7 +661,7 @@ export function ExploreScreen({
 
   useEffect(() => {
     setNearbyDisplayCount(NEARBY_INITIAL_COUNT);
-    setNuzzleUnbookmarkedDisplayCount(NUZZLE_UNBOOKMARKED_INITIAL_COUNT);
+    setNuzzleDisplayCount(NUZZLE_UNBOOKMARKED_INITIAL_COUNT);
   }, [coords]);
 
   const handleGooglePlacePress = (candidate: GooglePlaceCandidate) => {
@@ -832,10 +823,10 @@ export function ExploreScreen({
               <>
                 <PlacesSection
                   title="On Nuzzle"
-                  isEmpty={nuzzleBookmarkedPlaces.length === 0 && nuzzleUnbookmarkedPlaces.length === 0}
+                  isEmpty={nuzzlePlaces.length === 0}
                   emptyMessage="No places in this area yet."
                 >
-                  {nuzzleBookmarkedPlaces.map((place) => (
+                  {nuzzlePlaces.slice(0, nuzzleDisplayCount).map((place) => (
                     <PlaceRow
                       key={place.id}
                       place={place}
@@ -849,24 +840,10 @@ export function ExploreScreen({
                       saveLoading={toggleSave.isPending}
                     />
                   ))}
-                  {nuzzleUnbookmarkedPlaces.slice(0, nuzzleUnbookmarkedDisplayCount).map((place) => (
-                    <PlaceRow
-                      key={place.id}
-                      place={place}
-                      variant="plain"
-                      showTypeChip={false}
-                      isSaved={false}
-                      onPress={() => navigation.navigate("PlaceDetail", { placeId: place.id })}
-                      onSaveToggle={() =>
-                        toggleSave.mutate({ placeId: place.id, isSaved: false })
-                      }
-                      saveLoading={toggleSave.isPending}
-                    />
-                  ))}
-                  {nuzzleUnbookmarkedDisplayCount < nuzzleUnbookmarkedPlaces.length && (
+                  {nuzzleDisplayCount < nuzzlePlaces.length && (
                     <Pressable
                       onPress={() =>
-                        setNuzzleUnbookmarkedDisplayCount((c) => c + NUZZLE_UNBOOKMARKED_LOAD_MORE_COUNT)
+                        setNuzzleDisplayCount((c) => c + NUZZLE_UNBOOKMARKED_LOAD_MORE_COUNT)
                       }
                     >
                       <Text style={styles.nearbyShowMoreText}>Show more places</Text>

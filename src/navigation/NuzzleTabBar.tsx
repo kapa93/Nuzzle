@@ -36,7 +36,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const TAB_ICON_COLOR = "#000000";
 /** Lucide stroke weight for Places / Explore / Profile tab icons */
-const TAB_BAR_LUCIDE_STROKE = 1.75;
+const TAB_BAR_LUCIDE_STROKE = 1.7;
 const TAB_BAR_LUCIDE_STROKE_ACTIVE = 2;
 const HOME_ICON_INACTIVE = require("../../assets/pup-icon.png");
 const HOME_ICON_SIZE = 30;

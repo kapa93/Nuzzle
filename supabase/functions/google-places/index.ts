@@ -577,6 +577,7 @@ Deno.serve(async (req) => {
       action?: Action;
       query?: string;
       googlePlaceId?: string;
+      bannerPhotoName?: string | null;
       latitude?: number | null;
       longitude?: number | null;
     };
@@ -638,10 +639,23 @@ Deno.serve(async (req) => {
         throw new ValidationError(validation.reason ?? "This place can't be saved right now.");
       }
 
-      const photoNames = preview.photos
-        .slice(0, 3)
+      const allPhotoNames = preview.photos
         .map((p) => p.name)
         .filter(Boolean);
+
+      const bannerPhotoName =
+        typeof body.bannerPhotoName === 'string' &&
+        body.bannerPhotoName.startsWith('places/') &&
+        body.bannerPhotoName.includes('/photos/')
+          ? body.bannerPhotoName
+          : null;
+
+      const otherPhotoNames = allPhotoNames.filter((n) => n !== bannerPhotoName);
+      const orderedPhotoNames = bannerPhotoName
+        ? [bannerPhotoName, ...otherPhotoNames]
+        : allPhotoNames;
+
+      const photoNames = orderedPhotoNames.slice(0, 3);
 
       const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey, {
         auth: { persistSession: false },

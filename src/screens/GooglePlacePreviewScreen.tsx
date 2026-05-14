@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { CirclePlus } from 'lucide-react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -38,18 +39,35 @@ export function GooglePlacePreviewScreen({ route, navigation }: Props) {
     queryFn: () => getGooglePlacePreview(googlePlaceId),
   });
 
-  const sessionQuery = useQuery({
-    queryKey: ['googlePlacePhotoSession'],
-    queryFn: async () => {
-      const { data } = await supabase.auth.getSession();
-      return data.session;
-    },
-    enabled: (placeQuery.data?.photos.length ?? 0) > 0,
-    staleTime: 60_000,
-  });
+  const [photoAccessToken, setPhotoAccessToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setPhotoAccessToken(session?.access_token ?? null);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setPhotoAccessToken(session?.access_token ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const bestPhotoName = useMemo(() => {
+    const photos = placeQuery.data?.photos ?? [];
+    if (photos.length === 0) return null;
+    return [...photos].sort(
+      (a, b) =>
+        (b.widthPx ?? 0) / (b.heightPx ?? 1) -
+        (a.widthPx ?? 0) / (a.heightPx ?? 1)
+    )[0]?.name ?? null;
+  }, [placeQuery.data?.photos]);
+
+  // Explicit user tap overrides the default; falls back to best landscape photo once loaded
+  const [userSelectedPhotoName, setUserSelectedPhotoName] = useState<string | null>(null);
+  const selectedPhotoName = userSelectedPhotoName ?? bestPhotoName;
 
   const importMutation = useMutation({
-    mutationFn: importGooglePlace,
+    mutationFn: ({ googlePlaceId, bannerPhotoName }: { googlePlaceId: string; bannerPhotoName: string | null }) =>
+      importGooglePlace(googlePlaceId, bannerPhotoName),
     onSuccess: async (place) => {
       await queryClient.invalidateQueries({ queryKey: ['places'] });
       navigation.navigate('PlaceDetail', { placeId: place.id });
@@ -60,7 +78,6 @@ export function GooglePlacePreviewScreen({ route, navigation }: Props) {
     navigation.setOptions({ title: placeQuery.data?.displayName ?? initialName ?? 'Place Preview' });
   }, [initialName, navigation, placeQuery.data?.displayName]);
 
-  const photoAccessToken = sessionQuery.data?.access_token;
 
   const hoursLines = formatOpeningHours(placeQuery.data?.currentOpeningHours);
 
@@ -108,26 +125,62 @@ export function GooglePlacePreviewScreen({ route, navigation }: Props) {
                   value={placeQuery.data.openNow ? 'Open now' : 'Closed right now'}
                 />
               ) : null}
+              <Pressable
+                onPress={() => importMutation.mutate({ googlePlaceId, bannerPhotoName: selectedPhotoName })}
+                disabled={importMutation.isPending}
+                style={({ pressed }) => [
+                  styles.saveButton,
+                  pressed && !importMutation.isPending && styles.saveButtonPressed,
+                  importMutation.isPending && styles.saveButtonDisabled,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Save place to Nuzzle"
+              >
+                {importMutation.isPending ? (
+                  <ActivityIndicator size="small" color={colors.surface} />
+                ) : (
+                  <CirclePlus size={21} color={colors.surface} />
+                )}
+                <Text style={styles.saveButtonText}>
+                  {importMutation.isPending ? 'Saving…' : 'Create Nuzzle Feed'}
+                </Text>
+              </Pressable>
             </View>
 
             <Section title="Photos">
               {placeQuery.data.photos.length > 0 && photoAccessToken ? (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.photoStrip}
-                >
-                  {placeQuery.data.photos.map((photo, index) => (
-                    <Image
-                      key={photo.name}
-                      source={{
-                        uri: getGooglePlacePhotoUrl(photo.name, photoAccessToken),
-                      }}
-                      style={styles.photo}
-                      accessibilityLabel={`${placeQuery.data?.displayName ?? 'Place'} photo ${index + 1}`}
-                    />
-                  ))}
-                </ScrollView>
+                <>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.photoStrip}
+                  >
+                    {placeQuery.data.photos.map((photo, index) => {
+                      const isSelected = photo.name === selectedPhotoName;
+                      return (
+                        <Pressable
+                          key={photo.name}
+                          onPress={() => setUserSelectedPhotoName(photo.name)}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Photo ${index + 1}${isSelected ? ', selected as cover' : ', tap to use as cover'}`}
+                          accessibilityState={{ selected: isSelected }}
+                        >
+                          <Image
+                            source={{ uri: getGooglePlacePhotoUrl(photo.name, photoAccessToken!) }}
+                            style={[styles.photo, isSelected && styles.photoSelected]}
+                            accessibilityLabel={`${placeQuery.data?.displayName ?? 'Place'} photo ${index + 1}`}
+                          />
+                          {isSelected && (
+                            <View style={styles.photoCheckmark}>
+                              <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+                            </View>
+                          )}
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
+                  <Text style={styles.photoHint}>Tap a photo to use as the cover</Text>
+                </>
               ) : (
                 <Text style={styles.emptyValue}>No photos returned.</Text>
               )}
@@ -152,27 +205,6 @@ export function GooglePlacePreviewScreen({ route, navigation }: Props) {
                   : 'Couldn’t save this place.'}
               </Text>
             ) : null}
-
-            <Pressable
-              onPress={() => importMutation.mutate(googlePlaceId)}
-              disabled={importMutation.isPending}
-              style={({ pressed }) => [
-                styles.addButton,
-                pressed && !importMutation.isPending && styles.addButtonPressed,
-                importMutation.isPending && styles.addButtonDisabled,
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel="Save place"
-            >
-              {importMutation.isPending ? (
-                <ActivityIndicator size="small" color={colors.surface} />
-              ) : (
-                <Ionicons name="bookmark" size={18} color={colors.surface} />
-              )}
-              <Text style={styles.addButtonText}>
-                {importMutation.isPending ? 'Saving…' : 'Save'}
-              </Text>
-            </Pressable>
           </>
         ) : null}
       </ScrollView>
@@ -261,7 +293,7 @@ const styles = StyleSheet.create({
     ...shadow.sm,
   },
   title: {
-    ...typography.titleLG,
+    ...typography.titleMD,
     color: colors.textPrimary,
   },
   infoRow: {
@@ -304,6 +336,26 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     backgroundColor: colors.surfaceMuted,
   },
+  photoSelected: {
+    borderWidth: 2.5,
+    borderColor: colors.primary,
+  },
+  photoCheckmark: {
+    position: 'absolute',
+    bottom: 6,
+    right: 6,
+    backgroundColor: colors.surface,
+    borderRadius: 11,
+    width: 22,
+    height: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoHint: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+  },
   valueText: {
     ...typography.body,
     color: colors.textPrimary,
@@ -316,24 +368,24 @@ const styles = StyleSheet.create({
     color: colors.danger,
     textAlign: 'center',
   },
-  addButton: {
-    minHeight: 48,
-    borderRadius: radius.pill,
-    backgroundColor: colors.primary,
+  saveButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.xs,
+    backgroundColor: colors.primary,
+    borderRadius: radius.pill,
+    paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
-    ...shadow.sm,
+    gap: spacing.xs,
+    marginTop: spacing.sm,
   },
-  addButtonPressed: {
+  saveButtonPressed: {
     opacity: 0.88,
   },
-  addButtonDisabled: {
+  saveButtonDisabled: {
     opacity: 0.65,
   },
-  addButtonText: {
+  saveButtonText: {
     ...typography.body,
     color: colors.surface,
     fontFamily: 'Inter_700Bold',
