@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -24,7 +24,8 @@ import { DogAvatar } from '@/components/DogAvatar';
 import { FeedItem } from '@/components/FeedItem';
 import { MetThisDogButton } from '@/components/MetThisDogButton';
 import { useAuthStore } from '@/store/authStore';
-import { checkIntoPlace, getActivePlaceCheckins, getMyActivePlaceCheckins, getPlaceById } from '@/api/places';
+import { checkIntoPlace, getActivePlaceCheckins, getGooglePlacePhotoUrl, getMyActivePlaceCheckins, getPlaceById } from '@/api/places';
+import { supabase } from '@/lib/supabase';
 import { deletePost, getPlaceMeetupPosts, getPlacePosts } from '@/api/posts';
 import { rsvpMeetup, unrsvpMeetup } from '@/api/meetups';
 import { setReaction } from '@/api/reactions';
@@ -106,6 +107,17 @@ export function SavedPlacesScreen({ navigation }: Props) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<PlaceDetailTab>('feed');
   const [reactionMenuOpen, setReactionMenuOpen] = useState(false);
+  const [photoAccessToken, setPhotoAccessToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setPhotoAccessToken(session?.access_token ?? null);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setPhotoAccessToken(session?.access_token ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   const scrollRef = useRef<ScrollView>(null);
   const userScrollingRef = useRef(false);
@@ -532,7 +544,12 @@ export function SavedPlacesScreen({ navigation }: Props) {
         {savedPlaces.map((p) => {
           const locationLine = [p.neighborhood, p.city].filter(Boolean).join(', ');
           const isSaved = true;
-          const heroImage = getPlaceHeroImage(p);
+          const bundledHero = getPlaceHeroImage(p);
+          const heroImage: ImageSourcePropType | null =
+            bundledHero ??
+            (p.photos[0] && photoAccessToken
+              ? { uri: getGooglePlacePhotoUrl(p.photos[0], photoAccessToken) }
+              : null);
           const hasHeroImage = heroImage !== null;
           const pageContent = (
             <>
@@ -631,7 +648,7 @@ export function SavedPlacesScreen({ navigation }: Props) {
           ref={flatListRef}
           data={tabData}
           keyExtractor={tabKeyExtractor}
-          extraData={activeTab}
+          extraData={[activeTab, photoAccessToken]}
           contentContainerStyle={tabContentStyle}
           scrollEnabled={!reactionMenuOpen}
           showsVerticalScrollIndicator={false}

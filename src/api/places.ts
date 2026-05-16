@@ -129,12 +129,8 @@ export async function getGooglePlacePreview(googlePlaceId: string): Promise<Goog
   return data.place;
 }
 
-export function getGooglePlacePhotoUrl(photoName: string, accessToken: string): string {
-  const params = new URLSearchParams({
-    action: 'photo',
-    name: photoName,
-    access_token: accessToken,
-  });
+export function getGooglePlacePhotoUrl(photoName: string, _accessToken?: string): string {
+  const params = new URLSearchParams({ action: 'photo', name: photoName });
   return `${supabaseUrl}/functions/v1/google-places?${params.toString()}`;
 }
 
@@ -159,6 +155,24 @@ export async function getNearbyGooglePlaces({
     'google-places',
     {
       body: { action: 'nearby', latitude, longitude },
+    }
+  );
+
+  if (error) await throwFunctionError(error);
+  return dedupeGooglePlaceCandidates(data?.places ?? []);
+}
+
+export async function getDogSpotsNearby({
+  latitude,
+  longitude,
+}: {
+  latitude: number;
+  longitude: number;
+}): Promise<GooglePlaceCandidate[]> {
+  const { data, error } = await supabase.functions.invoke<{ places: GooglePlaceCandidate[] }>(
+    'google-places',
+    {
+      body: { action: 'dogSpots', latitude, longitude },
     }
   );
 

@@ -211,10 +211,7 @@ export function NotificationsSheet({ visible, onClose, onPostPress }: Props) {
             </View>
           ) : items.length === 0 ? (
             <View style={styles.stateBox}>
-              <Text style={styles.emptyTitle}>No notifications yet</Text>
-              <Text style={styles.emptyBody}>
-                You&apos;ll be notified when someone comments, reacts, meets your dog, or posts in a feed you follow.
-              </Text>
+              <Text style={styles.emptyBody}>You're all caught up!</Text>
             </View>
           ) : (
             <FlatList
@@ -315,8 +312,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.xxs,
   },
   stateBox: {
+    flex: 1,
     alignItems: 'center',
-    paddingVertical: spacing.xxxl,
+    justifyContent: 'center',
     paddingHorizontal: spacing.xxl,
     gap: spacing.md,
   },
@@ -329,6 +327,8 @@ const styles = StyleSheet.create({
   },
   emptyBody: {
     ...typography.bodyMuted,
+    fontSize: 16,
+    fontFamily: 'Inter_500Medium',
     textAlign: 'center',
   },
 });

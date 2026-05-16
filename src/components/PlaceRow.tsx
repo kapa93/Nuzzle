@@ -1,7 +1,7 @@
 import React from 'react';
 import { Image, ImageSourcePropType, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Check, MapPinPlus } from 'lucide-react-native';
+import { Check, Plus } from 'lucide-react-native';
 import { colors, radius, shadow, spacing, typography } from '@/theme';
 import type { Place, PlaceTypeEnum } from '@/types';
 
@@ -110,7 +110,10 @@ export function PlaceRow({
             <Check size={13} color={colors.primaryDark} strokeWidth={3.5} />
           </View>
         ) : (
-          <MapPinPlus size={25} color={colors.primaryDark} />
+          <View style={styles.joinPill}>
+            <Text style={styles.joinPillText}>Join</Text>
+            <Plus size={14} color={colors.textSecondary} strokeWidth={3.2} />
+          </View>
         )}
       </Pressable>
     </Pressable>
@@ -208,6 +211,23 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     color: colors.primaryDark,
+    fontWeight: '700',
+  },
+  joinPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs - 1,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    paddingHorizontal: spacing.sm + 5,
+    paddingVertical: spacing.xs - 2,
+  },
+  joinPillText: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.textSecondary,
     fontWeight: '700',
   },
   location: {

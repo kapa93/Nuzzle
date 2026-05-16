@@ -29,6 +29,7 @@ import * as Location from "expo-location";
 import { getPackItems } from "@/utils/breedAssets";
 import { useStackHeaderHeight } from "@/hooks/useStackHeaderHeight";
 import {
+  getDogSpotsNearby,
   getNearbyGooglePlaces,
   getGooglePlacePhotoUrl,
   listActivePlaces,
@@ -64,9 +65,28 @@ const SEARCH_RANK_DISTANCE_SCALE_METERS = 15_000;
 type LocalScrollDirection = "up" | "down";
 
 type Tab = "breeds" | "places";
+type PlacesSubTab = "placeFeeds" | "dogSpots";
+type DogSpotsFilter = "all" | "cafes" | "bars" | "breweries" | "restaurants" | "stores";
 
 type UserCoords = { latitude: number; longitude: number } | null;
 type PlacesLocationState = "unknown" | "granted" | "denied";
+
+const DOG_SPOTS_FILTERS: DogSpotsFilter[] = ["all", "cafes", "bars", "breweries", "restaurants", "stores"];
+const DOG_SPOTS_FILTER_LABELS: Record<DogSpotsFilter, string> = {
+  all: "All",
+  cafes: "Cafes",
+  bars: "Bars",
+  breweries: "Breweries",
+  restaurants: "Restaurants",
+  stores: "Stores",
+};
+const DOG_SPOTS_FILTER_TYPES: Record<Exclude<DogSpotsFilter, "all">, string[]> = {
+  cafes: ["cafe", "coffee_shop", "bakery", "dog_cafe"],
+  bars: ["bar", "pub", "night_club"],
+  breweries: ["brewery"],
+  restaurants: ["restaurant", "food"],
+  stores: ["pet_store", "store"],
+};
 
 type SearchBucket = {
   inNuzzle: Place[];
@@ -156,6 +176,8 @@ const NEARBY_PROXIMITY_DEDUP_THRESHOLD_METERS = 50;
 const NUZZLE_SECTION_UNBOOKMARKED_RADIUS_METERS = 100_000;
 const NUZZLE_UNBOOKMARKED_INITIAL_COUNT = 5;
 const NUZZLE_UNBOOKMARKED_LOAD_MORE_COUNT = 5;
+const DOG_SPOTS_INITIAL_COUNT = 10;
+const DOG_SPOTS_LOAD_MORE_COUNT = 10;
 
 
 
@@ -356,6 +378,7 @@ export function ExploreScreen({
   const cardWidth = (width - H_PADDING * 2 - CARD_GAP * (NUM_COLUMNS - 1)) / NUM_COLUMNS + 1;
   const packItems = getPackItems();
   const [activeTab, setActiveTab] = useState<Tab>(route.params?.initialTab ?? "breeds");
+  const [activePlacesSubTab, setActivePlacesSubTab] = useState<PlacesSubTab>("placeFeeds");
   const [searchQuery, setSearchQuery] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [debouncedPlaceSearch, setDebouncedPlaceSearch] = useState("");
@@ -363,8 +386,12 @@ export function ExploreScreen({
   const [placesLocationState, setPlacesLocationState] = useState<PlacesLocationState>("unknown");
   const [nearbyDisplayCount, setNearbyDisplayCount] = useState(NEARBY_INITIAL_COUNT);
   const [nuzzleDisplayCount, setNuzzleDisplayCount] = useState(NUZZLE_UNBOOKMARKED_INITIAL_COUNT);
+  const [dogSpotsDisplayCount, setDogSpotsDisplayCount] = useState(DOG_SPOTS_INITIAL_COUNT);
+  const [dogSpotsFilter, setDogSpotsFilter] = useState<DogSpotsFilter>("all");
   const hasRequestedPlacesPermissionRef = useRef(false);
-  const [tabsSearchHeight, setTabsSearchHeight] = useState(TABS_SEARCH_ESTIMATED_HEIGHT);
+  const [breedsTabsHeight, setBreedsTabsHeight] = useState(TABS_SEARCH_ESTIMATED_HEIGHT);
+  const [placesTabsHeight, setPlacesTabsHeight] = useState(TABS_SEARCH_ESTIMATED_HEIGHT);
+  const tabsSearchHeight = activeTab === "places" ? placesTabsHeight : breedsTabsHeight;
   const [scrollDirection, setScrollDirection] = useState<LocalScrollDirection>("up");
   const lastOffsetRef = useRef(0);
   const [photoAccessToken, setPhotoAccessToken] = useState<string | null>(null);
@@ -412,8 +439,11 @@ export function ExploreScreen({
 
   const handleTabsSearchLayout = (e: LayoutChangeEvent) => {
     const h = e.nativeEvent.layout.height;
-    if (h > 0 && Math.abs(h - tabsSearchHeight) > 0.5) {
-      setTabsSearchHeight(h);
+    if (h <= 0) return;
+    if (activeTab === "places") {
+      if (Math.abs(h - placesTabsHeight) > 0.5) setPlacesTabsHeight(h);
+    } else {
+      if (Math.abs(h - breedsTabsHeight) > 0.5) setBreedsTabsHeight(h);
     }
   };
 
@@ -421,6 +451,7 @@ export function ExploreScreen({
     if (tab === activeTab) return;
     setActiveTab(tab);
     setSearchQuery("");
+    if (tab !== "places") setActivePlacesSubTab("placeFeeds");
   };
 
   React.useEffect(() => {
@@ -454,6 +485,10 @@ export function ExploreScreen({
     supabase.auth.getSession().then(({ data: { session } }) => {
       setPhotoAccessToken(session?.access_token ?? null);
     });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setPhotoAccessToken(session?.access_token ?? null);
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -656,6 +691,17 @@ export function ExploreScreen({
     retry: false,
   });
 
+  const dogSpotsQuery = useQuery({
+    queryKey: [
+      "dogSpots",
+      coords ? `${coords.latitude.toFixed(3)},${coords.longitude.toFixed(3)}` : "no-location",
+    ],
+    queryFn: () => getDogSpotsNearby({ latitude: coords!.latitude, longitude: coords!.longitude }),
+    enabled: coords !== null && placesLocationState === "granted" && activePlacesSubTab === "dogSpots",
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+
   const dbGooglePlaceIds = useMemo(
     () => new Set(places.map((p) => p.google_place_id).filter(Boolean) as string[]),
     [places]
@@ -682,10 +728,23 @@ export function ExploreScreen({
     [nearbyPlacesQuery.data, coords, dbGooglePlaceIds, dbPlaceNames]
   );
 
+  const filteredDogSpots = useMemo(() => {
+    const raw = dogSpotsQuery.data ?? [];
+    if (dogSpotsFilter === "all") return raw;
+    const allowedTypes = new Set(DOG_SPOTS_FILTER_TYPES[dogSpotsFilter]);
+    return raw.filter((c) => c.types.some((t) => allowedTypes.has(t.toLowerCase())));
+  }, [dogSpotsQuery.data, dogSpotsFilter]);
+
   useEffect(() => {
     setNearbyDisplayCount(NEARBY_INITIAL_COUNT);
     setNuzzleDisplayCount(NUZZLE_UNBOOKMARKED_INITIAL_COUNT);
+    setDogSpotsDisplayCount(DOG_SPOTS_INITIAL_COUNT);
+    setDogSpotsFilter("all");
   }, [coords]);
+
+  useEffect(() => {
+    setDogSpotsDisplayCount(DOG_SPOTS_INITIAL_COUNT);
+  }, [dogSpotsFilter]);
 
   const handleGooglePlacePress = (candidate: GooglePlaceCandidate) => {
     navigation.navigate("GooglePlacePreview", {
@@ -777,8 +836,8 @@ export function ExploreScreen({
           </ScrollView>
         )}
 
-        {/* Places tab */}
-        {activeTab === "places" && (
+        {/* Places tab — Place Feeds sub-tab */}
+        {activeTab === "places" && activePlacesSubTab === "placeFeeds" && (
           <ScrollView
             style={styles.container}
             contentContainerStyle={[
@@ -846,7 +905,7 @@ export function ExploreScreen({
             ) : (
               <>
                 <PlacesSection
-                  title="On Nuzzle"
+                  title="Feeds On Nuzzle"
                   isEmpty={nuzzlePlaces.length === 0}
                   emptyMessage="No places in this area yet."
                 >
@@ -928,6 +987,99 @@ export function ExploreScreen({
           </ScrollView>
         )}
 
+        {/* Places tab — Dog Spots sub-tab */}
+        {activeTab === "places" && activePlacesSubTab === "dogSpots" && (
+          <ScrollView
+            style={styles.container}
+            contentContainerStyle={[
+              styles.placesContent,
+              { paddingTop: scrollChromePadding + spacing.xl - 5 },
+            ]}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            showsVerticalScrollIndicator={false}
+          >
+            {coords ? (
+              <>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.dogSpotsChipRow}
+                >
+                  {DOG_SPOTS_FILTERS.map((filter) => (
+                    <Pressable
+                      key={filter}
+                      onPress={() => setDogSpotsFilter(filter)}
+                      style={({ pressed }) => [
+                        styles.dogSpotsChip,
+                        dogSpotsFilter === filter && styles.dogSpotsChipActive,
+                        pressed && styles.dogSpotsChipPressed,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.dogSpotsChipText,
+                          dogSpotsFilter === filter && styles.dogSpotsChipTextActive,
+                        ]}
+                      >
+                        {DOG_SPOTS_FILTER_LABELS[filter]}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+
+                <PlacesSection
+                  title="Dog-Friendly Spots Nearby"
+                  isEmpty={
+                    !dogSpotsQuery.isFetching &&
+                    !dogSpotsQuery.isError &&
+                    filteredDogSpots.length === 0
+                  }
+                  emptyMessage={
+                    dogSpotsFilter === "all"
+                      ? "No dog-friendly spots found nearby."
+                      : `No ${DOG_SPOTS_FILTER_LABELS[dogSpotsFilter].toLowerCase()} found nearby.`
+                  }
+                >
+                  {dogSpotsQuery.isFetching ? (
+                    <View style={styles.googleStateRow}>
+                      <ActivityIndicator size="small" color={colors.primary} />
+                      <Text style={styles.googleStateText}>Finding dog-friendly spots…</Text>
+                    </View>
+                  ) : dogSpotsQuery.isError ? (
+                    <Text style={styles.placesEmptyText}>
+                      Couldn't load dog-friendly spots. Try again in a moment.
+                    </Text>
+                  ) : (
+                    <>
+                      {filteredDogSpots.slice(0, dogSpotsDisplayCount).map((candidate) => (
+                        <GooglePlaceRow
+                          key={candidate.googlePlaceId}
+                          candidate={candidate}
+                          onPress={() => handleGooglePlacePress(candidate)}
+                        />
+                      ))}
+                      {dogSpotsDisplayCount < filteredDogSpots.length && (
+                        <Pressable
+                          onPress={() =>
+                            setDogSpotsDisplayCount((c) => c + DOG_SPOTS_LOAD_MORE_COUNT)
+                          }
+                        >
+                          <Text style={styles.nearbyShowMoreText}>Show more spots</Text>
+                        </Pressable>
+                      )}
+                    </>
+                  )}
+                </PlacesSection>
+              </>
+            ) : placesLocationState === "denied" ? (
+              <Text style={styles.placesHintText}>
+                Enable location in Settings to show dog-friendly spots nearby.
+              </Text>
+            ) : null}
+          </ScrollView>
+        )}
+
         {/* Tabs + search overlay (hides on scroll down, shows on scroll up) */}
         <Animated.View
           style={[
@@ -955,32 +1107,54 @@ export function ExploreScreen({
               </Text>
             </Pressable>
           </View>
-          <View style={styles.searchWrap}>
-            <View style={styles.searchRow}>
-              <Ionicons name="search" size={18} color={colors.textMuted} />
-              <TextInput
-                style={styles.searchInput}
-                placeholder={activeTab === "breeds" ? "Search breeds" : "Search places"}
-                placeholderTextColor={colors.textMuted}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="default"
-                clearButtonMode="while-editing"
-              />
-              {searchQuery.length > 0 && Platform.OS !== "ios" ? (
-                <Pressable
-                  onPress={() => setSearchQuery("")}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  accessibilityLabel="Clear search"
-                >
-                  <Ionicons name="close-circle" size={18} color={colors.textMuted} />
-                </Pressable>
-              ) : null}
+          {activeTab === "places" && (
+            <View style={styles.placesSubTabBar}>
+              <Pressable
+                style={[styles.placesSubTab, activePlacesSubTab === "placeFeeds" && styles.placesSubTabActive]}
+                onPress={() => setActivePlacesSubTab("placeFeeds")}
+              >
+                <Text style={[styles.placesSubTabText, activePlacesSubTab === "placeFeeds" && styles.placesSubTabTextActive]}>
+                  Place Feeds
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[styles.placesSubTab, activePlacesSubTab === "dogSpots" && styles.placesSubTabActive]}
+                onPress={() => setActivePlacesSubTab("dogSpots")}
+              >
+                <Text style={[styles.placesSubTabText, activePlacesSubTab === "dogSpots" && styles.placesSubTabTextActive]}>
+                  Dog Spots
+                </Text>
+              </Pressable>
             </View>
-          </View>
+          )}
+          {activeTab !== "places" && (
+            <View style={styles.searchWrap}>
+              <View style={styles.searchRow}>
+                <Ionicons name="search" size={18} color={colors.textMuted} />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder={activeTab === "breeds" ? "Search breeds" : "Search for a place"}
+                  placeholderTextColor={colors.textMuted}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="default"
+                  clearButtonMode="while-editing"
+                />
+                {searchQuery.length > 0 && Platform.OS !== "ios" ? (
+                  <Pressable
+                    onPress={() => setSearchQuery("")}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Clear search"
+                  >
+                    <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+                  </Pressable>
+                ) : null}
+              </View>
+            </View>
+          )}
         </Animated.View>
       </SafeAreaView>
       <NotificationsSheet
@@ -1130,6 +1304,37 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   tabTextActive: {
+    fontFamily: "Inter_700Bold",
+    color: colors.primary,
+  },
+
+  // Places sub-tabs
+  placesSubTabBar: {
+    flexDirection: "row",
+    marginHorizontal: H_PADDING,
+    marginTop: spacing.md + 3,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.pill,
+    padding: 3,
+    gap: 3,
+  },
+  placesSubTab: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: spacing.xs + 1,
+    borderRadius: radius.pill,
+  },
+  placesSubTabActive: {
+    backgroundColor: colors.primarySoft,
+  },
+  placesSubTabText: {
+    ...typography.caption,
+    fontFamily: "Inter_500Medium",
+    color: colors.textSecondary,
+    fontSize: 13,
+  },
+  placesSubTabTextActive: {
     fontFamily: "Inter_700Bold",
     color: colors.primary,
   },
@@ -1338,6 +1543,29 @@ const styles = StyleSheet.create({
   googleStateText: {
     ...typography.bodyMuted,
   },
+
+  // Dog Spots filter chips
+  dogSpotsChipRow: {
+    flexDirection: "row",
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  dogSpotsChip: {
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceMuted,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  dogSpotsChipPressed: { opacity: 0.85 },
+  dogSpotsChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  dogSpotsChipText: {
+    ...typography.caption,
+    color: colors.textPrimary,
+    fontWeight: "600",
+  },
+  dogSpotsChipTextActive: { color: colors.surface },
   googlePlaceRow: {
     flexDirection: "row",
     alignItems: "center",

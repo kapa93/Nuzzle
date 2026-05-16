@@ -485,7 +485,7 @@ export function PlaceDetailScreen({ route, navigation }: Props) {
         <FlatList
           data={tabData}
           keyExtractor={tabKeyExtractor}
-          extraData={activeTab}
+          extraData={[activeTab, photoAccessToken]}
           contentContainerStyle={[styles.tabContent, { paddingBottom: tabBarScrollPad }]}
           scrollEnabled={!reactionMenuOpen}
           showsVerticalScrollIndicator={false}
@@ -563,7 +563,7 @@ function PlaceHeroContent({
         <Text style={isSaved ? styles.heroBookmarkText : styles.heroBookmarkTextJoin}>{isSaved ? 'Joined' : 'Join'}</Text>
           {isSaved
             ? <MapPinCheck size={15} color="#2E3834" strokeWidth={2.5} />
-            : <MapPinPlus size={17} color="#2E3834" strokeWidth={2.5} />
+            : <MapPinPlus size={16} color="#2E3834" strokeWidth={2.5} />
           }
       </Pressable>
 

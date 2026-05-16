@@ -6,7 +6,7 @@ declare const Deno: {
   serve: (handler: (req: Request) => Response | Promise<Response>) => void;
 };
 
-type Action = "search" | "details" | "import" | "nearby";
+type Action = "search" | "details" | "import" | "nearby" | "dogSpots";
 type PlaceType = "dog_beach" | "dog_park" | "trail" | "park" | "other";
 
 type GoogleAddressComponent = {
@@ -543,27 +543,104 @@ async function searchNearbyPlaces(
   return merged;
 }
 
+const DOG_SPOTS_TEXT_QUERIES = [
+  "dog friendly cafe",
+  "dog friendly bar",
+  "dog friendly restaurant",
+  "dog store",
+] as const;
+const DOG_SPOTS_TEXT_SEARCH_RADIUS_METERS = 50_000;
+const DOG_SPOTS_TEXT_SEARCH_MAX_RESULTS = 20;
+const DOG_SPOTS_NEARBY_TYPES = ["cafe", "bar", "restaurant", "pet_store", "dog_cafe"] as const;
+const DOG_SPOTS_NEARBY_MAX_RESULTS = 20;
+const DOG_SPOTS_NEARBY_RADIUS_METERS = 15_000;
+
+async function searchDogSpots(
+  location: { latitude: number; longitude: number },
+  apiKey: string
+): Promise<GooglePlaceCandidate[]> {
+  const fetchTextSearch = async (query: string): Promise<GooglePlaceCandidate[]> => {
+    const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": apiKey,
+        "X-Goog-FieldMask": googleFieldMask,
+      },
+      body: JSON.stringify({
+        textQuery: query,
+        maxResultCount: DOG_SPOTS_TEXT_SEARCH_MAX_RESULTS,
+        locationBias: {
+          circle: {
+            center: { latitude: location.latitude, longitude: location.longitude },
+            radius: DOG_SPOTS_TEXT_SEARCH_RADIUS_METERS,
+          },
+        },
+        regionCode: "US",
+        languageCode: "en",
+      }),
+    });
+    if (!response.ok) return [];
+    const body = (await response.json()) as { places?: GooglePlace[] };
+    return (body.places ?? []).map(toCandidate).filter((c): c is GooglePlaceCandidate => !!c);
+  };
+
+  const fetchNearby = async (): Promise<GooglePlaceCandidate[]> => {
+    const response = await fetch("https://places.googleapis.com/v1/places:searchNearby", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": apiKey,
+        "X-Goog-FieldMask": googleFieldMask,
+      },
+      body: JSON.stringify({
+        includedTypes: DOG_SPOTS_NEARBY_TYPES,
+        maxResultCount: DOG_SPOTS_NEARBY_MAX_RESULTS,
+        rankPreference: "DISTANCE",
+        locationRestriction: {
+          circle: {
+            center: { latitude: location.latitude, longitude: location.longitude },
+            radius: DOG_SPOTS_NEARBY_RADIUS_METERS,
+          },
+        },
+        regionCode: "US",
+        languageCode: "en",
+      }),
+    });
+    if (!response.ok) return [];
+    const body = (await response.json()) as { places?: GooglePlace[] };
+    return (body.places ?? []).map(toCandidate).filter((c): c is GooglePlaceCandidate => !!c);
+  };
+
+  const [nearbyResults, ...textResults] = await Promise.all([
+    fetchNearby(),
+    ...DOG_SPOTS_TEXT_QUERIES.map(fetchTextSearch),
+  ]);
+
+  // Text-search results (dog-specific queries) take priority; nearby fills in surrounding businesses
+  const seen = new Set<string>();
+  const merged: GooglePlaceCandidate[] = [];
+  for (const c of [...textResults.flat(), ...nearbyResults]) {
+    if (!seen.has(c.googlePlaceId)) {
+      seen.add(c.googlePlaceId);
+      merged.push(c);
+    }
+  }
+  return merged;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST" && req.method !== "GET") return json({ error: "Method not allowed" }, 405);
 
   try {
-    const supabaseUrl = getRequiredEnv("SUPABASE_URL");
-    const supabaseAnonKey = getRequiredEnv("SUPABASE_ANON_KEY");
-    const supabaseServiceRoleKey = getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY");
     const googleApiKey = getGoogleApiKey();
     if (!googleApiKey) throw new Error("Missing GOOGLE_PLACES_API_KEY");
 
     const url = new URL(req.url);
-    const queryAccessToken = url.searchParams.get("access_token");
-    const authorization =
-      req.headers.get("Authorization") ?? (queryAccessToken ? `Bearer ${queryAccessToken}` : "");
-    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authorization } },
-    });
-    const { data: authData, error: authError } = await authClient.auth.getUser();
-    if (authError || !authData.user) return json({ error: "Unauthorized" }, 401);
 
+    // Photo proxy is unauthenticated — Google photo references are already opaque,
+    // time-limited strings that contain no user-specific data.
     if (req.method === "GET") {
       if (url.searchParams.get("action") === "photo") {
         const photoName = url.searchParams.get("name")?.trim();
@@ -572,6 +649,19 @@ Deno.serve(async (req) => {
       }
       return json({ error: "Invalid action" }, 400);
     }
+
+    const supabaseUrl = getRequiredEnv("SUPABASE_URL");
+    const supabaseAnonKey = getRequiredEnv("SUPABASE_ANON_KEY");
+    const supabaseServiceRoleKey = getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY");
+
+    const queryAccessToken = url.searchParams.get("access_token");
+    const authorization =
+      req.headers.get("Authorization") ?? (queryAccessToken ? `Bearer ${queryAccessToken}` : "");
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authorization } },
+    });
+    const { data: authData, error: authError } = await authClient.auth.getUser();
+    if (authError || !authData.user) return json({ error: "Unauthorized" }, 401);
 
   const body = (await req.json()) as {
       action?: Action;
@@ -626,6 +716,21 @@ Deno.serve(async (req) => {
         return json({ error: "latitude and longitude are required for nearby search" }, 400);
       }
       const places = await searchNearbyPlaces({ latitude: lat, longitude: lng }, googleApiKey);
+      return json({ places });
+    }
+
+    if (body.action === "dogSpots") {
+      const lat = body.latitude;
+      const lng = body.longitude;
+      if (
+        typeof lat !== "number" ||
+        !Number.isFinite(lat) ||
+        typeof lng !== "number" ||
+        !Number.isFinite(lng)
+      ) {
+        return json({ error: "latitude and longitude are required for dog spots search" }, 400);
+      }
+      const places = await searchDogSpots({ latitude: lat, longitude: lng }, googleApiKey);
       return json({ places });
     }
 

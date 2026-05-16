@@ -1,14 +1,30 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
-import { listActivePlaces } from '@/api/places';
+import { getGooglePlacePhotoUrl, listActivePlaces } from '@/api/places';
 import { PlaceRow } from '@/components/PlaceRow';
 import { ScreenWithWallpaper } from '@/components/ScreenWithWallpaper';
 import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
 import { useSavedPlaces, useToggleSavedPlace } from '@/hooks/useSavedPlaces';
 import { useAuthStore } from '@/store/authStore';
+import { supabase } from '@/lib/supabase';
 import { colors, spacing, typography } from '@/theme';
+import { getPlaceHeroImage } from '@/utils/placeHeroImage';
+import type { Place } from '@/types';
+import type { ImageSourcePropType } from 'react-native';
+
+function getPlaceImageSource(
+  place: Place,
+  accessToken: string | null,
+): ImageSourcePropType | null {
+  const bundled = getPlaceHeroImage(place);
+  if (bundled) return bundled;
+  if (place.photos[0] && accessToken) {
+    return { uri: getGooglePlacePhotoUrl(place.photos[0], accessToken) };
+  }
+  return null;
+}
 
 type Props = {
   navigation: { navigate: (screen: string, params?: object) => void };
@@ -25,6 +41,13 @@ export function PlacesScreen({ navigation }: Props) {
 
   const { savedPlaceIds, isLoading: savesLoading } = useSavedPlaces(user?.id);
   const toggleSave = useToggleSavedPlace();
+  const [photoAccessToken, setPhotoAccessToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setPhotoAccessToken(session?.access_token ?? null);
+    });
+  }, []);
 
   const savedPlaces = allPlaces.filter((p) => savedPlaceIds.has(p.id));
   const isLoading = placesLoading || savesLoading;
@@ -67,6 +90,7 @@ export function PlacesScreen({ navigation }: Props) {
                     onSaveToggle={() => handleSaveToggle(place.id, true)}
                     saveLoading={toggleSave.isPending}
                     showTypeChip={false}
+                    heroImageSource={getPlaceImageSource(place, photoAccessToken)}
                   />
                 ))}
               </View>
@@ -91,6 +115,7 @@ export function PlacesScreen({ navigation }: Props) {
                     onSaveToggle={() => handleSaveToggle(place.id, savedPlaceIds.has(place.id))}
                     saveLoading={toggleSave.isPending}
                     showTypeChip={false}
+                    heroImageSource={getPlaceImageSource(place, photoAccessToken)}
                   />
                 ))}
               </View>
