@@ -317,6 +317,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: spacing.xxl,
     gap: spacing.md,
+    marginTop: -5,
   },
   helperText: {
     ...typography.bodyMuted,
