@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, ImageSourcePropType, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Check, MapPinPlus } from 'lucide-react-native';
 import { colors, radius, shadow, spacing, typography } from '@/theme';
@@ -29,7 +29,16 @@ type Props = {
   saveLoading?: boolean;
   variant?: 'card' | 'plain';
   showTypeChip?: boolean;
+  heroImageSource?: ImageSourcePropType | null;
 };
+
+function formatPlaceName(name: string): string {
+  const words = name.trim().split(/\s+/);
+  if (words.length >= 4) {
+    return words.slice(0, words.length - 2).join(' ') + '\n' + words.slice(-2).join(' ');
+  }
+  return name;
+}
 
 export function PlaceRow({
   place,
@@ -39,6 +48,7 @@ export function PlaceRow({
   saveLoading,
   variant = 'card',
   showTypeChip = true,
+  heroImageSource,
 }: Props) {
   const locationLine = [place.neighborhood, place.city].filter(Boolean).join(', ');
   const isPlain = variant === 'plain';
@@ -54,7 +64,15 @@ export function PlaceRow({
       accessibilityRole="button"
       accessibilityLabel={place.name}
     >
-      {showTypeChip ? (
+      {heroImageSource ? (
+        <View style={styles.heroThumbWrap}>
+          <Image
+            source={heroImageSource}
+            style={styles.heroThumb}
+            resizeMode="cover"
+          />
+        </View>
+      ) : showTypeChip ? (
         <View style={styles.iconWrap}>
           <Ionicons
             name={PLACE_TYPE_ICONS[place.place_type]}
@@ -65,7 +83,7 @@ export function PlaceRow({
       ) : null}
 
       <View style={styles.body}>
-        <Text style={styles.name} numberOfLines={1}>{place.name}</Text>
+        <Text style={styles.name}>{formatPlaceName(place.name)}</Text>
         <View style={styles.meta}>
           {showTypeChip ? (
             <View style={styles.typeChip}>
@@ -136,6 +154,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: spacing.md,
     flexShrink: 0,
+  },
+  heroThumbWrap: {
+    width: 80,
+    height: 72,
+    borderRadius: radius.md,
+    marginRight: spacing.md,
+    flexShrink: 0,
+    ...shadow.sm,
+  },
+  heroThumb: {
+    width: 80,
+    height: 72,
+    borderRadius: radius.md,
+    overflow: 'hidden',
   },
   body: {
     flex: 1,

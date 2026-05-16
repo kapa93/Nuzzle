@@ -8,6 +8,7 @@ import {
   useWindowDimensions,
   Pressable,
   ImageBackground,
+  type ImageSourcePropType,
   Platform,
   TextInput,
   type LayoutChangeEvent,
@@ -29,6 +30,7 @@ import { getPackItems } from "@/utils/breedAssets";
 import { useStackHeaderHeight } from "@/hooks/useStackHeaderHeight";
 import {
   getNearbyGooglePlaces,
+  getGooglePlacePhotoUrl,
   listActivePlaces,
   searchGooglePlacesWithOptions,
 } from "@/api/places";
@@ -38,6 +40,8 @@ import { useAuthStore } from "@/store/authStore";
 import { NotificationsSheet } from "@/components/NotificationsSheet";
 import { colors, radius, spacing, typography } from "@/theme";
 import { getDistanceMeters } from "@/utils/location";
+import { getPlaceHeroImage } from "@/utils/placeHeroImage";
+import { supabase } from "@/lib/supabase";
 import type { GooglePlaceCandidate, Place } from "@/types";
 
 const CARD_GAP = spacing.md;
@@ -324,6 +328,18 @@ function rankGoogleCandidatesForSearch({
   });
 }
 
+function getPlaceImageSource(
+  place: Place,
+  accessToken: string | null
+): ImageSourcePropType | null {
+  const bundled = getPlaceHeroImage(place);
+  if (bundled) return bundled;
+  if (place.photos[0] && accessToken) {
+    return { uri: getGooglePlacePhotoUrl(place.photos[0], accessToken) };
+  }
+  return null;
+}
+
 export function ExploreScreen({
   navigation,
   route,
@@ -351,6 +367,7 @@ export function ExploreScreen({
   const [tabsSearchHeight, setTabsSearchHeight] = useState(TABS_SEARCH_ESTIMATED_HEIGHT);
   const [scrollDirection, setScrollDirection] = useState<LocalScrollDirection>("up");
   const lastOffsetRef = useRef(0);
+  const [photoAccessToken, setPhotoAccessToken] = useState<string | null>(null);
   const tabsSearchTranslate = useSharedValue(0);
 
   const handleScroll = useCallback(
@@ -432,6 +449,12 @@ export function ExploreScreen({
 
   const { savedPlaceIds } = useSavedPlaces(user?.id);
   const toggleSave = useToggleSavedPlace();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setPhotoAccessToken(session?.access_token ?? null);
+    });
+  }, []);
 
   useEffect(() => {
     if (activeTab !== "places") return;
@@ -777,6 +800,7 @@ export function ExploreScreen({
                         place={place}
                         variant="plain"
                         showTypeChip={false}
+                        heroImageSource={getPlaceImageSource(place, photoAccessToken)}
                         isSaved={savedPlaceIds.has(place.id)}
                         onPress={() => navigation.navigate("PlaceDetail", { placeId: place.id })}
                         onSaveToggle={() =>
@@ -832,6 +856,7 @@ export function ExploreScreen({
                       place={place}
                       variant="plain"
                       showTypeChip={false}
+                      heroImageSource={getPlaceImageSource(place, photoAccessToken)}
                       isSaved={savedPlaceIds.has(place.id)}
                       onPress={() => navigation.navigate("PlaceDetail", { placeId: place.id })}
                       onSaveToggle={() =>
