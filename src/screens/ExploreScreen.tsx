@@ -8,6 +8,7 @@ import {
   useWindowDimensions,
   Pressable,
   ImageBackground,
+  Image,
   type ImageSourcePropType,
   Platform,
   TextInput,
@@ -69,7 +70,7 @@ type PlacesSubTab = "placeFeeds" | "dogSpots";
 type DogSpotsFilter = "all" | "cafes" | "bars" | "breweries" | "restaurants" | "stores";
 
 type UserCoords = { latitude: number; longitude: number } | null;
-type PlacesLocationState = "unknown" | "granted" | "denied";
+type PlacesLocationState = "unknown" | "granted" | "denied" | "error";
 
 const DOG_SPOTS_FILTERS: DogSpotsFilter[] = ["all", "cafes", "bars", "breweries", "restaurants", "stores"];
 const DOG_SPOTS_FILTER_LABELS: Record<DogSpotsFilter, string> = {
@@ -497,6 +498,7 @@ export function ExploreScreen({
     let cancelled = false;
 
     const loadLocation = async () => {
+      let permissionGranted = false;
       try {
         const permission = await Location.getForegroundPermissionsAsync();
         let status = permission.status;
@@ -514,9 +516,24 @@ export function ExploreScreen({
           }
           return;
         }
-        const position = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
+
+        permissionGranted = true;
+
+        // Accuracy.High forces the GPS provider on Android, which picks up
+        // mock locations set via emulator Extended Controls. Network-accuracy
+        // modes (Balanced/Lowest) use a different provider and return stale
+        // network-triangulated coordinates instead of the GPS mock.
+        let position: Location.LocationObject | null = null;
+        try {
+          position = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.High,
+          });
+        } catch {
+          position = await Location.getLastKnownPositionAsync();
+        }
+
+        if (!position) throw new Error("Could not determine location");
+
         if (!cancelled) {
           setCoords({
             latitude: position.coords.latitude,
@@ -527,7 +544,7 @@ export function ExploreScreen({
       } catch {
         if (!cancelled) {
           setCoords(null);
-          setPlacesLocationState("denied");
+          setPlacesLocationState(permissionGranted ? "error" : "denied");
         }
       }
     };
@@ -748,6 +765,13 @@ export function ExploreScreen({
 
   const handleGooglePlacePress = (candidate: GooglePlaceCandidate) => {
     navigation.navigate("GooglePlacePreview", {
+      googlePlaceId: candidate.googlePlaceId,
+      initialName: candidate.name,
+    });
+  };
+
+  const handleDogSpotPress = (candidate: GooglePlaceCandidate) => {
+    navigation.navigate("DogSpotPreview", {
       googlePlaceId: candidate.googlePlaceId,
       initialName: candidate.name,
     });
@@ -1053,10 +1077,10 @@ export function ExploreScreen({
                   ) : (
                     <>
                       {filteredDogSpots.slice(0, dogSpotsDisplayCount).map((candidate) => (
-                        <GooglePlaceRow
+                        <DogSpotRow
                           key={candidate.googlePlaceId}
                           candidate={candidate}
-                          onPress={() => handleGooglePlacePress(candidate)}
+                          onPress={() => handleDogSpotPress(candidate)}
                         />
                       ))}
                       {dogSpotsDisplayCount < filteredDogSpots.length && (
@@ -1075,6 +1099,10 @@ export function ExploreScreen({
             ) : placesLocationState === "denied" ? (
               <Text style={styles.placesHintText}>
                 Enable location in Settings to show dog-friendly spots nearby.
+              </Text>
+            ) : placesLocationState === "error" ? (
+              <Text style={styles.placesHintText}>
+                Couldn't get your location. Check your connection and try again.
               </Text>
             ) : null}
           </ScrollView>
@@ -1180,6 +1208,52 @@ function getGooglePlaceIcon(candidate: GooglePlaceCandidate): React.ComponentPro
   if (lower.includes('trail') || lower.includes('hike') || lower.includes('hiking')) return 'leaf-outline';
   if (lower.includes('park') || lower.includes('dog park')) return 'paw-outline';
   return GOOGLE_PLACE_TYPE_ICONS[candidate.placeType] ?? 'location-outline';
+}
+
+function DogSpotRow({
+  candidate,
+  onPress,
+}: {
+  candidate: GooglePlaceCandidate;
+  onPress: () => void;
+}) {
+  const locationLine = [candidate.neighborhood, candidate.city]
+    .filter(Boolean)
+    .join(", ");
+  const subtitle = locationLine || candidate.formattedAddress;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.googlePlaceRow,
+        pressed && styles.googlePlaceRowPressed,
+      ]}
+      accessibilityRole="button"
+      accessibilityLabel={`Preview ${candidate.name}`}
+    >
+      {candidate.coverPhotoName ? (
+        <Image
+          source={{ uri: getGooglePlacePhotoUrl(candidate.coverPhotoName) }}
+          style={styles.dogSpotThumb}
+        />
+      ) : (
+        <View style={[styles.googlePlaceIconWrap, styles.dogSpotThumbFallback]}>
+          <Ionicons name={getGooglePlaceIcon(candidate)} size={22} color={colors.primary} />
+        </View>
+      )}
+      <View style={styles.googlePlaceBody}>
+        <Text style={styles.googlePlaceName} numberOfLines={1}>
+          {candidate.name}
+        </Text>
+        {subtitle ? (
+          <Text style={styles.googlePlaceSubtitle} numberOfLines={1}>
+            {subtitle}
+          </Text>
+        ) : null}
+      </View>
+    </Pressable>
+  );
 }
 
 function GooglePlaceRow({
@@ -1589,6 +1663,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: spacing.md,
     flexShrink: 0,
+  },
+  dogSpotThumb: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.sm,
+    marginRight: spacing.md,
+    flexShrink: 0,
+    backgroundColor: colors.surfaceMuted,
+  },
+  dogSpotThumbFallback: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.sm,
   },
   googlePlaceBody: {
     flex: 1,

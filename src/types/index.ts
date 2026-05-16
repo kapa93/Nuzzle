@@ -165,6 +165,7 @@ export interface GooglePlaceCandidate {
   types: string[];
   rating: number | null;
   userRatingCount: number | null;
+  coverPhotoName: string | null;
 }
 
 export interface GooglePlacePhoto {

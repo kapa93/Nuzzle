@@ -50,6 +50,7 @@ type GooglePlaceCandidate = {
   types: string[];
   rating: number | null;
   userRatingCount: number | null;
+  coverPhotoName: string | null;
 };
 
 type GooglePlacePreview = GooglePlaceCandidate & {
@@ -75,7 +76,7 @@ const corsHeaders = {
 };
 
 const googleFieldMask =
-  "places.id,places.displayName,places.formattedAddress,places.shortFormattedAddress,places.location,places.addressComponents,places.types,places.rating,places.userRatingCount";
+  "places.id,places.displayName,places.formattedAddress,places.shortFormattedAddress,places.location,places.addressComponents,places.types,places.rating,places.userRatingCount,places.photos";
 const googleDetailsFieldMask =
   "id,displayName,formattedAddress,location,addressComponents,types";
 const googlePreviewFieldMask =
@@ -148,6 +149,17 @@ function getGoogleApiKey() {
   return Deno.env.get("GOOGLE_PLACES_API_KEY") ?? Deno.env.get("GOOGLE_MAPS_API_KEY") ?? "";
 }
 
+function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6_371_000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 function getAddressComponent(place: GooglePlace, type: string) {
   return (
     place.addressComponents?.find((component) => component.types?.includes(type))?.longText ?? null
@@ -182,6 +194,9 @@ function toCandidate(place: GooglePlace): GooglePlaceCandidate | null {
     getAddressComponent(place, "sublocality") ??
     getAddressComponent(place, "sublocality_level_1");
 
+  const photos = (place.photos ?? []).filter((p): p is GooglePhoto & { name: string } => !!p.name);
+  const coverPhoto = photos.length > 0 ? photos[0] : null;
+
   return {
     googlePlaceId,
     name,
@@ -195,6 +210,7 @@ function toCandidate(place: GooglePlace): GooglePlaceCandidate | null {
     types: place.types ?? [],
     rating: place.rating ?? null,
     userRatingCount: place.userRatingCount ?? null,
+    coverPhotoName: coverPhoto?.name ?? null,
   };
 }
 
@@ -549,7 +565,7 @@ const DOG_SPOTS_TEXT_QUERIES = [
   "dog friendly restaurant",
   "dog store",
 ] as const;
-const DOG_SPOTS_TEXT_SEARCH_RADIUS_METERS = 50_000;
+const DOG_SPOTS_TEXT_SEARCH_RADIUS_METERS = 20_000;
 const DOG_SPOTS_TEXT_SEARCH_MAX_RESULTS = 20;
 const DOG_SPOTS_NEARBY_TYPES = ["cafe", "bar", "restaurant", "pet_store", "dog_cafe"] as const;
 const DOG_SPOTS_NEARBY_MAX_RESULTS = 20;
@@ -626,7 +642,17 @@ async function searchDogSpots(
       merged.push(c);
     }
   }
-  return merged;
+
+  // Sort by straight-line distance from the user so closer places always appear first
+  return merged.sort((a, b) => {
+    const distA = a.latitude != null && a.longitude != null
+      ? haversineMeters(location.latitude, location.longitude, a.latitude, a.longitude)
+      : Infinity;
+    const distB = b.latitude != null && b.longitude != null
+      ? haversineMeters(location.latitude, location.longitude, b.latitude, b.longitude)
+      : Infinity;
+    return distA - distB;
+  });
 }
 
 Deno.serve(async (req) => {

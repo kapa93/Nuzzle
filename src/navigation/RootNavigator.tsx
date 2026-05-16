@@ -18,6 +18,7 @@ import { PlaceDetailScreen } from '@/screens/PlaceDetailScreen';
 import { PlacesScreen } from '@/screens/PlacesScreen';
 import { ExploreScreen } from '@/screens/ExploreScreen';
 import { GooglePlacePreviewScreen } from '@/screens/GooglePlacePreviewScreen';
+import { DogSpotPreviewScreen } from '@/screens/DogSpotPreviewScreen';
 import { ProfileScreen } from '@/screens/ProfileScreen';
 import { SavedPlacesScreen } from '@/screens/SavedPlacesScreen';
 import { BreedFeedScreen } from '@/screens/BreedFeedScreen';
@@ -187,6 +188,11 @@ function ExploreTab() {
         name="GooglePlacePreview"
         component={GooglePlacePreviewScreen}
         options={{ title: 'Place Preview' }}
+      />
+      <Stack.Screen
+        name="DogSpotPreview"
+        component={DogSpotPreviewScreen}
+        options={{ title: 'Dog Spot Preview' }}
       />
       <Stack.Screen name="PlaceNow" component={PlaceCheckinScreen} options={{ title: 'Dogs Here Now' }} />
     </Stack.Navigator>

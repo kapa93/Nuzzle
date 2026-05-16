@@ -1,83 +1,41 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect } from 'react';
 import {
   ActivityIndicator,
   Image,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { CirclePlus } from 'lucide-react-native';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   getGooglePlacePhotoUrl,
   getGooglePlacePreview,
-  importGooglePlace,
 } from '@/api/places';
-import { supabase } from '@/lib/supabase';
 import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
-import { colors, radius, shadow, spacing, typography } from '@/theme';
+import { colors, radius, spacing, typography } from '@/theme';
 
 type Props = {
   route: { params: { googlePlaceId: string; initialName?: string } };
   navigation: {
-    navigate: (screen: string, params?: object) => void;
     setOptions: (opts: object) => void;
   };
 };
 
-export function GooglePlacePreviewScreen({ route, navigation }: Props) {
+export function DogSpotPreviewScreen({ route, navigation }: Props) {
   const { googlePlaceId, initialName } = route.params;
   const headerHeight = useStackHeaderHeight();
-  const queryClient = useQueryClient();
 
   const placeQuery = useQuery({
     queryKey: ['googlePlacePreview', googlePlaceId],
     queryFn: () => getGooglePlacePreview(googlePlaceId),
   });
 
-  const [photoAccessToken, setPhotoAccessToken] = useState<string | null>(null);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setPhotoAccessToken(session?.access_token ?? null);
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      setPhotoAccessToken(session?.access_token ?? null);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const bestPhotoName = useMemo(() => {
-    const photos = placeQuery.data?.photos ?? [];
-    if (photos.length === 0) return null;
-    return [...photos].sort(
-      (a, b) =>
-        (b.widthPx ?? 0) / (b.heightPx ?? 1) -
-        (a.widthPx ?? 0) / (a.heightPx ?? 1)
-    )[0]?.name ?? null;
-  }, [placeQuery.data?.photos]);
-
-  // Explicit user tap overrides the default; falls back to best landscape photo once loaded
-  const [userSelectedPhotoName, setUserSelectedPhotoName] = useState<string | null>(null);
-  const selectedPhotoName = userSelectedPhotoName ?? bestPhotoName;
-
-  const importMutation = useMutation({
-    mutationFn: ({ googlePlaceId, bannerPhotoName }: { googlePlaceId: string; bannerPhotoName: string | null }) =>
-      importGooglePlace(googlePlaceId, bannerPhotoName),
-    onSuccess: async (place) => {
-      await queryClient.invalidateQueries({ queryKey: ['places'] });
-      navigation.navigate('PlaceDetail', { placeId: place.id });
-    },
-  });
-
   useEffect(() => {
     navigation.setOptions({ title: placeQuery.data?.displayName ?? initialName ?? 'Place Preview' });
   }, [initialName, navigation, placeQuery.data?.displayName]);
-
 
   const hoursLines = formatOpeningHours(placeQuery.data?.currentOpeningHours);
 
@@ -94,7 +52,7 @@ export function GooglePlacePreviewScreen({ route, navigation }: Props) {
           </View>
         ) : placeQuery.isError ? (
           <View style={styles.stateBox}>
-            <Text style={styles.errorTitle}>Couldn’t load place details</Text>
+            <Text style={styles.errorTitle}>Couldn't load place details</Text>
             <Text style={styles.stateText}>
               {placeQuery.error instanceof Error ? placeQuery.error.message : 'Try again in a moment.'}
             </Text>
@@ -125,62 +83,28 @@ export function GooglePlacePreviewScreen({ route, navigation }: Props) {
                   value={placeQuery.data.openNow ? 'Open now' : 'Closed right now'}
                 />
               ) : null}
-              <Pressable
-                onPress={() => importMutation.mutate({ googlePlaceId, bannerPhotoName: selectedPhotoName })}
-                disabled={importMutation.isPending}
-                style={({ pressed }) => [
-                  styles.saveButton,
-                  pressed && !importMutation.isPending && styles.saveButtonPressed,
-                  importMutation.isPending && styles.saveButtonDisabled,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel="Save place to Nuzzle"
-              >
-                {importMutation.isPending ? (
-                  <ActivityIndicator size="small" color={colors.surface} />
-                ) : (
-                  <CirclePlus size={21} color={colors.surface} />
-                )}
-                <Text style={styles.saveButtonText}>
-                  {importMutation.isPending ? 'Saving…' : 'Create Nuzzle Feed'}
-                </Text>
-              </Pressable>
             </View>
 
+            <Section title="Dog Vibes">
+              <Text style={styles.emptyValue}>Coming soon.</Text>
+            </Section>
+
             <Section title="Photos">
-              {placeQuery.data.photos.length > 0 && photoAccessToken ? (
-                <>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.photoStrip}
-                  >
-                    {placeQuery.data.photos.map((photo, index) => {
-                      const isSelected = photo.name === selectedPhotoName;
-                      return (
-                        <Pressable
-                          key={photo.name}
-                          onPress={() => setUserSelectedPhotoName(photo.name)}
-                          accessibilityRole="button"
-                          accessibilityLabel={`Photo ${index + 1}${isSelected ? ', selected as cover' : ', tap to use as cover'}`}
-                          accessibilityState={{ selected: isSelected }}
-                        >
-                          <Image
-                            source={{ uri: getGooglePlacePhotoUrl(photo.name, photoAccessToken!) }}
-                            style={[styles.photo, isSelected && styles.photoSelected]}
-                            accessibilityLabel={`${placeQuery.data?.displayName ?? 'Place'} photo ${index + 1}`}
-                          />
-                          {isSelected && (
-                            <View style={styles.photoCheckmark}>
-                              <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
-                            </View>
-                          )}
-                        </Pressable>
-                      );
-                    })}
-                  </ScrollView>
-                  <Text style={styles.photoHint}>Tap a photo to use as the cover</Text>
-                </>
+              {placeQuery.data.photos.length > 0 ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.photoStrip}
+                >
+                  {placeQuery.data.photos.map((photo, index) => (
+                    <Image
+                      key={photo.name}
+                      source={{ uri: getGooglePlacePhotoUrl(photo.name) }}
+                      style={styles.photo}
+                      accessibilityLabel={`${placeQuery.data?.displayName ?? 'Place'} photo ${index + 1}`}
+                    />
+                  ))}
+                </ScrollView>
               ) : (
                 <Text style={styles.emptyValue}>No photos returned.</Text>
               )}
@@ -197,14 +121,6 @@ export function GooglePlacePreviewScreen({ route, navigation }: Props) {
                 <Text style={styles.emptyValue}>Not available.</Text>
               )}
             </Section>
-
-            {importMutation.isError ? (
-              <Text style={styles.errorText}>
-                {importMutation.error instanceof Error
-                  ? importMutation.error.message
-                  : 'Couldn’t save this place.'}
-              </Text>
-            ) : null}
           </>
         ) : null}
       </ScrollView>
@@ -335,58 +251,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     backgroundColor: colors.surfaceMuted,
   },
-  photoSelected: {
-    borderWidth: 2.5,
-    borderColor: colors.primary,
-  },
-  photoCheckmark: {
-    position: 'absolute',
-    bottom: 6,
-    right: 6,
-    backgroundColor: colors.surface,
-    borderRadius: 11,
-    width: 22,
-    height: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  photoHint: {
-    ...typography.caption,
-    color: colors.textMuted,
-    marginTop: spacing.xs,
-  },
   valueText: {
     ...typography.body,
     color: colors.textPrimary,
   },
   emptyValue: {
     ...typography.bodyMuted,
-  },
-  errorText: {
-    ...typography.body,
-    color: colors.danger,
-    textAlign: 'center',
-  },
-  saveButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: radius.pill,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    gap: spacing.xs,
-    marginTop: spacing.sm,
-  },
-  saveButtonPressed: {
-    opacity: 0.88,
-  },
-  saveButtonDisabled: {
-    opacity: 0.65,
-  },
-  saveButtonText: {
-    ...typography.body,
-    color: colors.surface,
-    fontFamily: 'Inter_700Bold',
   },
 });

@@ -72,6 +72,7 @@ export type ExploreStackParamList = {
   PlacesList: undefined;
   PlaceDetail: { placeId: string };
   GooglePlacePreview: { googlePlaceId: string; initialName?: string };
+  DogSpotPreview: { googlePlaceId: string; initialName?: string };
   PlaceNow: { placeId: string };
 };
 
