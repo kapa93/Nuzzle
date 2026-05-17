@@ -152,7 +152,7 @@ function ExploreTab() {
         options={{
           title: 'Explore',
           header: (props) => (
-            <AnimatedStackHeader {...props} animateOnScroll={false} hideBottomBorder />
+            <AnimatedStackHeader {...props} animateOnScroll={false} />
           ),
         }}
       />

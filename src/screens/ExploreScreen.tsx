@@ -149,7 +149,6 @@ export function ExploreScreen({
 
   React.useEffect(() => {
     navigation.setOptions({
-      headerTitle: () => <Text style={styles.headerTitleText}>Explore</Text>,
       headerLeft: () => (
         <Pressable
           onPress={() => setNotificationsOpen(true)}
@@ -375,15 +374,6 @@ const styles = StyleSheet.create({
     transform: [{ translateX: 1 }],
   },
   bellIconPressed: { opacity: 0.5 },
-  headerTitleText: {
-    fontFamily: "Inter_700Bold",
-    fontSize: 24,
-    lineHeight: 30,
-    color: colors.textPrimary,
-    position: "relative",
-    top: -2,
-  },
-
   content: {
     paddingHorizontal: H_PADDING,
     paddingBottom: spacing.xxxl + 75,
