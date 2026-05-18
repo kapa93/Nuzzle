@@ -348,7 +348,12 @@ export function ExploreScreen({
             <Text style={styles.placesHintText}>
               Couldn't get your location. Check your connection and try again.
             </Text>
-          ) : null}
+          ) : (
+            <View style={styles.googleStateRow}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={styles.googleStateText}>Finding dog-friendly spots…</Text>
+            </View>
+          )}
         </ScrollView>
       </SafeAreaView>
       <NotificationsSheet
