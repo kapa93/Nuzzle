@@ -32,7 +32,7 @@ function SegmentTabItem({
     backgroundColor: interpolateColor(
       activeProgress.value,
       [0, 1],
-      [colors.surface, colors.primary]
+      [colors.chipNeutral, colors.primary]
     ),
   }));
 
@@ -101,31 +101,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   tab: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.chipNeutral,
     borderRadius: radius.xs,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 1,
-    elevation: 1,
   },
   tabGap: { marginRight: spacing.sm },
   tabActive: {
     backgroundColor: colors.primary,
-    shadowColor: colors.primaryDark,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.25,
-    shadowRadius: 2,
-    elevation: 2,
   },
   label: {
     ...typography.caption,
     fontSize: 14,
     lineHeight: 19,
     ...(Platform.OS === "web"
-      ? { fontFamily: "'Inter', sans-serif", fontWeight: "600" as const }
-      : { fontFamily: "Inter_600SemiBold" as const }),
+      ? { fontFamily: "'Inter', sans-serif", fontWeight: "500" as const }
+      : { fontFamily: "Inter_500Medium" as const }),
   },
 });

@@ -15,7 +15,6 @@ import { SignUpScreen } from '@/screens/SignUpScreen';
 import { HomeScreen } from '@/screens/HomeScreen';
 import { PlaceCheckinScreen } from '@/screens/PlaceCheckinScreen';
 import { PlaceDetailScreen } from '@/screens/PlaceDetailScreen';
-import { PlacesScreen } from '@/screens/PlacesScreen';
 import { ExploreScreen } from '@/screens/ExploreScreen';
 import { GooglePlacePreviewScreen } from '@/screens/GooglePlacePreviewScreen';
 import { DogSpotPreviewScreen } from '@/screens/DogSpotPreviewScreen';
@@ -183,7 +182,6 @@ function ExploreTab() {
       />
       <Stack.Screen name="EditPost" component={EditPostScreen} options={{ title: 'Edit Post' }} />
       <Stack.Screen name="UserProfile" component={UserProfileScreen} options={{ title: 'Profile' }} />
-      <Stack.Screen name="PlacesList" component={PlacesScreen} options={{ title: 'Places' }} />
       <Stack.Screen name="PlaceDetail" component={PlaceDetailScreen} options={{ title: 'Place' }} />
       <Stack.Screen
         name="GooglePlacePreview"

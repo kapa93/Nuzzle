@@ -71,7 +71,6 @@ export type ExploreStackParamList = {
   CreatePost: { breed?: BreedEnum; initialType?: PostTypeEnum; initialPlaceId?: string; initialPlaceName?: string };
   EditPost: { postId: string };
   UserProfile: { userId: string };
-  PlacesList: undefined;
   PlaceDetail: { placeId: string };
   GooglePlacePreview: { googlePlaceId: string; initialName?: string };
   DogSpotPreview: { googlePlaceId: string; initialName?: string };

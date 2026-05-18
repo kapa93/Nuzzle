@@ -394,9 +394,12 @@ const styles = StyleSheet.create({
   nearbyShowMoreText: {
     ...typography.body,
     color: colors.primary,
+    fontSize: 15,
+    fontFamily: 'Inter_500Medium',
     textAlign: "center",
     paddingVertical: spacing.sm,
     marginTop: spacing.xs,
+    marginBottom: -5,
   },
   googleSection: {
     gap: spacing.sm,

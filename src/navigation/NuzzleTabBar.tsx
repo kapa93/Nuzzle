@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
   },
   tabLabelCenter: {
     position: "absolute",
-    bottom: -16,
+    bottom: -17,
     left: "50%",
     marginLeft: -60,
     width: 120,
@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
   },
   centerButton: {
     position: "absolute",
-    bottom: 2,
+    bottom: 1,
     left: "50%",
     marginLeft: -22.5,
     width: 46,
@@ -424,5 +424,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
 });

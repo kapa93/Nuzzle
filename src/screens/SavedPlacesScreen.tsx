@@ -1172,23 +1172,23 @@ const styles = StyleSheet.create({
   placesTabChip: {
     flex: 1,
     alignItems: 'center',
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.sm + 1,
-    borderBottomWidth: 2,
+    paddingTop: spacing.sm - 2,
+    paddingBottom: spacing.sm - 1,
+    borderBottomWidth: 1.5,
     borderBottomColor: 'transparent',
     marginBottom: -1.5,
   },
   placesTabChipActive: {
-    borderBottomColor: colors.primary,
+    borderBottomColor: '#000000',
   },
   placesTabChipText: {
     ...typography.body,
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: 'Inter_500Medium',
     color: colors.textSecondary,
   },
   placesTabChipTextActive: {
     fontFamily: 'Inter_600SemiBold',
-    color: colors.primary,
+    color: '#000000',
   },
 });

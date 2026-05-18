@@ -333,14 +333,6 @@ export function HomeScreen({
     );
   }, [availableDogsForPlaceCheckIn, checkinMutation, dogs]);
 
-  const handleSentryTestCapture = useCallback(() => {
-    captureHandledError(new Error('Manual Sentry test capture from Home screen'), {
-      area: 'sentry.manual-test',
-      tags: { screen: 'home', env: 'dev' },
-    });
-    Alert.alert('Sentry test sent', 'Check your Sentry project for a handled event.');
-  }, []);
-
   const tabBarHeight = useBottomTabBarHeight();
   const typeFilter = feedFilter === "QUESTION" || feedFilter === "UPDATE_STORY" || feedFilter === "TIP" || feedFilter === "MEETUP" ? feedFilter : null;
 
@@ -548,14 +540,6 @@ export function HomeScreen({
       />
       <SafeAreaView style={styles.safe} edges={["left", "right"]}>
         <View style={styles.container}>
-          {__DEV__ ? (
-            <Pressable
-              onPress={handleSentryTestCapture}
-              style={({ pressed }) => [styles.devSentryButton, pressed && styles.devSentryButtonPressed]}
-            >
-              <Text style={styles.devSentryButtonText}>Test Sentry</Text>
-            </Pressable>
-          ) : null}
           {showNearbyCheckinCard ? (
             <Animated.View style={[styles.placeAlertOverlay, { top: headerHeight + homeTabBarHeight + 12 }, placeAlertAnimatedStyle]}>
               <PlaceNearbyAlert
@@ -734,26 +718,7 @@ const styles = StyleSheet.create({
   listContentBarHidden: { paddingBottom: spacing.sm },
   initialLoader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   footerLoader: { paddingVertical: spacing.xl, alignItems: 'center' },
-  devSentryButton: {
-    position: 'absolute',
-    right: spacing.lg,
-    bottom: spacing.xxxl,
-    zIndex: 50,
-    backgroundColor: colors.textPrimary,
-    borderRadius: radius.pill,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
-  },
-  devSentryButtonPressed: {
-    opacity: 0.85,
-  },
-  devSentryButtonText: {
-    ...typography.caption,
-    color: colors.surface,
-    fontWeight: '700',
-  },
-
-  // Home tab bar overlay
+// Home tab bar overlay
   homeTabBarOverlay: {
     position: 'absolute',
     left: 0,
@@ -771,24 +736,24 @@ const styles = StyleSheet.create({
   homeTabChip: {
     flex: 1,
     alignItems: 'center',
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.sm + 1,
-    borderBottomWidth: 2,
+    paddingTop: spacing.sm - 2,
+    paddingBottom: spacing.sm - 1,
+    borderBottomWidth: 1.5,
     borderBottomColor: 'transparent',
     marginBottom: -1.5,
   },
   homeTabChipActive: {
-    borderBottomColor: colors.primary,
+    borderBottomColor: '#000000',
   },
   homeTabChipText: {
     ...typography.body,
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: 'Inter_500Medium',
     color: colors.textSecondary,
   },
   homeTabChipTextActive: {
     fontFamily: 'Inter_600SemiBold',
-    color: colors.primary,
+    color: '#000000',
   },
 
 });

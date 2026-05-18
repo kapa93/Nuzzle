@@ -369,7 +369,7 @@ export function MorePlacesTab({
       scrollEventThrottle={16}
     >
       <PlacesSection
-        title="Explore existing places or suggest a new feed"
+        title="Explore local feeds or suggest a new one"
         isEmpty={nuzzlePlaces.length === 0}
         emptyMessage="No places in this area yet."
       >
@@ -487,6 +487,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingVertical: spacing.sm,
     marginTop: spacing.xs,
+    marginBottom: spacing.xs,
   },
   googleStateRow: {
     flexDirection: "row",
