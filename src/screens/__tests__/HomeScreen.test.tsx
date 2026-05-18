@@ -75,7 +75,6 @@ jest.mock('@/components/CreatePostPromptCard', () => ({ CreatePostPromptCard: ()
 jest.mock('@/components/MeetupPromptCard', () => ({ MeetupPromptCard: () => null }));
 jest.mock('@/components/PlaceNearbyAlert', () => ({ PlaceNearbyAlert: () => null }));
 jest.mock('@/components/PlaceNowAlert', () => ({ PlaceNowAlert: () => null }));
-jest.mock('@/components/MyPlacesSheet', () => ({ MyPlacesSheet: () => null }));
 jest.mock('@/ui/BreedHero', () => ({ BreedHero: () => null }));
 jest.mock('@/ui/SwipeableBreedBanner', () => ({ SwipeableBreedBanner: () => null }));
 jest.mock('@/ui/SegmentTabs', () => ({ SegmentTabs: () => null }));

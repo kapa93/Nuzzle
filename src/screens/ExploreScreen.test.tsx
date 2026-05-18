@@ -67,10 +67,6 @@ jest.mock('@/store/authStore', () => ({
   useAuthStore: jest.fn(),
 }));
 
-jest.mock('@/components/MyPlacesSheet', () => ({
-  MyPlacesSheet: () => null,
-}));
-
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { useQuery } from '@tanstack/react-query';
