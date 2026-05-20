@@ -712,6 +712,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     overflow: "hidden",
     backgroundColor: colors.surfaceMuted,
+    position: "relative",
+    top: -6,
   },
   pendingThumbFallback: {
     backgroundColor: colors.warningSoft,
