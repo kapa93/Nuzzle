@@ -73,6 +73,20 @@ export async function getOrCreatePendingCommunity(
   return { place: data.place, suggestionStatus: data.suggestionStatus };
 }
 
+/** Removes the current user's interest in a pending community. No-op if not interested. */
+export async function removeCommunityInterest(
+  placeId: string,
+  userId: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('place_community_interests')
+    .delete()
+    .eq('place_id', placeId)
+    .eq('user_id', userId);
+
+  if (error) throw error;
+}
+
 /**
  * Records that `userId` is interested in the pending community for `placeId`.
  * Idempotent — duplicate inserts are detected via the unique constraint and

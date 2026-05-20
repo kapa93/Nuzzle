@@ -22,6 +22,10 @@ export const colors = {
   dangerPressedSurface: "rgba(220, 38, 38, 0.18)",
   warningSoft: "#F8E7BA",
   warningText: "#7A5A12",
+  /** Pending / forming community surfaces */
+  pendingSoft: "#EDE8F8",
+  pendingText: "#6B4FBB",
+  pendingBorder: "#C4B4E8",
   breeds: {
     aussie: { bg: "#B9EBD9", ring: "#49B88A", text: "#114D35" },
     dachshund: { bg: "#F0CFB2", ring: "#C98952", text: "#4B2B12" },

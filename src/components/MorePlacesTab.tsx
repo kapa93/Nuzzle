@@ -1,22 +1,28 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Image,
+  Modal,
+  PanResponder,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
   type ImageSourcePropType,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   type ViewStyle,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { MapPin } from "lucide-react-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Location from "expo-location";
 import { listActivePlaces, listPendingPlacesWithInterests, getNearbyGooglePlaces, getGooglePlacePhotoUrl } from "@/api/places";
-import { markCommunityInterest } from "@/api/communityInterests";
+import { markCommunityInterest, removeCommunityInterest } from "@/api/communityInterests";
 import { PlaceRow } from "@/components/PlaceRow";
 import { useSavedPlaces, useToggleSavedPlace } from "@/hooks/useSavedPlaces";
 import { useAuthStore } from "@/store/authStore";
@@ -185,7 +191,7 @@ function PendingPlaceRow({
   photoAccessToken: string | null;
   userId: string | null;
   onPress: () => void;
-  onCountMeIn: () => void;
+  onCountMeIn: (isInterested: boolean) => void;
   countMeInLoading: boolean;
 }) {
   const imageSource = getPlaceImageSource(place, photoAccessToken);
@@ -225,7 +231,7 @@ function PendingPlaceRow({
           </Text>
           {interestCount > 0 && (
             <View style={styles.pendingInterestRow}>
-              <Ionicons name="people-outline" size={16} color={colors.primary} />
+              <Ionicons name="people-outline" size={18} color={colors.textPrimary} />
               <Text style={styles.pendingInterestText}>{interestLabel}</Text>
             </View>
           )}
@@ -247,14 +253,14 @@ function PendingPlaceRow({
           )}
         </View>
         <Pressable
-          onPress={(e) => { e.stopPropagation?.(); onCountMeIn(); }}
-          disabled={isInterested || countMeInLoading}
+          onPress={(e) => { e.stopPropagation?.(); onCountMeIn(isInterested); }}
+          disabled={countMeInLoading}
           style={[styles.countMeInButton, isInterested && styles.countMeInButtonDone]}
           accessibilityRole="button"
-          accessibilityLabel={isInterested ? "Already interested" : "Count me in"}
+          accessibilityLabel={isInterested ? "Remove interest" : "Count me in"}
         >
           {countMeInLoading ? (
-            <ActivityIndicator size="small" color={colors.primary} />
+            <ActivityIndicator size="small" color={colors.pendingText} />
           ) : (
             <Text style={[styles.countMeInText, isInterested && styles.countMeInTextDone]}>
               {isInterested ? "Interested ✓" : "I'm interested 🐾"}
@@ -287,6 +293,198 @@ function PlacesSection({
   );
 }
 
+// ── Nearby Sheet ─────────────────────────────────────────────────────────────
+
+type NearbySheetProps = {
+  visible: boolean;
+  onClose: () => void;
+  candidates: GooglePlaceCandidate[];
+  isLoading: boolean;
+  isError: boolean;
+  onGooglePlacePress: (googlePlaceId: string, initialName?: string) => void;
+};
+
+function NearbySheet({
+  visible,
+  onClose,
+  candidates,
+  isLoading,
+  isError,
+  onGooglePlacePress,
+}: NearbySheetProps) {
+  const insets = useSafeAreaInsets();
+  const [query, setQuery] = useState("");
+  const sheetHeightRef = useRef(900);
+  const slideAnim = useRef(new Animated.Value(900)).current;
+
+  const startSlideOut = useCallback(
+    (onDone?: () => void) => {
+      Animated.timing(slideAnim, {
+        toValue: sheetHeightRef.current,
+        duration: 220,
+        useNativeDriver: true,
+      }).start(onDone);
+    },
+    [slideAnim]
+  );
+
+  const handleModalShow = useCallback(() => {
+    slideAnim.setValue(sheetHeightRef.current);
+    Animated.spring(slideAnim, {
+      toValue: 0,
+      damping: 22,
+      stiffness: 220,
+      useNativeDriver: true,
+    }).start();
+  }, [slideAnim]);
+
+  const handleClose = useCallback(() => {
+    startSlideOut(onClose);
+  }, [startSlideOut, onClose]);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gs) => gs.dy > 5,
+      onPanResponderMove: (_, gs) => {
+        if (gs.dy > 0) slideAnim.setValue(gs.dy);
+      },
+      onPanResponderRelease: (_, gs) => {
+        if (gs.dy > 80 || gs.vy > 0.5) {
+          startSlideOut(onClose);
+        } else {
+          Animated.spring(slideAnim, {
+            toValue: 0,
+            damping: 22,
+            stiffness: 220,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
+  useEffect(() => {
+    if (!visible) {
+      slideAnim.setValue(sheetHeightRef.current);
+      setQuery("");
+    }
+  }, [visible, slideAnim]);
+
+  const filtered = useMemo(() => {
+    if (!query.trim()) return candidates;
+    const lower = query.toLowerCase();
+    return candidates.filter(
+      (c) =>
+        c.name.toLowerCase().includes(lower) ||
+        (c.formattedAddress ?? "").toLowerCase().includes(lower)
+    );
+  }, [candidates, query]);
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="none"
+      onShow={handleModalShow}
+      onRequestClose={handleClose}
+    >
+      <View style={sheetStyles.overlay}>
+        <Pressable
+          style={sheetStyles.backdrop}
+          onPress={handleClose}
+          accessibilityLabel="Close nearby places"
+        />
+
+        <Animated.View
+          onLayout={(e) => {
+            const h = e.nativeEvent.layout.height;
+            if (h > 0) sheetHeightRef.current = h;
+          }}
+          style={[
+            sheetStyles.nearbyPlacesSheet,
+            { transform: [{ translateY: slideAnim }] },
+          ]}
+        >
+          <View style={sheetStyles.handleArea} {...panResponder.panHandlers}>
+            <View style={sheetStyles.handle} />
+          </View>
+
+          <View style={sheetStyles.sheetHeader}>
+            <Text style={sheetStyles.sheetTitle}>Nearby Places</Text>
+          </View>
+
+          <View style={sheetStyles.searchRow}>
+            <Ionicons name="search-outline" size={16} color={colors.textMuted} style={sheetStyles.searchIcon} />
+            <TextInput
+              style={sheetStyles.searchInput}
+              placeholder="Search nearby places…"
+              placeholderTextColor={colors.textMuted}
+              value={query}
+              onChangeText={setQuery}
+              autoCorrect={false}
+              autoCapitalize="none"
+              clearButtonMode="while-editing"
+            />
+          </View>
+
+          {isLoading ? (
+            <View
+              style={[
+                sheetStyles.stateBox,
+                { paddingBottom: Math.max(insets.bottom, spacing.lg) },
+              ]}
+            >
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={sheetStyles.stateText}>Finding nearby places…</Text>
+            </View>
+          ) : isError ? (
+            <View
+              style={[
+                sheetStyles.stateBox,
+                { paddingBottom: Math.max(insets.bottom, spacing.lg) },
+              ]}
+            >
+              <Text style={sheetStyles.stateText}>
+                Couldn't load nearby places. Try again in a moment.
+              </Text>
+            </View>
+          ) : filtered.length === 0 ? (
+            <View
+              style={[
+                sheetStyles.stateBox,
+                { paddingBottom: Math.max(insets.bottom, spacing.lg) },
+              ]}
+            >
+              <Text style={sheetStyles.stateText}>
+                {query.trim() ? "No places match your search." : "No nearby dog-friendly places found."}
+              </Text>
+            </View>
+          ) : (
+            <ScrollView
+              style={sheetStyles.list}
+              contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, spacing.lg) }}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              {filtered.map((candidate) => (
+                <GooglePlaceRow
+                  key={candidate.googlePlaceId}
+                  candidate={candidate}
+                  onPress={() => {
+                    handleClose();
+                    onGooglePlacePress(candidate.googlePlaceId, candidate.name);
+                  }}
+                />
+              ))}
+            </ScrollView>
+          )}
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+}
+
 // ── Main component ───────────────────────────────────────────────────────────
 
 type Props = {
@@ -312,6 +510,7 @@ export function MorePlacesTab({
   const [placesLocationState, setPlacesLocationState] = useState<PlacesLocationState>("unknown");
   const [nearbyDisplayCount, setNearbyDisplayCount] = useState(NEARBY_INITIAL_COUNT);
   const [nuzzleDisplayCount, setNuzzleDisplayCount] = useState(NUZZLE_UNBOOKMARKED_INITIAL_COUNT);
+  const [nearbySheetVisible, setNearbySheetVisible] = useState(false);
   const hasRequestedPermissionRef = useRef(false);
 
   const { data: places = [] } = useQuery({
@@ -344,11 +543,15 @@ export function MorePlacesTab({
   const [countMeInLoadingId, setCountMeInLoadingId] = useState<string | null>(null);
 
   const countMeInMutation = useMutation({
-    mutationFn: (placeId: string) => {
+    mutationFn: async ({ placeId, isInterested }: { placeId: string; isInterested: boolean }) => {
       if (!user) throw new Error("Sign in to express interest.");
-      return markCommunityInterest(placeId, user.id);
+      if (isInterested) {
+        await removeCommunityInterest(placeId, user.id);
+      } else {
+        await markCommunityInterest(placeId, user.id);
+      }
     },
-    onMutate: (placeId) => setCountMeInLoadingId(placeId),
+    onMutate: ({ placeId }) => setCountMeInLoadingId(placeId),
     onSettled: () => {
       setCountMeInLoadingId(null);
       queryClient.invalidateQueries({ queryKey: ["pendingPlaces"] });
@@ -482,6 +685,7 @@ export function MorePlacesTab({
   }, [nearbyPlacesQuery.data, coords, dbGooglePlaceIds, dbPlaceNames]);
 
   return (
+    <>
     <ScrollView
       style={styles.container}
       contentContainerStyle={[
@@ -540,61 +744,68 @@ export function MorePlacesTab({
                   onGooglePlacePress(place.google_place_id, place.name);
                 }
               }}
-              onCountMeIn={() => countMeInMutation.mutate(place.id)}
+              onCountMeIn={(isInterested) => countMeInMutation.mutate({ placeId: place.id, isInterested })}
             />
           ))}
         </PlacesSection>
       )}
 
-      {coords ? (
-        <PlacesSection
-          title="Nearby"
-          style={{ marginTop: spacing.md }}
-          isEmpty={
-            !nearbyPlacesQuery.isFetching &&
-            !nearbyPlacesQuery.isError &&
-            rankedNearbyCandidates.length === 0
-          }
-          emptyMessage="No nearby dog-friendly places found."
+      <View style={{ marginTop: spacing.md }}>
+        <Text style={styles.suggestHelperText}>
+          Don't see your dog spot? Suggest it and we'll launch it once enough local dog owners are interested.
+        </Text>
+        <Pressable
+          onPress={() => setNearbySheetVisible(true)}
+          style={({ pressed }) => [
+            styles.suggestButton,
+            (placesLocationState === "denied" || placesLocationState === "error") && styles.suggestButtonDisabled,
+            pressed && styles.suggestButtonPressed,
+          ]}
+          disabled={placesLocationState === "denied" || placesLocationState === "error"}
+          accessibilityRole="button"
+          accessibilityLabel="Suggest Local Community"
         >
-          {nearbyPlacesQuery.isFetching ? (
-            <View style={styles.googleStateRow}>
-              <ActivityIndicator size="small" color={colors.primary} />
-              <Text style={styles.googleStateText}>Finding nearby places…</Text>
-            </View>
-          ) : nearbyPlacesQuery.isError ? (
-            <Text style={styles.placesEmptyText}>
-              Couldn't load nearby places. Try again in a moment.
-            </Text>
-          ) : (
-            <>
-              {rankedNearbyCandidates.slice(0, nearbyDisplayCount).map((candidate) => (
-                <GooglePlaceRow
-                  key={candidate.googlePlaceId}
-                  candidate={candidate}
-                  onPress={() => onGooglePlacePress(candidate.googlePlaceId, candidate.name)}
-                />
-              ))}
-              {nearbyDisplayCount < rankedNearbyCandidates.length && (
-                <Pressable
-                  onPress={() => setNearbyDisplayCount((c) => c + NEARBY_LOAD_MORE_COUNT)}
-                >
-                  <Text style={styles.nearbyShowMoreText}>Show more places</Text>
-                </Pressable>
-              )}
-            </>
-          )}
-        </PlacesSection>
-      ) : placesLocationState === "denied" ? (
-        <Text style={styles.placesHintText}>
-          Enable location in Settings to show nearby places.
-        </Text>
-      ) : placesLocationState === "error" ? (
-        <Text style={styles.placesHintText}>
-          Couldn't get your location. Check your connection and try again.
-        </Text>
-      ) : null}
+          <MapPin
+            size={18}
+            strokeWidth={2.3}
+            color={
+              placesLocationState === "denied" || placesLocationState === "error"
+                ? colors.textMuted
+                : colors.primary
+            }
+          />
+          <Text
+            style={[
+              styles.suggestButtonText,
+              (placesLocationState === "denied" || placesLocationState === "error") &&
+                styles.suggestButtonTextDisabled,
+            ]}
+          >
+            Suggest Local Community
+          </Text>
+        </Pressable>
+        {(placesLocationState === "denied" || placesLocationState === "error") && (
+          <Text style={styles.placesHintText}>
+            {placesLocationState === "denied"
+              ? "Enable location in Settings to suggest nearby places."
+              : "Couldn't get your location. Check your connection and try again."}
+          </Text>
+        )}
+      </View>
     </ScrollView>
+
+    <NearbySheet
+      visible={nearbySheetVisible}
+      onClose={() => setNearbySheetVisible(false)}
+      candidates={rankedNearbyCandidates}
+      isLoading={nearbyPlacesQuery.isFetching}
+      isError={nearbyPlacesQuery.isError}
+      onGooglePlacePress={(id, name) => {
+        setNearbySheetVisible(false);
+        onGooglePlacePress(id, name);
+      }}
+    />
+    </>
   );
 }
 
@@ -685,12 +896,13 @@ const styles = StyleSheet.create({
   },
   // ── Pending community card
   pendingCard: {
-    backgroundColor: colors.primarySoft,
-    borderWidth: 1,
-    borderColor: colors.primary,
+    backgroundColor: colors.pendingSoft,
+    borderWidth: 1.25,
+    borderColor: colors.pendingText,
     borderRadius: radius.lg,
     padding: spacing.md,
     gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
   pendingCardPressed: {
     opacity: 0.9,
@@ -737,7 +949,7 @@ const styles = StyleSheet.create({
   },
   pendingInterestText: {
     ...typography.caption,
-    color: colors.primary,
+    color: colors.pendingText,
     fontFamily: "Inter_500Medium",
   },
   pendingDescription: {
@@ -745,27 +957,27 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   countMeInButton: {
-    borderWidth: 1.5,
-    borderColor: colors.primary,
+    borderWidth: 1.25,
+    borderColor: colors.pendingText,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.primarySoft,
+    backgroundColor: colors.pendingSoft,
   },
   countMeInButtonDone: {
-    borderColor: colors.textMuted,
-    backgroundColor: colors.primarySoft,
+    borderColor: colors.pendingText,
+    backgroundColor: colors.pendingSoft,
   },
   countMeInText: {
     ...typography.caption,
-    color: colors.primary,
+    color: colors.pendingText,
     fontFamily: "Inter_500Medium",
     fontSize: 12,
   },
   countMeInTextDone: {
-    color: colors.textMuted,
+    color: colors.pendingText,
   },
   pendingBottomRow: {
     flexDirection: "row",
@@ -782,12 +994,136 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: colors.surfaceMuted,
     borderWidth: 1.5,
-    borderColor: colors.primarySoft,
+    borderColor: colors.pendingSoft,
     marginRight: -8,
   },
   pendingAvatarExtra: {
     ...typography.caption,
     color: colors.textMuted,
     marginLeft: spacing.md + 4,
+  },
+  suggestHelperText: {
+    ...typography.bodyMuted,
+    color: colors.textMuted,
+    textAlign: "left",
+    marginBottom: spacing.lg,
+    marginTop: -5,
+  },
+  suggestButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    borderWidth: 1.25,
+    borderColor: colors.primary,
+    borderRadius: 15,
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colors.primarySoft,
+    marginBottom: spacing.md,
+  },
+  suggestButtonDisabled: {
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceMuted,
+  },
+  suggestButtonPressed: {
+    opacity: 0.8,
+  },
+  suggestButtonText: {
+    ...typography.body,
+    fontFamily: "Inter_600SemiBold",
+    color: colors.primary,
+    fontSize: 15,
+  },
+  suggestButtonTextDisabled: {
+    color: colors.textMuted,
+  },
+});
+
+// ── Sheet styles (separate to avoid collision with main styles) ───────────────
+
+const sheetStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.35)",
+  },
+  nearbyPlacesSheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: spacing.sm,
+    minHeight: "75%",
+    maxHeight: "92%",
+    ...shadow.md,
+  },
+  handleArea: {
+    alignSelf: "stretch",
+    alignItems: "center",
+    paddingVertical: 10,
+  },
+  handle: {
+    alignSelf: "center",
+    width: 37,
+    height: 2,
+    borderRadius: 2,
+    backgroundColor: "rgba(60, 60, 67, 0.75)",
+    marginBottom: 11,
+    transform: [{ translateY: -2 }],
+  },
+  sheetHeader: {
+    paddingHorizontal: spacing.lg,
+    marginTop: -3,
+    paddingBottom: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(231, 226, 216, 0.5)",
+  },
+  sheetTitle: {
+    ...typography.subtitle,
+    fontFamily: "Inter_700Bold",
+    transform: [{ translateY: -12 }],
+  },
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: spacing.lg,
+    marginBottom: 10,
+    marginTop: 15,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceMuted,
+    paddingHorizontal: spacing.sm,
+    gap: spacing.xs,
+  },
+  searchIcon: {
+    flexShrink: 0,
+  },
+  searchInput: {
+    flex: 1,
+    ...typography.body,
+    color: colors.textPrimary,
+    paddingVertical: spacing.sm,
+    fontSize: 15,
+  },
+  list: {
+    flex: 1,
+  },
+  stateBox: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xl,
+  },
+  stateText: {
+    ...typography.bodyMuted,
+    textAlign: "center",
+    flexShrink: 1,
   },
 });
