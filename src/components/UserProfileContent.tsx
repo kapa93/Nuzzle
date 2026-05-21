@@ -175,7 +175,6 @@ export function UserProfileContent({
     includeJoinedBreeds: true,
   });
 
-  const primaryDog = dogs[0];
   const canManageProfile = isOwnProfile;
   const joinedLabel = formatJoinedDate(profile?.created_at);
 
@@ -255,8 +254,8 @@ export function UserProfileContent({
             style={styles.heroAvatarWrap}
           >
             <DogAvatar
-              imageUrl={profile.profile_image_url ?? primaryDog?.dog_image_url}
-              name={profile.name ?? primaryDog?.name}
+              imageUrl={profile.profile_image_url}
+              name={profile.name}
               size={135}
             />
             {canManageProfile && onChangePhoto ? (

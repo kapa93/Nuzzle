@@ -197,10 +197,7 @@ function PendingPlaceRow({
   const imageSource = getPlaceImageSource(place, photoAccessToken);
   const interestCount = place.interests.length;
   const isInterested = userId ? place.interests.some((i) => i.user_id === userId) : false;
-  const avatars = place.interests
-    .map((i) => i.profile_image_url)
-    .filter((url): url is string => !!url)
-    .slice(0, AVATAR_DISPLAY_COUNT);
+  const visibleInterests = place.interests.slice(0, AVATAR_DISPLAY_COUNT);
   const extraCount = Math.max(0, interestCount - AVATAR_DISPLAY_COUNT);
   const interestLabel =
     interestCount === 1 ? "1 dog owner interested" : `${interestCount} dog owners interested`;
@@ -245,9 +242,19 @@ function PendingPlaceRow({
       {/* Bottom row: avatars (left) + Count Me In button (right) */}
       <View style={styles.pendingBottomRow}>
         <View style={styles.pendingAvatarRow}>
-          {avatars.map((url, i) => (
-            <Image key={i} source={{ uri: url }} style={styles.pendingAvatar} />
-          ))}
+          {visibleInterests.map((interest) =>
+            interest.profile_image_url ? (
+              <Image
+                key={interest.user_id}
+                source={{ uri: interest.profile_image_url }}
+                style={styles.pendingAvatar}
+              />
+            ) : (
+              <View key={interest.user_id} style={[styles.pendingAvatar, styles.pendingAvatarFallback]}>
+                <Ionicons name="person" size={15} color={colors.pendingText} />
+              </View>
+            )
+          )}
           {extraCount > 0 && (
             <Text style={styles.pendingAvatarExtra}>+{extraCount} more</Text>
           )}
@@ -504,7 +511,7 @@ export function MorePlacesTab({
   onGooglePlacePress,
   onScroll,
 }: Props) {
-  const { user } = useAuthStore();
+  const { user, profile } = useAuthStore();
   const queryClient = useQueryClient();
   const [coords, setCoords] = useState<UserCoords>(null);
   const [placesLocationState, setPlacesLocationState] = useState<PlacesLocationState>("unknown");
@@ -551,7 +558,40 @@ export function MorePlacesTab({
         await markCommunityInterest(placeId, user.id);
       }
     },
-    onMutate: ({ placeId }) => setCountMeInLoadingId(placeId),
+    onMutate: async ({ placeId, isInterested }) => {
+      setCountMeInLoadingId(placeId);
+      if (!user) return { previous: undefined };
+      await queryClient.cancelQueries({ queryKey: ["pendingPlaces"] });
+      const previous = queryClient.getQueryData<PendingPlaceWithInterests[]>(["pendingPlaces"]);
+      const currentUserId = user.id;
+      const currentAvatar = profile?.profile_image_url ?? null;
+      queryClient.setQueryData<PendingPlaceWithInterests[]>(["pendingPlaces"], (old) => {
+        if (!old) return old;
+        return old.map((p) => {
+          if (p.id !== placeId) return p;
+          if (isInterested) {
+            return {
+              ...p,
+              interests: p.interests.filter((i) => i.user_id !== currentUserId),
+            };
+          }
+          if (p.interests.some((i) => i.user_id === currentUserId)) return p;
+          return {
+            ...p,
+            interests: [
+              ...p.interests,
+              { user_id: currentUserId, profile_image_url: currentAvatar },
+            ],
+          };
+        });
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous !== undefined) {
+        queryClient.setQueryData(["pendingPlaces"], ctx.previous);
+      }
+    },
     onSettled: () => {
       setCountMeInLoadingId(null);
       queryClient.invalidateQueries({ queryKey: ["pendingPlaces"] });
@@ -997,6 +1037,11 @@ const styles = StyleSheet.create({
     borderColor: colors.pendingSoft,
     marginRight: -8,
   },
+  pendingAvatarFallback: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surfaceMuted,
+  },
   pendingAvatarExtra: {
     ...typography.caption,
     color: colors.textMuted,
@@ -1005,6 +1050,7 @@ const styles = StyleSheet.create({
   suggestHelperText: {
     ...typography.bodyMuted,
     color: colors.textMuted,
+    fontFamily: 'Inter_500Medium',
     textAlign: "left",
     marginBottom: spacing.lg,
     marginTop: -5,
@@ -1020,7 +1066,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm + 2,
     paddingHorizontal: spacing.lg,
     backgroundColor: colors.primarySoft,
-    marginBottom: spacing.md,
+    marginBottom: spacing.md + 5,
   },
   suggestButtonDisabled: {
     borderColor: colors.border,

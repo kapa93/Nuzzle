@@ -522,34 +522,7 @@ export function SavedPlacesScreen({ navigation }: Props) {
     ...(activeTab === 'dogs' ? { gap: spacing.sm } : {}),
   }), [activeTab, bottomPad]);
 
-  // ── Early returns (after all hooks) ─────────────────────────────────────────
-  if (!savedPlacesLoading && savedPlaces.length === 0) {
-    return (
-      <View style={styles.screenRoot}>
-        <SafeAreaView style={[styles.safe, styles.centered]} edges={['left', 'right']}>
-          <View style={{ paddingTop: headerHeight + spacing.xl, alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.xl }}>
-            <Ionicons name="bookmark-outline" size={40} color={colors.textMuted} />
-            <Text style={styles.emptyTitle}>No saved places yet</Text>
-            <Text style={styles.emptyBody}>Save places from the Explore tab to see their feeds here.</Text>
-          </View>
-        </SafeAreaView>
-      </View>
-    );
-  }
-
-  const showFullScreenLoader = savedPlacesLoading;
-
-  if (showFullScreenLoader) {
-    return (
-      <View style={styles.screenRoot}>
-        <SafeAreaView style={[styles.safe, styles.centered]} edges={['left', 'right']}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </SafeAreaView>
-      </View>
-    );
-  }
-
-  // Sync refs after early-return guards (plain assignments, not hook calls)
+  // Sync refs (plain assignments, not hook calls)
   activeTabRef.current = activeTab;
 
   // ── Carousel header ──────────────────────────────────────────────────────────
@@ -698,24 +671,38 @@ export function SavedPlacesScreen({ navigation }: Props) {
         </Animated.View>
 
         {placesTab === 'myPlaces' && (
-          <FlatList
-            ref={flatListRef}
-            data={tabData}
-            keyExtractor={tabKeyExtractor}
-            extraData={[activeTab, photoAccessToken]}
-            contentContainerStyle={tabContentStyle}
-            scrollEnabled={!reactionMenuOpen}
-            showsVerticalScrollIndicator={false}
-            onScroll={onScroll}
-            scrollEventThrottle={16}
-            ListHeaderComponent={ListHeader}
-            renderItem={renderTabItem}
-            ItemSeparatorComponent={renderTabSeparator}
-            initialNumToRender={8}
-            maxToRenderPerBatch={8}
-            windowSize={11}
-            ListEmptyComponent={tabEmptyComponent}
-          />
+          savedPlacesLoading ? (
+            <View style={[styles.safe, styles.centered]}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          ) : savedPlaces.length === 0 ? (
+            <View style={[styles.safe, { paddingTop: headerHeight + placesTabBarHeight, paddingBottom: tabBarHeight }]}>
+              <View style={[styles.centered, { flex: 1, gap: spacing.md, paddingHorizontal: spacing.xl }]}>
+                <Ionicons name="bookmark-outline" size={40} color={colors.textMuted} />
+                <Text style={styles.emptyTitle}>No saved places yet</Text>
+                <Text style={styles.emptyBody}>Save places from the Explore tab to see their feeds here.</Text>
+              </View>
+            </View>
+          ) : (
+            <FlatList
+              ref={flatListRef}
+              data={tabData}
+              keyExtractor={tabKeyExtractor}
+              extraData={[activeTab, photoAccessToken]}
+              contentContainerStyle={tabContentStyle}
+              scrollEnabled={!reactionMenuOpen}
+              showsVerticalScrollIndicator={false}
+              onScroll={onScroll}
+              scrollEventThrottle={16}
+              ListHeaderComponent={ListHeader}
+              renderItem={renderTabItem}
+              ItemSeparatorComponent={renderTabSeparator}
+              initialNumToRender={8}
+              maxToRenderPerBatch={8}
+              windowSize={11}
+              ListEmptyComponent={tabEmptyComponent}
+            />
+          )
         )}
 
         {placesTab === 'morePlaces' && (
