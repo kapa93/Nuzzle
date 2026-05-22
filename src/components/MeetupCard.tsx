@@ -48,6 +48,7 @@ type Props = {
   currentUserId?: string | null;
   onEdit?: (postId: string) => void;
   onDelete?: (postId: string) => void;
+  onShare?: () => void;
 };
 
 const COMMENT_PRESS_ANIMATION = { duration: 180 };
@@ -67,6 +68,7 @@ export function MeetupCard({
   currentUserId,
   onEdit,
   onDelete,
+  onShare,
 }: Props) {
   const commentButtonPress = useSharedValue(0);
   const [menuVisible, setMenuVisible] = useState(false);
@@ -284,6 +286,20 @@ export function MeetupCard({
             <Text style={styles.answersText}>{getBarksText(post.comment_count ?? 0)}</Text>
           </View>
         </AnimatedPressable>
+        {onShare && (
+          <Pressable
+            onPress={(event) => {
+              event.stopPropagation();
+              onShare();
+            }}
+            style={({ pressed }) => [styles.answersPill, pressed && styles.pillPressed]}
+          >
+            <View style={styles.answersPillRow}>
+              <Ionicons name="share-outline" size={16} color={colors.textSecondary} />
+              <Text style={styles.answersText}>Share</Text>
+            </View>
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -470,4 +486,5 @@ const styles = StyleSheet.create({
       : { fontFamily: "Inter_600SemiBold" as const }),
   },
   pressed: { opacity: 0.95 },
+  pillPressed: { backgroundColor: colors.border },
 });

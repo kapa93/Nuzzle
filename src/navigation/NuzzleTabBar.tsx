@@ -21,7 +21,7 @@ const TAB_CONFIG = [
   { key: "Home", label: "Dogs" },
   { key: "SavedPlaces", label: "Places" },
   { key: "Create", label: "Create" },
-  { key: "Explore", label: "Dog Spots" },
+  { key: "Explore", label: "Dog Friendly" },
   { key: "Profile", label: "Profile" },
 ];
 

@@ -520,7 +520,7 @@ export function MorePlacesTab({
   const [nearbySheetVisible, setNearbySheetVisible] = useState(false);
   const hasRequestedPermissionRef = useRef(false);
 
-  const { data: places = [] } = useQuery({
+  const { data: places = [], isLoading: placesLoading } = useQuery({
     queryKey: ["places"],
     queryFn: listActivePlaces,
     enabled: !!user?.id,
@@ -540,7 +540,7 @@ export function MorePlacesTab({
     retry: false,
   });
 
-  const { data: pendingPlaces = [] } = useQuery({
+  const { data: pendingPlaces = [], isLoading: pendingLoading } = useQuery({
     queryKey: ["pendingPlaces"],
     queryFn: listPendingPlacesWithInterests,
     enabled: !!user?.id,
@@ -724,6 +724,21 @@ export function MorePlacesTab({
     return rankNearbyCandidates(filtered, coords);
   }, [nearbyPlacesQuery.data, coords, dbGooglePlaceIds, dbPlaceNames]);
 
+  const isInitialLoading = placesLoading || pendingLoading;
+
+  if (isInitialLoading) {
+    return (
+      <View
+        style={[
+          styles.loadingContainer,
+          { paddingTop: headerHeight + placesTabBarHeight },
+        ]}
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
   return (
     <>
     <ScrollView
@@ -852,6 +867,11 @@ export function MorePlacesTab({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   placesContent: {
     paddingHorizontal: spacing.lg,

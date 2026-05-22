@@ -1,5 +1,5 @@
 import React, { useCallback } from "react";
-import { View, StyleSheet } from "react-native";
+import { Share, StyleSheet, View } from "react-native";
 import { QuestionCard } from "@/ui/QuestionCard";
 import { MeetupCard } from "@/components/MeetupCard";
 import { postToQuestionCardData } from "@/utils/postToQuestionCard";
@@ -19,6 +19,24 @@ type Props = {
   onEdit: (postId: string) => void;
   onDelete: (postId: string) => void;
 };
+
+function buildShareMessage(post: PostWithDetails): string {
+  if (post.type === "MEETUP" && post.meetup_details) {
+    const md = post.meetup_details;
+    const date = new Date(md.start_time).toLocaleString(undefined, {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+    return `${post.author_name} is hosting a meetup on Nuzzle:\n\n${post.title ?? "Meetup"}\n📍 ${md.location_name} · 📅 ${date}\n\n— Shared from the Nuzzle dog community app`;
+  }
+  const body = post.title
+    ? `${post.title}\n\n${post.content_text ?? ""}`
+    : post.content_text ?? "";
+  return `${post.author_name} on Nuzzle:\n\n${body}\n\n— Shared from the Nuzzle dog community app`;
+}
 
 function FeedItemInner({
   item,
@@ -44,6 +62,13 @@ function FeedItemInner({
     (postId: string, rsvped: boolean) => onRsvpToggle?.(postId, rsvped),
     [onRsvpToggle]
   );
+  const handleShare = useCallback(async () => {
+    try {
+      await Share.share({ message: buildShareMessage(item) });
+    } catch (err) {
+      console.warn("Share failed", err);
+    }
+  }, [item]);
 
   const borderColor = item.type === "MEETUP"
     ? colors.primary
@@ -62,6 +87,7 @@ function FeedItemInner({
           currentUserId={currentUserId}
           onEdit={onEdit}
           onDelete={onDelete}
+          onShare={handleShare}
         />
       </View>
     );
@@ -78,6 +104,7 @@ function FeedItemInner({
         currentUserId={currentUserId}
         onEdit={onEdit}
         onDelete={onDelete}
+        onShare={handleShare}
       />
     </View>
   );

@@ -10,6 +10,7 @@ import {
   type NativeSyntheticEvent,
   type NativeScrollEvent,
 } from "react-native";
+import { MapPinCheck, MapPinPlus } from "lucide-react-native";
 import { colors, radius, spacing, typography } from "@/theme";
 import type { PackItem } from "@/utils/breedAssets";
 import type { BreedEnum } from "@/types";
@@ -22,7 +23,9 @@ type Props = {
   cardWidth: number;
   headerHeight: number;
   homeTabBarHeight: number;
+  joinedBreeds: BreedEnum[];
   onBreedPress: (breed: BreedEnum) => void;
+  onJoinToggle: (breed: BreedEnum) => void;
   onScroll: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
 };
 
@@ -31,7 +34,9 @@ export function MoreBreedsTab({
   cardWidth,
   headerHeight,
   homeTabBarHeight,
+  joinedBreeds,
   onBreedPress,
+  onJoinToggle,
   onScroll,
 }: Props) {
   return (
@@ -77,6 +82,24 @@ export function MoreBreedsTab({
                     resizeMode="cover"
                   >
                     <View style={styles.overlay} />
+                    {/* Join / Joined pill – top-right corner */}
+                    <Pressable
+                      onPress={(e) => { e.stopPropagation?.(); onJoinToggle(item.breed); }}
+                      style={({ pressed }) => [
+                        styles.joinPill,
+                        joinedBreeds.includes(item.breed) && styles.joinPillJoined,
+                        pressed && styles.joinPillPressed,
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel={joinedBreeds.includes(item.breed) ? `Leave ${item.label}` : `Join ${item.label}`}
+                    >
+                      <Text style={[styles.joinPillText, joinedBreeds.includes(item.breed) && styles.joinPillTextJoined]}>
+                        {joinedBreeds.includes(item.breed) ? "Joined" : "Join"}
+                      </Text>
+                      {joinedBreeds.includes(item.breed)
+                        ? <MapPinCheck size={14} color="#ffffff" strokeWidth={2.4} style={styles.joinPillIcon} />
+                        : <MapPinPlus size={14} color="#2E3834" strokeWidth={2.4} style={styles.joinPillIcon} />}
+                    </Pressable>
                     <Text
                       style={[
                         styles.cardLabel,
@@ -134,7 +157,7 @@ const styles = StyleSheet.create({
   card: {
     width: "100%",
     aspectRatio: 1,
-    borderRadius: radius.xl,
+    borderRadius: radius.lg,
     overflow: "hidden",
     justifyContent: "flex-end",
     padding: spacing.md,
@@ -227,6 +250,25 @@ const styles = StyleSheet.create({
     bottom: 1,
   },
   pressed: { opacity: 0.92 },
+  joinPill: {
+    position: "absolute",
+    top: spacing.sm + 1,
+    right: spacing.sm + 2,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.81)",
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs,
+    zIndex: 2,
+  },
+  joinPillJoined: {
+    backgroundColor: "rgba(56, 145, 87, 0.75)",
+  },
+  joinPillPressed: { opacity: 0.78 },
+  joinPillText: { fontSize: 13, fontWeight: "700", color: "#2E3834" },
+  joinPillTextJoined: { color: "#ffffff" },
+  joinPillIcon: { marginLeft: 3 },
   sectionHint: {
     ...typography.bodyMuted,
     color: colors.textMuted,

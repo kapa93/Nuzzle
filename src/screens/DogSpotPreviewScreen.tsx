@@ -154,10 +154,9 @@ export function DogSpotPreviewScreen({ route, navigation }: Props) {
                     <Ionicons name="image-outline" size={28} color={colors.textMuted} />
                   </View>
                 )}
-                {place.photos.length > 0 ? (
-                  <View style={styles.photoBadge}>
-                    <Ionicons name="camera-outline" size={11} color="#fff" />
-                    <Text style={styles.photoBadgeText}>{place.photos.length}</Text>
+                {place.openNow != null ? (
+                  <View style={[styles.openBadge, place.openNow ? styles.openBadgeOpen : styles.openBadgeClosed]}>
+                    <Text style={styles.openBadgeText}>{place.openNow ? 'Open' : 'Closed'}</Text>
                   </View>
                 ) : null}
               </View>
@@ -185,14 +184,6 @@ export function DogSpotPreviewScreen({ route, navigation }: Props) {
                     <Ionicons name="star-outline" size={13} color={colors.textMuted} style={styles.heroRowIcon} />
                     <Text style={styles.heroRowText}>
                       {formatRating(place.rating, place.ratingCount)}
-                    </Text>
-                  </View>
-                ) : null}
-                {place.openNow != null ? (
-                  <View style={styles.heroRow}>
-                    <View style={[styles.openDot, !place.openNow && styles.closedDot]} />
-                    <Text style={[styles.heroRowText, place.openNow ? styles.openNowText : styles.closedNowText]}>
-                      {place.openNow ? 'Open now' : 'Closed'}
                     </Text>
                   </View>
                 ) : null}
@@ -313,24 +304,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  photoBadge: {
-    position: 'absolute',
-    bottom: spacing.xs,
-    left: spacing.xs,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 3,
-    borderRadius: radius.xs,
-  },
-  photoBadgeText: {
-    ...typography.caption,
-    color: '#fff',
-    fontSize: 11,
-    lineHeight: 14,
-  },
   heroInfo: {
     flex: 1,
     gap: spacing.xxs + 1,
@@ -356,22 +329,26 @@ const styles = StyleSheet.create({
     flex: 1,
     lineHeight: 17,
   },
-  openDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: colors.primary,
-    marginTop: 5,
-    flexShrink: 0,
+  openBadge: {
+    position: 'absolute',
+    top: spacing.xs,
+    left: spacing.xs,
+    paddingHorizontal: spacing.xs + 1,
+    paddingVertical: 3,
+    borderRadius: radius.xs,
   },
-  closedDot: {
+  openBadgeOpen: {
+    backgroundColor: colors.primary,
+  },
+  openBadgeClosed: {
     backgroundColor: colors.danger,
   },
-  openNowText: {
-    color: colors.primary,
-  },
-  closedNowText: {
-    color: colors.danger,
+  openBadgeText: {
+    ...typography.caption,
+    color: '#fff',
+    fontSize: 11,
+    lineHeight: 14,
+    fontFamily: 'Inter_600SemiBold',
   },
 
   // ── Section card

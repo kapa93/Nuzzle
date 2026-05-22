@@ -625,10 +625,12 @@ export function HomeScreen({
               cardWidth={cardWidth}
               headerHeight={headerHeight}
               homeTabBarHeight={homeTabBarHeight}
+              joinedBreeds={joinedBreeds}
               onBreedPress={(breed) => {
                 setScrollDirection("up");
                 navigation.navigate("BreedFeed", { breed });
               }}
+              onJoinToggle={handleJoinPressForBreed}
               onScroll={() => {}}
             />
           )}
