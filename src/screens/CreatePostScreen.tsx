@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Image,
   Platform,
   KeyboardAvoidingView,
+  Pressable,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -60,6 +61,21 @@ function formatDateTimeDisplay(d: Date): string {
   });
 }
 
+const TYPE_CHIP_CONFIG: { type: PostTypeEnum; icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
+  { type: 'QUESTION', icon: 'chatbubble-outline', label: 'Question' },
+  { type: 'UPDATE_STORY', icon: 'document-text-outline', label: 'Update/Story' },
+  { type: 'MEETUP', icon: 'calendar-outline', label: 'Meetup' },
+  { type: 'TIP', icon: 'bulb-outline', label: 'Tip' },
+];
+
+const TAG_CHIP_CONFIG: { tag: PostTagEnum; icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
+  { tag: 'TRAINING', icon: 'barbell-outline', label: 'Training' },
+  { tag: 'HEALTH', icon: 'heart-outline', label: 'Health' },
+  { tag: 'PLAYDATE', icon: 'paw-outline', label: 'Playdate' },
+  { tag: 'GROOMING', icon: 'cut-outline', label: 'Grooming' },
+  { tag: 'BEHAVIOR', icon: 'happy-outline', label: 'Behavior' },
+];
+
 export function CreatePostScreen() {
   const navigation = useNavigation();
   const route = useRoute<RouteProp<CreatePostRoute, 'CreatePost' | 'CreatePostModal'>>();
@@ -90,11 +106,10 @@ export function CreatePostScreen() {
 
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
-  const [tag, setTag] = useState<PostTagEnum>('TRAINING');
+  const [tags, setTags] = useState<PostTagEnum[]>(['TRAINING']);
   const [imageUris, setImageUris] = useState<Array<{ uri: string; base64?: string }>>([]);
   const [error, setError] = useState('');
 
-  // Post-level place attachment (applies to ALL post types → posts.place_id)
   const [attachedPlaceId, setAttachedPlaceId] = useState<string | null>(route.params?.initialPlaceId ?? null);
   const [attachedPlaceName, setAttachedPlaceName] = useState<string | null>(route.params?.initialPlaceName ?? null);
 
@@ -116,6 +131,37 @@ export function CreatePostScreen() {
 
   const isMeetup = type === 'MEETUP';
 
+  const primaryTag = tags[0] ?? 'TRAINING';
+
+  const toggleTag = (t: PostTagEnum) => {
+    setTags((prev) => {
+      if (prev.includes(t)) {
+        return prev.length === 1 ? prev : prev.filter((x) => x !== t);
+      }
+      if (prev.length >= 2) return [prev[1]!, t];
+      return [...prev, t];
+    });
+  };
+
+  const hasMultipleDogs = dogs && dogs.length > 1 && !route.params?.breed;
+  const currentDog = dogs?.[selectedDogIndex];
+  const dogImageUrl = currentDog?.dog_image_url;
+
+  const handleBreedPicker = () => {
+    if (!hasMultipleDogs || !dogs) return;
+    Alert.alert(
+      'Select dog',
+      'Choose which dog to post as',
+      [
+        ...dogs.map((dog, i) => ({
+          text: BREED_LABELS[dog.breed],
+          onPress: () => setSelectedDogIndex(i),
+        })),
+        { text: 'Cancel', style: 'cancel' as const },
+      ]
+    );
+  };
+
   React.useEffect(() => {
     const trigger =
       route.name === 'CreatePostModal' ? 'tab' :
@@ -131,7 +177,7 @@ export function CreatePostScreen() {
       const payload: Record<string, unknown> = {
         content_text: content,
         type,
-        tag: isMeetup ? 'PLAYDATE' : tag,
+        tag: isMeetup ? 'PLAYDATE' : primaryTag,
         breed,
         title: title.trim() || undefined,
         meetup_details: isMeetup
@@ -227,7 +273,7 @@ export function CreatePostScreen() {
       const payload: Record<string, unknown> = {
         content_text: content,
         type,
-        tag: isMeetup ? 'PLAYDATE' : tag,
+        tag: isMeetup ? 'PLAYDATE' : primaryTag,
         breed,
         title: title.trim() || undefined,
         meetup_details: isMeetup
@@ -252,6 +298,42 @@ export function CreatePostScreen() {
     }
   };
 
+  // Use ref to avoid stale closure in header button
+  const handleSubmitRef = useRef(handleSubmit);
+  handleSubmitRef.current = handleSubmit;
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <Pressable
+          onPress={() => navigation.goBack()}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+          style={({ pressed }) => [styles.headerCloseButton, pressed && { opacity: 0.6 }]}
+        >
+          <Ionicons name="close" size={24} color={colors.textPrimary} />
+        </Pressable>
+      ),
+      headerRight: () => (
+        <TouchableOpacity
+          style={[styles.headerPostButton, mutation.isPending && styles.headerPostButtonDisabled]}
+          onPress={() => handleSubmitRef.current()}
+          disabled={mutation.isPending}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={isMeetup ? 'Create Meetup' : 'Post'}
+        >
+          {mutation.isPending ? (
+            <ActivityIndicator color={colors.surface} size="small" />
+          ) : (
+            <Text style={styles.headerPostButtonText}>{isMeetup ? 'Create' : 'Post'}</Text>
+          )}
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, mutation.isPending, isMeetup]);
+
   const scrollBodyFieldIntoView = (target: number) => {
     const scrollToFocusedInput = () => {
       const responder = (scrollViewRef.current as unknown as {
@@ -264,6 +346,28 @@ export function CreatePostScreen() {
 
     setTimeout(scrollToFocusedInput, 160);
     setTimeout(scrollToFocusedInput, 320);
+  };
+
+  const handlePlacePicker = () => {
+    const options = places.map((p) => p.name);
+    const actions = [
+      ...options.map((name, i) => ({
+        text: name,
+        onPress: () => {
+          const place = places[i];
+          setAttachedPlaceId(place.id);
+          setAttachedPlaceName(place.name);
+        },
+      })),
+      ...(attachedPlaceId
+        ? [{ text: 'Remove place', style: 'destructive' as const, onPress: () => {
+            setAttachedPlaceId(null);
+            setAttachedPlaceName(null);
+          } }]
+        : []),
+      { text: 'Cancel', style: 'cancel' as const },
+    ];
+    Alert.alert('Tag a place', 'Associate this post with a known place.', actions);
   };
 
   if (!user) return null;
@@ -283,93 +387,189 @@ export function CreatePostScreen() {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[styles.content, { paddingTop: headerHeight }]}
       >
-        <Text style={styles.label}>Breed</Text>
-        {!route.params?.breed && dogs && dogs.length > 1 ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.tagScroll}
-            contentContainerStyle={styles.tagScrollContent}
-          >
-            {dogs.map((dog, i) => (
-              <TouchableOpacity
-                key={dog.id}
-                style={[styles.tagChip, selectedDogIndex === i && styles.tagChipSelected]}
-                onPress={() => setSelectedDogIndex(i)}
-              >
-                <Text style={[styles.chipText, selectedDogIndex === i && styles.chipTextSelected]}>
-                  {BREED_LABELS[dog.breed]}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        ) : (
-          <Text style={styles.breedValue}>{BREED_LABELS[breed]}</Text>
-        )}
 
-        <Text style={styles.label}>Type</Text>
-        <View style={styles.chipRow}>
-          {(['QUESTION', 'UPDATE_STORY', 'MEETUP', 'TIP'] as PostTypeEnum[]).map((t) => (
+        {/* ── Breed card ── */}
+        <TouchableOpacity
+          style={styles.breedCard}
+          onPress={handleBreedPicker}
+          activeOpacity={hasMultipleDogs ? 0.75 : 1}
+          accessibilityLabel={`Breed: ${BREED_LABELS[breed]}`}
+        >
+          <View style={styles.breedCardLeft}>
+            <View style={styles.breedIconCircle}>
+              <Ionicons name="paw" size={16} color={colors.surface} />
+            </View>
+            <View>
+              <Text style={styles.breedCardLabel}>Breed</Text>
+              <Text style={styles.breedCardValue}>{BREED_LABELS[breed]}</Text>
+            </View>
+            {hasMultipleDogs && (
+              <Ionicons name="chevron-down" size={16} color={colors.textMuted} style={{ marginLeft: 4 }} />
+            )}
+          </View>
+          {dogImageUrl ? (
+            <Image source={{ uri: dogImageUrl }} style={styles.breedDogThumb} resizeMode="cover" />
+          ) : (
+            <View style={[styles.breedDogThumb, styles.breedDogThumbPlaceholder]}>
+              <Ionicons name="paw" size={22} color={colors.border} />
+            </View>
+          )}
+        </TouchableOpacity>
+
+        {/* ── Type ── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionLabel}>Type</Text>
+          <Ionicons name="help-circle-outline" size={15} color={colors.textMuted} style={{ marginLeft: 4, marginTop: 1 }} />
+        </View>
+        <View style={styles.typeChipRow}>
+          {TYPE_CHIP_CONFIG.map(({ type: t, icon, label }) => (
             <TouchableOpacity
               key={t}
-              style={[styles.chip, type === t && styles.chipSelected]}
+              style={[styles.typeChip, type === t && styles.typeChipSelected]}
               onPress={() => {
                 setType(t);
                 if (t !== type) track('create_post_type_selected', { type: t });
               }}
+              activeOpacity={0.75}
             >
-              <Text style={[styles.chipText, type === t && styles.chipTextSelected]}>
-                {POST_TYPE_LABELS[t]}
+              <Ionicons
+                name={icon}
+                size={14}
+                color={type === t ? colors.surface : colors.textSecondary}
+                style={{ marginRight: 5 }}
+              />
+              <Text style={[styles.typeChipText, type === t && styles.typeChipTextSelected]}>
+                {label}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {attachedPlaceId ? (
-          <View style={styles.placeAttachmentBanner} accessibilityLabel={`Posting at ${attachedPlaceName}`}>
-            <Ionicons name="location" size={14} color={colors.primaryDark} />
-            <Text style={styles.placeAttachmentText} numberOfLines={1}>
-              Posting at: {attachedPlaceName}
-            </Text>
-            {!isMeetup && (
-              <TouchableOpacity
-                onPress={() => { setAttachedPlaceId(null); setAttachedPlaceName(null); }}
-                hitSlop={8}
-                accessibilityLabel="Remove place"
-              >
-                <Ionicons name="close-circle" size={16} color={colors.textMuted} />
-              </TouchableOpacity>
-            )}
-          </View>
-        ) : null}
-
         {!isMeetup && (
           <>
-            <Text style={styles.label}>Tag</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.tagScroll}
-              contentContainerStyle={styles.tagScrollContent}
-            >
-              {(['TRAINING', 'HEALTH', 'PLAYDATE', 'GROOMING', 'BEHAVIOR', 'FOOD', 'GEAR', 'PUPPY', 'ADOLESCENT', 'ADULT', 'SENIOR'] as PostTagEnum[]).map((t) => (
+            {/* ── Tags ── */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionLabel}>Tag</Text>
+              <Text style={styles.sectionLabelHint}> (choose up to 2)</Text>
+            </View>
+            <View style={styles.tagChipWrap}>
+              {TAG_CHIP_CONFIG.map(({ tag: t, icon, label }) => (
                 <TouchableOpacity
                   key={t}
-                  style={[styles.tagChip, tag === t && styles.tagChipSelected]}
-                  onPress={() => setTag(t)}
+                  style={[styles.tagChipNew, tags.includes(t) && styles.tagChipNewSelected]}
+                  onPress={() => toggleTag(t)}
+                  activeOpacity={0.75}
                 >
-                  <Text style={[styles.chipText, tag === t && styles.chipTextSelected]}>
-                    {POST_TAG_LABELS[t]}
+                  <Ionicons
+                    name={icon}
+                    size={14}
+                    color={tags.includes(t) ? colors.surface : colors.textSecondary}
+                    style={{ marginRight: 5 }}
+                  />
+                  <Text style={[styles.tagChipNewText, tags.includes(t) && styles.tagChipNewTextSelected]}>
+                    {label}
                   </Text>
                 </TouchableOpacity>
               ))}
-            </ScrollView>
+            </View>
+
+            {/* ── Title ── */}
+            <Text style={styles.sectionLabel}>Title</Text>
+            <View style={styles.inputWrap}>
+              <TextInput
+                style={styles.input}
+                placeholder="Add a short headline"
+                placeholderTextColor={colors.textMuted}
+                value={title}
+                onChangeText={setTitle}
+                maxLength={80}
+              />
+              <Text style={styles.charCounter}>{title.length}/80</Text>
+            </View>
+
+            {/* ── Body ── */}
+            <Text style={styles.sectionLabel}>Body</Text>
+            <View style={styles.inputWrap}>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Share a question, update, or tip..."
+                placeholderTextColor={colors.textMuted}
+                multiline
+                numberOfLines={4}
+                value={content}
+                onChangeText={setContent}
+                onFocus={(event) => scrollBodyFieldIntoView(event.nativeEvent.target)}
+                textAlignVertical="top"
+                maxLength={2000}
+              />
+              <Text style={[styles.charCounter, styles.charCounterArea]}>{content.length}/2000</Text>
+            </View>
+
+            {/* ── Place ── */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionLabel}>Place</Text>
+              <Text style={styles.sectionLabelHint}> (optional)</Text>
+            </View>
+            <TouchableOpacity style={styles.placeRow} onPress={handlePlacePicker} activeOpacity={0.75}>
+              <Ionicons name="location-outline" size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
+              <Text style={[styles.placeRowText, attachedPlaceName != null && styles.placeRowTextSelected]} numberOfLines={1}>
+                {attachedPlaceName ?? 'Tag a place'}
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+            </TouchableOpacity>
+
+            {/* ── Images ── */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionLabel}>Images</Text>
+              <Text style={styles.sectionLabelHint}> (optional)</Text>
+            </View>
+            <View style={styles.imageRow}>
+              {imageUris.length < 5 && (
+                <TouchableOpacity style={styles.addPhotosButton} onPress={handlePickImages} activeOpacity={0.75}>
+                  <Ionicons name="add" size={24} color={colors.textSecondary} />
+                  <Text style={styles.addPhotosText}>Add photos</Text>
+                </TouchableOpacity>
+              )}
+              {imageUris.map((img, i) => (
+                <View key={i} style={styles.thumbWrap}>
+                  <Image source={{ uri: img.uri }} style={styles.thumbImage} resizeMode="cover" />
+                  <TouchableOpacity
+                    style={styles.removeCircle}
+                    onPress={() => removeImage(i)}
+                    hitSlop={4}
+                    accessibilityLabel="Remove photo"
+                  >
+                    <Ionicons name="close" size={11} color={colors.surface} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+              {imageUris.length > 0 && (
+                <View style={styles.imageCountBadge}>
+                  <Text style={styles.imageCountText}>{imageUris.length}</Text>
+                </View>
+              )}
+            </View>
+            <Text style={styles.imageCaption}>Up to 5 photos</Text>
+
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+
+            {/* ── Community banner ── */}
+            <TouchableOpacity style={styles.communityBanner} activeOpacity={0.85}>
+              <View style={styles.communityIconWrap}>
+                <Ionicons name="paw" size={20} color={colors.primary} />
+              </View>
+              <View style={styles.communityTextWrap}>
+                <Text style={styles.communityTitle}>Post to the {BREED_LABELS[breed]} community</Text>
+                <Text style={styles.communitySubtitle}>Your post will be visible to all {BREED_LABELS[breed]} members.</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+            </TouchableOpacity>
           </>
         )}
 
-        {isMeetup ? (
+        {isMeetup && (
           <>
-            <Text style={styles.label}>Title</Text>
+            <Text style={styles.sectionLabel}>Title</Text>
             <TextInput
               style={styles.input}
               placeholder="e.g. Golden Retriever playdate at the park"
@@ -377,7 +577,7 @@ export function CreatePostScreen() {
               value={title}
               onChangeText={setTitle}
             />
-            <Text style={styles.label}>Body</Text>
+            <Text style={styles.sectionLabel}>Body</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               placeholder="What should attendees know?"
@@ -389,7 +589,7 @@ export function CreatePostScreen() {
               onFocus={(event) => scrollBodyFieldIntoView(event.nativeEvent.target)}
               textAlignVertical="top"
             />
-            <Text style={styles.label}>Location</Text>
+            <Text style={styles.sectionLabel}>Location</Text>
             <TextInput
               style={styles.input}
               placeholder="e.g. Central Park Dog Run"
@@ -397,9 +597,12 @@ export function CreatePostScreen() {
               value={locationName}
               onChangeText={setLocationName}
             />
-            <Text style={[styles.label, styles.optionalLabel]}>Place (optional)</Text>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionLabel}>Place</Text>
+              <Text style={styles.sectionLabelHint}> (optional)</Text>
+            </View>
             <TouchableOpacity
-              style={styles.placePickerButton}
+              style={styles.placeRow}
               onPress={() => {
                 const options = places.map((p) => p.name);
                 const actions = [
@@ -427,15 +630,17 @@ export function CreatePostScreen() {
                 Alert.alert('Link a place', 'Associate this meetup with a known place.', actions);
               }}
             >
-              <Ionicons name="location-outline" size={18} color={colors.textSecondary} />
-              <Text style={[styles.placePickerText, linkedPlaceName ? styles.placePickerTextSelected : undefined]}>
+              <Ionicons name="location-outline" size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
+              <Text style={[styles.placeRowText, linkedPlaceName != null && styles.placeRowTextSelected]} numberOfLines={1}>
                 {linkedPlaceName ?? 'Link to a place'}
               </Text>
               {linkedPlaceName && (
                 <Ionicons name="checkmark-circle" size={18} color={colors.primary} />
               )}
+              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} style={{ marginLeft: 4 }} />
             </TouchableOpacity>
-            <Text style={styles.label}>Date & Time</Text>
+
+            <Text style={styles.sectionLabel}>Date & Time</Text>
             <TouchableOpacity
               style={styles.dateButton}
               onPress={() => setShowStartPicker(true)}
@@ -455,7 +660,10 @@ export function CreatePostScreen() {
                 minimumDate={new Date()}
               />
             )}
-            <Text style={[styles.label, styles.optionalLabel]}>End Time (optional)</Text>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionLabel}>End Time</Text>
+              <Text style={styles.sectionLabelHint}> (optional)</Text>
+            </View>
             <TouchableOpacity
               style={styles.dateButton}
               onPress={() => setShowEndPicker(true)}
@@ -477,7 +685,10 @@ export function CreatePostScreen() {
                 minimumDate={startTime}
               />
             )}
-            <Text style={[styles.label, styles.optionalLabel]}>Kind (optional)</Text>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionLabel}>Kind</Text>
+              <Text style={styles.sectionLabelHint}> (optional)</Text>
+            </View>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -487,7 +698,7 @@ export function CreatePostScreen() {
               {(['playdate', 'walk', 'beach', 'training', 'other'] as MeetupKind[]).map((k) => (
                 <TouchableOpacity
                   key={k}
-                  style={[styles.tagChip, meetupKind === k && styles.tagChipSelected]}
+                  style={[styles.tagChipOld, meetupKind === k && styles.tagChipOldSelected]}
                   onPress={() => setMeetupKind(meetupKind === k ? '' : k)}
                 >
                   <Text style={[styles.chipText, meetupKind === k && styles.chipTextSelected]}>
@@ -496,7 +707,10 @@ export function CreatePostScreen() {
                 </TouchableOpacity>
               ))}
             </ScrollView>
-            <Text style={[styles.label, styles.optionalLabel]}>Spots available (optional)</Text>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionLabel}>Spots available</Text>
+              <Text style={styles.sectionLabelHint}> (optional)</Text>
+            </View>
             <TextInput
               style={styles.input}
               placeholder="e.g. 10"
@@ -505,100 +719,23 @@ export function CreatePostScreen() {
               value={spotsAvailable}
               onChangeText={setSpotsAvailable}
             />
-          </>
-        ) : (
-          <>
-            <Text style={styles.label}>Title</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Add a short headline"
-              placeholderTextColor={colors.textMuted}
-              value={title}
-              onChangeText={setTitle}
-            />
-            <Text style={styles.label}>Body</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Share a question, update, or tip..."
-              placeholderTextColor={colors.textMuted}
-              multiline
-              numberOfLines={4}
-              value={content}
-              onChangeText={setContent}
-              onFocus={(event) => scrollBodyFieldIntoView(event.nativeEvent.target)}
-              textAlignVertical="top"
-            />
-          </>
-        )}
 
-        {!isMeetup && (
-          <>
-            <Text style={[styles.label, styles.optionalLabel]}>Place (optional)</Text>
-            <TouchableOpacity
-              style={styles.placePickerButton}
-              onPress={() => {
-                const options = places.map((p) => p.name);
-                const actions = [
-                  ...options.map((name, i) => ({
-                    text: name,
-                    onPress: () => {
-                      const place = places[i];
-                      setAttachedPlaceId(place.id);
-                      setAttachedPlaceName(place.name);
-                    },
-                  })),
-                  ...(attachedPlaceId
-                    ? [{ text: 'Remove place', style: 'destructive' as const, onPress: () => {
-                        setAttachedPlaceId(null);
-                        setAttachedPlaceName(null);
-                      } }]
-                    : []),
-                  { text: 'Cancel', style: 'cancel' as const },
-                ];
-                Alert.alert('Tag a place', 'Associate this post with a known place.', actions);
-              }}
-            >
-              <Ionicons name="location-outline" size={18} color={colors.textSecondary} />
-              <Text style={[styles.placePickerText, attachedPlaceName ? styles.placePickerTextSelected : undefined]}>
-                {attachedPlaceName ?? 'Tag a place'}
-              </Text>
-              {attachedPlaceName && (
-                <Ionicons name="checkmark-circle" size={18} color={colors.primary} />
-              )}
-            </TouchableOpacity>
-          </>
-        )}
+            {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <Text style={styles.label}>Images (optional)</Text>
-        <View style={styles.imageRow}>
-          {imageUris.map((img, i) => (
-            <TouchableOpacity key={i} style={styles.thumb} onPress={() => removeImage(i)}>
-              <Image source={{ uri: img.uri }} style={styles.thumbImage} resizeMode="cover" />
-              <View style={styles.removeOverlay}>
-                <Text style={styles.removeText}>×</Text>
+            {/* ── Community banner ── */}
+            <TouchableOpacity style={styles.communityBanner} activeOpacity={0.85}>
+              <View style={styles.communityIconWrap}>
+                <Ionicons name="paw" size={20} color={colors.primary} />
               </View>
+              <View style={styles.communityTextWrap}>
+                <Text style={styles.communityTitle}>Post to the {BREED_LABELS[breed]} community</Text>
+                <Text style={styles.communitySubtitle}>Your post will be visible to all {BREED_LABELS[breed]} members.</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
             </TouchableOpacity>
-          ))}
-          {imageUris.length < 5 && (
-            <TouchableOpacity style={styles.addImage} onPress={handlePickImages}>
-              <Text style={styles.addImageText}>+ Add</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+          </>
+        )}
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-
-        <TouchableOpacity
-          style={[styles.submit, mutation.isPending && styles.submitDisabled]}
-          onPress={handleSubmit}
-          disabled={mutation.isPending}
-        >
-          {mutation.isPending ? (
-            <ActivityIndicator color={colors.surface} />
-          ) : (
-            <Text style={styles.submitText}>{isMeetup ? 'Create Meetup' : 'Post'}</Text>
-          )}
-        </TouchableOpacity>
       </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -609,56 +746,212 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   container: { flex: 1 },
   content: { padding: 16, paddingBottom: 90 },
-  label: { ...interByWeight('600'), fontSize: 14, color: colors.textPrimary, marginBottom: 8, marginTop: 16 },
-  optionalLabel: { ...interByWeight('500'), color: colors.textSecondary },
-  breedValue: { ...interByWeight('400'), fontSize: 16, color: colors.textPrimary, marginBottom: 8 },
-  chipRow: {
+
+  // ── Header buttons ──────────────────────────────────────────────
+  headerCloseButton: {
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+  },
+  headerPostButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 20,
+    minWidth: 64,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerPostButtonDisabled: { opacity: 0.65 },
+  headerPostButtonText: { ...interByWeight('600'), color: colors.surface, fontSize: 15 },
+
+  // ── Section headers ──────────────────────────────────────────────
+  sectionHeader: { flexDirection: 'row', alignItems: 'baseline', marginTop: 20, marginBottom: 10 },
+  sectionLabel: { ...interByWeight('600'), fontSize: 14, color: colors.textPrimary },
+  sectionLabelHint: { ...interByWeight('400'), fontSize: 13, color: colors.textMuted },
+
+  // ── Breed card ──────────────────────────────────────────────────
+  breedCard: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 4,
-    gap: 8
-  },
-  tagScroll: {
-    marginBottom: 4,
-    maxHeight: 44,
-    marginHorizontal: -spacing.lg,
-  },
-  tagScrollContent: {
-    paddingLeft: spacing.lg,
-    paddingRight: 0,
-  },
-  chip: {
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 14,
     paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginTop: 8,
+    ...shadow.sm,
+  },
+  breedCardLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  breedIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  breedCardLabel: { ...interByWeight('400'), fontSize: 12, color: colors.textMuted },
+  breedCardValue: { ...interByWeight('600'), fontSize: 15, color: colors.primary, marginTop: 1 },
+  breedDogThumb: { width: 52, height: 52, borderRadius: 10, backgroundColor: colors.surfaceMuted },
+  breedDogThumbPlaceholder: { alignItems: 'center', justifyContent: 'center' },
+
+  // ── Type chips ──────────────────────────────────────────────────
+  typeChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  typeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 13,
     paddingVertical: 8,
     backgroundColor: colors.surfaceMuted,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  chipSelected: {
-    backgroundColor: colors.primary,
-  },
-  tagChip: {
-    paddingHorizontal: 14,
+  typeChipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  typeChipText: { ...interByWeight('400'), fontSize: 13, color: colors.textPrimary },
+  typeChipTextSelected: { ...interByWeight('600'), color: colors.surface },
+
+  // ── Tag chips ───────────────────────────────────────────────────
+  tagChipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  tagChipNew: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 13,
     paddingVertical: 8,
     backgroundColor: colors.surfaceMuted,
     borderRadius: 20,
-    marginRight: spacing.xxs,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  tagChipSelected: {
-    backgroundColor: colors.primary,
-  },
-  chipText: { ...interByWeight('400'), fontSize: 13, color: colors.textPrimary },
-  chipTextSelected: { ...interByWeight('600'), color: colors.surface },
+  tagChipNewSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  tagChipNewText: { ...interByWeight('400'), fontSize: 13, color: colors.textPrimary },
+  tagChipNewTextSelected: { ...interByWeight('600'), color: colors.surface },
+
+  // ── Inputs ──────────────────────────────────────────────────────
+  inputWrap: { position: 'relative' },
   input: {
     ...interByWeight('400'),
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 12,
     padding: 12,
+    paddingBottom: 28,
     fontSize: 15,
     minHeight: 44,
     backgroundColor: colors.surfaceMuted,
+    color: colors.textPrimary,
   },
-  textArea: { minHeight: 120 },
+  textArea: { minHeight: 120, paddingBottom: 28 },
+  charCounter: {
+    position: 'absolute',
+    bottom: 8,
+    right: 12,
+    ...interByWeight('400'),
+    fontSize: 12,
+    color: colors.textMuted,
+  },
+  charCounterArea: { bottom: 8 },
+
+  // ── Place row ───────────────────────────────────────────────────
+  placeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 13,
+    backgroundColor: colors.surfaceMuted,
+  },
+  placeRowText: { ...interByWeight('400'), fontSize: 15, color: colors.textMuted, flex: 1 },
+  placeRowTextSelected: { color: colors.textPrimary },
+
+  // ── Images ──────────────────────────────────────────────────────
+  imageRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
+  addPhotosButton: {
+    width: 80,
+    height: 80,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  addPhotosText: { ...interByWeight('400'), fontSize: 12, color: colors.textSecondary },
+  thumbWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 10,
+    overflow: 'visible',
+    position: 'relative',
+    ...shadow.sm,
+  },
+  thumbImage: { width: 80, height: 80, borderRadius: 10 },
+  removeCircle: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+  imageCountBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imageCountText: { ...interByWeight('600'), fontSize: 14, color: colors.textSecondary },
+  imageCaption: { ...interByWeight('400'), fontSize: 12, color: colors.textMuted, marginTop: 6 },
+
+  // ── Community banner ─────────────────────────────────────────────
+  communityBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primarySoft,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    marginTop: 24,
+    gap: 12,
+  },
+  communityIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  communityTextWrap: { flex: 1 },
+  communityTitle: { ...interByWeight('600'), fontSize: 14, color: colors.textPrimary },
+  communitySubtitle: { ...interByWeight('400'), fontSize: 12, color: colors.textSecondary, marginTop: 2 },
+
+  // ── Meetup-specific (legacy tag scroll) ──────────────────────────
+  tagScroll: { marginBottom: 4, maxHeight: 44, marginHorizontal: -spacing.lg },
+  tagScrollContent: { paddingLeft: spacing.lg, paddingRight: 0 },
+  tagChipOld: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: 20,
+    marginRight: spacing.xxs,
+  },
+  tagChipOldSelected: { backgroundColor: colors.primary },
+  chipText: { ...interByWeight('400'), fontSize: 13, color: colors.textPrimary },
+  chipTextSelected: { ...interByWeight('600'), color: colors.surface },
   dateButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -672,67 +965,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   dateButtonText: { ...interByWeight('400'), fontSize: 15, color: colors.textPrimary },
-  placePickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    padding: 12,
-    backgroundColor: colors.surfaceMuted,
-    marginBottom: 8,
-  },
-  placePickerText: {
-    ...interByWeight('400'),
-    fontSize: 15,
-    color: colors.textMuted,
-    flex: 1,
-  },
-  placePickerTextSelected: {
-    color: colors.textPrimary,
-  },
-  imageRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  thumb: { width: 72, height: 72, borderRadius: 8, overflow: 'hidden', backgroundColor: colors.border, position: 'relative', ...shadow.sm },
-  thumbImage: { width: 72, height: 72 },
-  removeOverlay: { position: 'absolute', top: 0, right: 0, width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  removeText: { ...interByWeight('700'), fontSize: 18, color: colors.surface },
-  addImage: {
-    width: 72,
-    height: 72,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: colors.border,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadow.sm,
-  },
-  addImageText: { ...interByWeight('400'), fontSize: 14, color: colors.textSecondary },
-  placeAttachmentBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xxs,
-    backgroundColor: colors.primarySoft,
-    borderRadius: 8,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    marginTop: spacing.md,
-  },
-  placeAttachmentText: {
-    ...interByWeight('500'),
-    fontSize: 13,
-    color: colors.primaryDark,
-    flex: 1,
-  },
+
+  // ── Error ────────────────────────────────────────────────────────
   error: { ...interByWeight('400'), color: colors.danger, marginTop: 12, fontSize: 14 },
-  submit: {
-    backgroundColor: colors.primary,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  submitDisabled: { opacity: 0.7 },
-  submitText: { ...interByWeight('600'), color: colors.surface, fontSize: 16 },
 });
