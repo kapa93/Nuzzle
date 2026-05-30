@@ -11,14 +11,16 @@ type NotificationType =
   | 'MEETUP_RSVP'
   | 'DOG_INTERACTION'
   | 'NEW_BREED_POST'
-  | 'NEW_PLACE_POST';
+  | 'NEW_PLACE_POST'
+  | 'COMMUNITY_ACTIVATED';
 
 interface NotificationRow {
   id: string;
   user_id: string;
-  actor_id: string;
+  actor_id: string | null;
   type: NotificationType;
   post_id: string | null;
+  place_id: string | null;
 }
 
 interface PushMessage {
@@ -41,7 +43,8 @@ function buildMessage(
   token: string,
   type: NotificationType,
   actorName: string,
-  postId: string | null
+  postId: string | null,
+  placeName: string | null
 ): PushMessage {
   const data: Record<string, unknown> = {};
   if (postId) data.postId = postId;
@@ -54,6 +57,12 @@ function buildMessage(
     DOG_INTERACTION: { title: 'Dog meetup!', body: `${actorName}'s dog met your dog` },
     NEW_BREED_POST: { title: 'New post', body: `${actorName} posted in a breed you follow` },
     NEW_PLACE_POST: { title: 'New post', body: `${actorName} posted at a place you saved` },
+    COMMUNITY_ACTIVATED: {
+      title: 'Community is live!',
+      body: placeName
+        ? `${placeName} is now an active community on Nuzzle`
+        : 'A community you supported is now live on Nuzzle',
+    },
   };
 
   const { title, body } = messages[type];
@@ -104,18 +113,31 @@ Deno.serve(async (req: Request) => {
       return new Response('No push tokens', { status: 200 });
     }
 
-    // Fetch actor name
-    const { data: actorRow } = await supabase
-      .from('profiles')
-      .select('name')
-      .eq('id', notification.actor_id)
-      .single();
+    // Fetch actor name (null for system notifications like COMMUNITY_ACTIVATED)
+    let actorName = 'Someone';
+    if (notification.actor_id) {
+      const { data: actorRow } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', notification.actor_id)
+        .single();
+      actorName = actorRow?.name ?? 'Someone';
+    }
 
-    const actorName: string = actorRow?.name ?? 'Someone';
+    // Fetch place name when needed
+    let placeName: string | null = null;
+    if (notification.place_id) {
+      const { data: placeRow } = await supabase
+        .from('places')
+        .select('name')
+        .eq('id', notification.place_id)
+        .single();
+      placeName = placeRow?.name ?? null;
+    }
 
     // Build and send messages in chunks
     const messages = tokenRows.map((row: { id: string; token: string }) =>
-      buildMessage(row.token, notification.type, actorName, notification.post_id)
+      buildMessage(row.token, notification.type, actorName, notification.post_id, placeName)
     );
 
     const staleTokenIds: string[] = [];

@@ -28,13 +28,14 @@ const BADGE_SIZE = 20;
 
 type NotificationItem = {
   id: string;
-  type: 'COMMENT' | 'REACTION' | 'COMMENT_REACTION' | 'MEETUP_RSVP' | 'DOG_INTERACTION' | 'NEW_BREED_POST' | 'NEW_PLACE_POST';
+  type: 'COMMENT' | 'REACTION' | 'COMMENT_REACTION' | 'MEETUP_RSVP' | 'DOG_INTERACTION' | 'NEW_BREED_POST' | 'NEW_PLACE_POST' | 'COMMUNITY_ACTIVATED';
   actor_name?: string;
   actor_profile_image_url?: string | null;
   post_id: string | null;
   content_preview?: string;
   breed?: string | null;
   place_name?: string | null;
+  community_place_name?: string | null;
   created_at: string;
   read_at: string | null;
 };
@@ -52,13 +53,14 @@ type BadgeConfig = {
 };
 
 const TYPE_BADGE: Record<NotificationItem['type'], BadgeConfig> = {
-  COMMENT:          { Icon: MessageSquare, bg: '#22C55E' },
-  REACTION:         { Icon: Heart,         bg: '#EF4444' },
-  COMMENT_REACTION: { Icon: Heart,         bg: '#EC4899' },
-  MEETUP_RSVP:  { Icon: Users,         bg: '#3B82F6' },
-  DOG_INTERACTION: { Icon: Star,       bg: '#F59E0B' },
-  NEW_BREED_POST:  { Icon: Users,      bg: '#14B8A6' },
-  NEW_PLACE_POST:  { Icon: MapPin,     bg: '#F97316' },
+  COMMENT:             { Icon: MessageSquare, bg: '#22C55E' },
+  REACTION:            { Icon: Heart,         bg: '#EF4444' },
+  COMMENT_REACTION:    { Icon: Heart,         bg: '#EC4899' },
+  MEETUP_RSVP:         { Icon: Users,         bg: '#3B82F6' },
+  DOG_INTERACTION:     { Icon: Star,          bg: '#F59E0B' },
+  NEW_BREED_POST:      { Icon: Users,         bg: '#14B8A6' },
+  NEW_PLACE_POST:      { Icon: MapPin,        bg: '#F97316' },
+  COMMUNITY_ACTIVATED: { Icon: MapPin,        bg: '#8B5CF6' },
 };
 
 function getDateGroup(dateStr: string): 'TODAY' | 'YESTERDAY' | 'EARLIER' {
@@ -129,6 +131,7 @@ export function NotificationsSheet({ onPostPress }: Props) {
     content_preview: n.post?.content_text?.slice(0, 60),
     breed: n.post?.breed ?? null,
     place_name: n.post?.place?.name ?? null,
+    community_place_name: n.community_place?.name ?? null,
     created_at: n.created_at,
     read_at: n.read_at,
   }));
@@ -199,10 +202,15 @@ export function NotificationsSheet({ onPostPress }: Props) {
     return ' reacted to your post';
   };
 
+  const isCommunityActivated = (item: NotificationItem) =>
+    item.type === 'COMMUNITY_ACTIVATED';
+
   const renderItem = useCallback(
     ({ item }: { item: NotificationItem }) => {
       const badge = TYPE_BADGE[item.type];
       const BadgeIcon = badge.Icon;
+      const isActivation = isCommunityActivated(item);
+
       return (
         <TouchableOpacity
           style={[styles.item, !item.read_at && styles.itemUnread]}
@@ -219,7 +227,11 @@ export function NotificationsSheet({ onPostPress }: Props) {
         >
           {/* Avatar + type badge */}
           <View style={styles.avatarWrap}>
-            {item.actor_profile_image_url ? (
+            {isActivation ? (
+              <View style={[styles.avatarFallback, { backgroundColor: badge.bg }]}>
+                <BadgeIcon size={22} color="#fff" strokeWidth={2} />
+              </View>
+            ) : item.actor_profile_image_url ? (
               <Image source={{ uri: item.actor_profile_image_url }} style={styles.avatar} />
             ) : (
               <View style={styles.avatarFallback}>
@@ -228,24 +240,37 @@ export function NotificationsSheet({ onPostPress }: Props) {
                 </Text>
               </View>
             )}
-            <View style={[styles.typeBadge, { backgroundColor: badge.bg }]}>
-              <BadgeIcon size={10} color="#fff" strokeWidth={2.5} />
-            </View>
+            {!isActivation && (
+              <View style={[styles.typeBadge, { backgroundColor: badge.bg }]}>
+                <BadgeIcon size={10} color="#fff" strokeWidth={2.5} />
+              </View>
+            )}
           </View>
 
           {/* Text content */}
           <View style={styles.itemContent}>
             <View style={styles.itemTopRow}>
               <Text style={styles.itemText} numberOfLines={2}>
-                <Text style={styles.actorName}>{item.actor_name ?? 'Someone'}</Text>
-                {notificationLabel(item)}
+                {isActivation ? (
+                  <>
+                    <Text style={styles.actorName}>
+                      {item.community_place_name ?? 'A community you supported'}
+                    </Text>
+                    {' is now live on Nuzzle! You\'ve been added.'}
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.actorName}>{item.actor_name ?? 'Someone'}</Text>
+                    {notificationLabel(item)}
+                  </>
+                )}
               </Text>
               <View style={styles.itemMeta}>
                 <Text style={styles.time}>{formatRelativeTime(item.created_at)}</Text>
                 {!item.read_at && <View style={styles.unreadDot} />}
               </View>
             </View>
-            {item.content_preview ? (
+            {!isActivation && item.content_preview ? (
               <Text style={styles.preview} numberOfLines={1}>
                 &ldquo;{item.content_preview}&hellip;&rdquo;
               </Text>
