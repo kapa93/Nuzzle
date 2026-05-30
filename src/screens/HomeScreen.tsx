@@ -560,7 +560,7 @@ export function HomeScreen({
                 onPress={() => { setHomeTab("moreBreeds"); setScrollDirection("up"); }}
               >
                 <Text style={[styles.homeTabChipText, homeTab === "moreBreeds" && styles.homeTabChipTextActive]}>
-                  More Breeds
+                  All Breeds
                 </Text>
               </Pressable>
             </View>

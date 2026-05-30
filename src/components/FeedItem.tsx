@@ -147,8 +147,8 @@ export const FeedItem = React.memo(FeedItemInner, feedItemPropsAreEqual);
 const styles = StyleSheet.create({
   cardWrap: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md - 3,
     borderLeftWidth: 4,
   },
 });

@@ -485,7 +485,7 @@ const TEXT_SEARCH_RADIUS_METERS = 25_000;
 const TEXT_SEARCH_MAX_RESULTS = 10;
 const NEARBY_GENERAL_TYPES = ["park", "beach", "hiking_area", "campground"] as const;
 const NEARBY_GENERAL_MAX_RESULTS = 10;
-const NEARBY_GENERAL_RADIUS_METERS = 5_000;
+const NEARBY_GENERAL_RADIUS_METERS = 10_000;
 
 async function searchNearbyPlaces(
   location: { latitude: number; longitude: number },

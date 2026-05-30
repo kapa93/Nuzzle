@@ -666,6 +666,7 @@ export function MorePlacesTab({
     () =>
       places
         .filter((place) => {
+          if (savedPlaceIds.has(place.id)) return true;
           if (coords && place.latitude != null && place.longitude != null) {
             return (
               getDistanceMeters(
@@ -693,7 +694,25 @@ export function MorePlacesTab({
           }
           return a.name.localeCompare(b.name);
         }),
-    [places, coords]
+    [places, coords, savedPlaceIds]
+  );
+
+  const filteredPendingPlaces = useMemo(
+    () =>
+      pendingPlaces.filter((place) => {
+        if (coords && place.latitude != null && place.longitude != null) {
+          return (
+            getDistanceMeters(
+              coords.latitude,
+              coords.longitude,
+              place.latitude,
+              place.longitude
+            ) <= NUZZLE_SECTION_UNBOOKMARKED_RADIUS_METERS
+          );
+        }
+        return true;
+      }),
+    [pendingPlaces, coords]
   );
 
   const dbGooglePlaceIds = useMemo(
@@ -775,14 +794,14 @@ export function MorePlacesTab({
         )}
       </PlacesSection>
 
-      {pendingPlaces.length > 0 && (
+      {filteredPendingPlaces.length > 0 && (
         <PlacesSection
           title="Pending Communities"
           style={{ marginTop: spacing.md - 2 }}
           isEmpty={false}
           emptyMessage=""
         >
-          {pendingPlaces.map((place) => (
+          {filteredPendingPlaces.map((place) => (
             <PendingPlaceRow
               key={place.id}
               place={place}

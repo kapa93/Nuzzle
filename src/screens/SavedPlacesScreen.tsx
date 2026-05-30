@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Animated, { interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, interpolate, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import {
   ActivityIndicator,
   Alert,
@@ -25,13 +25,14 @@ import { DogAvatar } from '@/components/DogAvatar';
 import { FeedItem } from '@/components/FeedItem';
 import { MetThisDogButton } from '@/components/MetThisDogButton';
 import { useAuthStore } from '@/store/authStore';
-import { checkIntoPlace, getActivePlaceCheckins, getGooglePlacePhotoUrl, getMyActivePlaceCheckins, getPlaceById } from '@/api/places';
+import { checkIntoPlace, endPlaceCheckins, getActivePlaceCheckins, getGooglePlacePhotoUrl, getMyActivePlaceCheckins, getPlaceById } from '@/api/places';
 import { supabase } from '@/lib/supabase';
 import { deletePost, getPlaceMeetupPosts, getPlacePosts } from '@/api/posts';
 import { rsvpMeetup, unrsvpMeetup } from '@/api/meetups';
 import { setReaction } from '@/api/reactions';
 import { getDogsByOwner } from '@/api/dogs';
 import { useToggleSavedPlace, useSavedPlacesWithActivity } from '@/hooks/useSavedPlaces';
+import { useUIStore } from '@/store/uiStore';
 import { NUZZLE_TAB_BAR_LAYOUT_EXTENDS_BELOW_SCREEN } from '@/navigation/NuzzleTabBar';
 import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
 import { useScrollDirectionUpdater, useScrollDirection } from '@/context/ScrollDirectionContext';
@@ -39,7 +40,7 @@ import { BREED_LABELS, PLAY_STYLE_LABELS, formatRelativeTime } from '@/utils/bre
 import { colors, radius, shadow, spacing, typography } from '@/theme';
 import { captureHandledError } from '@/lib/sentry';
 import { MorePlacesTab } from '@/components/MorePlacesTab';
-import { MapPinCheck } from 'lucide-react-native';
+import { LoaderCircle, MapPinCheck } from 'lucide-react-native';
 import { NotificationBell } from '@/components/NotificationBell';
 import type { ActivePlaceCheckin, Dog, Place, PlaceTypeEnum, PostWithDetails, ReactionEnum } from '@/types';
 
@@ -207,6 +208,7 @@ export function SavedPlacesScreen({ navigation }: Props) {
 
   const toggleSave = useToggleSavedPlace();
   const queryClient = useQueryClient();
+  const showToast = useUIStore((s) => s.showToast);
 
   const placePostsQueryKey = useMemo(() => ['placePosts', placeId] as const, [placeId]);
   const placeMeetupsQueryKey = useMemo(() => ['placeMeetups', placeId] as const, [placeId]);
@@ -301,9 +303,11 @@ export function SavedPlacesScreen({ navigation }: Props) {
   const checkinMutation = useMutation({
     mutationFn: ({ targetPlaceId, dogIds, durationMinutes }: { targetPlaceId: string; dogIds: string[]; durationMinutes?: number }) =>
       checkIntoPlace(targetPlaceId, user!.id, dogIds, durationMinutes),
-    onSuccess: (_data, { targetPlaceId }) => {
+    onSuccess: (_data, { targetPlaceId, dogIds }) => {
       queryClient.invalidateQueries({ queryKey: ['placeActiveCheckins', targetPlaceId] });
       queryClient.invalidateQueries({ queryKey: ['placeMyCheckins', user?.id, targetPlaceId] });
+      setActiveTab('dogs');
+      showToast(dogIds.length === 1 ? 'Checked in!' : `Checked in ${dogIds.length} dogs`);
     },
     onError: (error, { targetPlaceId }) => {
       captureHandledError(error, {
@@ -313,6 +317,28 @@ export function SavedPlacesScreen({ navigation }: Props) {
       Alert.alert('Could not check in', 'Please try again in a moment.');
     },
   });
+
+  const endCheckinMutation = useMutation({
+    mutationFn: ({ checkinId }: { checkinId: string; targetPlaceId: string }) =>
+      endPlaceCheckins([checkinId], user!.id),
+    onSuccess: (_data, { targetPlaceId }) => {
+      queryClient.invalidateQueries({ queryKey: ['placeActiveCheckins', targetPlaceId] });
+      queryClient.invalidateQueries({ queryKey: ['placeMyCheckins', user?.id, targetPlaceId] });
+      showToast('Checked out');
+    },
+    onError: (error, { targetPlaceId }) => {
+      captureHandledError(error, {
+        area: 'place.end-check-in',
+        tags: { screen: 'saved-places', placeId: targetPlaceId },
+      });
+      Alert.alert('Could not check out', 'Please try again in a moment.');
+    },
+  });
+
+  const handleLeave = useCallback((checkinId: string) => {
+    if (!placeId) return;
+    endCheckinMutation.mutate({ checkinId, targetPlaceId: placeId });
+  }, [endCheckinMutation, placeId]);
 
   const handleHeroCheckIn = useCallback((targetPlace: Place) => {
     const checkedInDogIds = new Set(myActiveCheckins.map((c) => c.dog_id));
@@ -412,8 +438,9 @@ export function SavedPlacesScreen({ navigation }: Props) {
       myDogs={myDogs}
       placeName={place?.name ?? ''}
       onDogPress={handleDogPress}
+      onLeave={handleLeave}
     />
-  ), [user?.id, myDogs, place?.name, handleDogPress]);
+  ), [user?.id, myDogs, place?.name, handleDogPress, handleLeave]);
 
   const ListHeader = useCallback(function SavedPlacesListHeader() {
     return (
@@ -508,8 +535,7 @@ export function SavedPlacesScreen({ navigation }: Props) {
   const tabContentStyle = useMemo(() => ({
     flexGrow: 1 as const,
     paddingBottom: bottomPad,
-    ...(activeTab === 'dogs' ? { gap: spacing.sm } : {}),
-  }), [activeTab, bottomPad]);
+  }), [bottomPad]);
 
   // Sync refs (plain assignments, not hook calls)
   activeTabRef.current = activeTab;
@@ -577,12 +603,16 @@ export function SavedPlacesScreen({ navigation }: Props) {
                   </Pressable>
                   {p.supports_check_in && (
                     <Pressable
-                      onPress={() => handleHeroCheckIn(p)}
+                      onPress={() => { if (!checkinMutation.isPending) handleHeroCheckIn(p); }}
                       style={({ pressed }) => [styles.checkinBtn, pressed && styles.pressed]}
                       accessibilityRole="button"
                       accessibilityLabel="Check in at this place"
                     >
-                      <Ionicons name="paw" size={12} color={colors.surface} />
+                      {checkinMutation.isPending && checkinMutation.variables?.targetPlaceId === p.id ? (
+                        <SpinningLoader size={13} color={colors.surface} />
+                      ) : (
+                        <Ionicons name="paw" size={13} color={colors.surface} />
+                      )}
                       <Text style={styles.checkinBtnText}>Check In</Text>
                     </Pressable>
                   )}
@@ -685,7 +715,7 @@ export function SavedPlacesScreen({ navigation }: Props) {
               scrollEventThrottle={16}
               ListHeaderComponent={ListHeader}
               renderItem={renderTabItem}
-              ItemSeparatorComponent={renderTabSeparator}
+              ItemSeparatorComponent={activeTab === 'dogs' ? undefined : renderTabSeparator}
               initialNumToRender={8}
               maxToRenderPerBatch={8}
               windowSize={11}
@@ -716,6 +746,25 @@ export function SavedPlacesScreen({ navigation }: Props) {
 }
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
+
+function SpinningLoader({ size = 12, color }: { size?: number; color?: string }) {
+  const rotation = useSharedValue(0);
+  useEffect(() => {
+    rotation.value = withRepeat(
+      withTiming(360, { duration: 800, easing: Easing.linear }),
+      -1,
+      false,
+    );
+  }, [rotation]);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
+  }));
+  return (
+    <Animated.View style={animatedStyle}>
+      <LoaderCircle size={size} color={color ?? colors.surface} strokeWidth={2.5} />
+    </Animated.View>
+  );
+}
 
 type PlaceEmptyStateProps = {
   icon: React.ComponentProps<typeof Ionicons>['name'];
@@ -750,8 +799,10 @@ type DogRowProps = {
   myDogs: Dog[];
   placeName: string;
   onDogPress: (dogId: string) => void;
+  onLeave: (checkinId: string) => void;
 };
-function DogRow({ item, userId, myDogs, placeName, onDogPress }: DogRowProps) {
+function DogRow({ item, userId, myDogs, placeName, onDogPress, onLeave }: DogRowProps) {
+  const isOwnCheckin = !!userId && item.user_id === userId;
   return (
     <View style={styles.row}>
       <Pressable onPress={() => onDogPress(item.dog_id)} style={styles.rowIdentity}>
@@ -772,16 +823,32 @@ function DogRow({ item, userId, myDogs, placeName, onDogPress }: DogRowProps) {
         </View>
       </Pressable>
       <View style={styles.rowSide}>
-        <Text style={styles.rowTime}>{formatRelativeTime(item.created_at)}</Text>
-        <MetThisDogButton
-          viewerUserId={userId}
-          viewerDogs={myDogs}
-          targetDog={{ id: item.dog_id, name: item.dog_name }}
-          sourceType="dog_beach"
-          locationName={placeName}
-          compact
-          alignRight
-        />
+        {isOwnCheckin ? (
+          <>
+            <Text style={styles.rowTime}>{formatRelativeTime(item.created_at)}</Text>
+            <Pressable
+              onPress={() => onLeave(item.id)}
+              style={({ pressed }) => [styles.leaveBtn, pressed && styles.pressed]}
+              accessibilityRole="button"
+              accessibilityLabel={`Check ${item.dog_name} out`}
+            >
+              <Text style={styles.leaveBtnText}>Leave</Text>
+            </Pressable>
+          </>
+        ) : (
+          <>
+            <Text style={styles.rowTime}>{formatRelativeTime(item.created_at)}</Text>
+            <MetThisDogButton
+              viewerUserId={userId}
+              viewerDogs={myDogs}
+              targetDog={{ id: item.dog_id, name: item.dog_name }}
+              sourceType="dog_beach"
+              locationName={placeName}
+              compact
+              alignRight
+            />
+          </>
+        )}
       </View>
     </View>
   );
@@ -1098,10 +1165,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md - 1,
     paddingHorizontal: spacing.lg,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.borderStrong,
   },
   rowIdentity: {
     flexDirection: 'row',
@@ -1122,6 +1189,20 @@ const styles = StyleSheet.create({
   rowMeta: { ...typography.caption, color: colors.textMuted },
   rowSide: { alignItems: 'flex-end', gap: spacing.xs },
   rowTime: { ...typography.caption, color: colors.textMuted },
+  leaveBtn: {
+    backgroundColor: '#FDECEA',
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md - 1,
+    paddingVertical: spacing.xs - 3,
+    borderWidth: 1,
+    borderColor: '#CA2D2D',
+    transform: [{ translateX: 2 }, { translateY: -1 }],
+  },
+  leaveBtnText: {
+    ...typography.caption,
+    color: '#CA2D2D',
+    fontFamily: 'Inter_700Bold',
+  },
 
   pressed: { opacity: 0.7 },
 
