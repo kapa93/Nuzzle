@@ -8,7 +8,7 @@ export async function getNotifications(userId: string, limit = 50) {
     .select(
       `
       *,
-      actor:profiles!actor_id (id, name),
+      actor:profiles!actor_id (id, name, profile_image_url),
       post:posts (id, content_text, breed, place:places (name))
     `
     )

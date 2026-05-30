@@ -21,7 +21,7 @@ import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
 
 type NotificationItem = {
   id: string;
-  type: 'COMMENT' | 'REACTION' | 'MEETUP_RSVP' | 'DOG_INTERACTION' | 'NEW_BREED_POST' | 'NEW_PLACE_POST';
+  type: 'COMMENT' | 'REACTION' | 'COMMENT_REACTION' | 'MEETUP_RSVP' | 'DOG_INTERACTION' | 'NEW_BREED_POST' | 'NEW_PLACE_POST';
   actor_name?: string;
   post_id: string | null;
   content_preview?: string;
@@ -86,15 +86,17 @@ export function NotificationsScreen() {
         <Text style={styles.actorName}>{item.actor_name ?? 'Someone'}</Text>
         {item.type === 'COMMENT'
           ? ' commented on your post'
-          : item.type === 'MEETUP_RSVP'
-            ? ' joined your meetup'
-            : item.type === 'DOG_INTERACTION'
-              ? ' marked that your dog met their dog'
-              : item.type === 'NEW_BREED_POST'
-                ? ' posted in a breed feed you follow'
-                : item.type === 'NEW_PLACE_POST'
-                  ? (item.place_name ? ` posted at ${item.place_name}` : ' posted at a place you saved')
-                  : ' reacted to your post'}
+          : item.type === 'COMMENT_REACTION'
+            ? ' reacted to your comment'
+            : item.type === 'MEETUP_RSVP'
+              ? ' joined your meetup'
+              : item.type === 'DOG_INTERACTION'
+                ? ' marked that your dog met their dog'
+                : item.type === 'NEW_BREED_POST'
+                  ? ' posted in a breed feed you follow'
+                  : item.type === 'NEW_PLACE_POST'
+                    ? (item.place_name ? ` posted at ${item.place_name}` : ' posted at a place you saved')
+                    : ' reacted to your post'}
       </Text>
       {item.content_preview ? (
         <Text style={styles.preview} numberOfLines={1}>

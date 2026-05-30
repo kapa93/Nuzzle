@@ -304,7 +304,7 @@ export interface Notification {
   id: string;
   user_id: string;
   actor_id: string;
-  type: 'COMMENT' | 'REACTION' | 'MEETUP_RSVP' | 'DOG_INTERACTION' | 'NEW_BREED_POST' | 'NEW_PLACE_POST';
+  type: 'COMMENT' | 'REACTION' | 'COMMENT_REACTION' | 'MEETUP_RSVP' | 'DOG_INTERACTION' | 'NEW_BREED_POST' | 'NEW_PLACE_POST';
   post_id: string | null;
   comment_id: string | null;
   dog_interaction_id?: string | null;
@@ -340,11 +340,13 @@ export interface PostWithDetails extends Omit<Post, 'reaction_counts' | 'user_re
   user_rsvped?: boolean;
 }
 
-// Comment with author + dog for display
+// Comment with author + dog + reactions for display
 export interface CommentWithAuthor extends Comment {
   author_name: string;
   author_dog_image_url: string | null;
   author_dog_name: string | null;
+  reaction_counts: Partial<Record<ReactionEnum, number>>;
+  user_reaction: ReactionEnum | null;
 }
 
 // Display helpers

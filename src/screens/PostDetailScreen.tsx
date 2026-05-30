@@ -21,8 +21,7 @@ import { useRoute, useNavigation } from "@react-navigation/native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getPostById, deletePost } from "@/api/posts";
 import { rsvpMeetup, unrsvpMeetup } from "@/api/meetups";
-import { getCommentsByPost } from "@/api/comments";
-import { createCommentWithNotification } from "@/api/comments";
+import { getCommentsByPost, createCommentWithNotification, deleteComment, setCommentReaction } from "@/api/comments";
 import { createReport } from "@/api/reports";
 import { useAuthStore } from "@/store/authStore";
 import { useReactionMutation } from "@/hooks/useReactionMutation";
@@ -112,7 +111,7 @@ export function PostDetailScreen() {
 
   const { data: comments } = useQuery({
     queryKey: ["comments", postId],
-    queryFn: () => getCommentsByPost(postId),
+    queryFn: () => getCommentsByPost(postId, user?.id ?? null),
     enabled: !!postId,
   });
 
@@ -145,6 +144,35 @@ export function PostDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ["post", postId] });
       queryClient.invalidateQueries({ queryKey: ["feed"] });
       queryClient.invalidateQueries({ queryKey: ["userPosts"] });
+    },
+  });
+
+  const deleteCommentMutation = useMutation({
+    mutationFn: (commentId: string) => deleteComment(commentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["comments", postId] });
+      queryClient.invalidateQueries({ queryKey: ["post", postId] });
+      queryClient.invalidateQueries({ queryKey: ["feed"] });
+      queryClient.invalidateQueries({ queryKey: ["userPosts"] });
+    },
+  });
+
+  const handleDeleteComment = (commentId: string) => {
+    Alert.alert(
+      "Delete comment",
+      "Are you sure you want to delete this comment? This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: () => deleteCommentMutation.mutate(commentId) },
+      ]
+    );
+  };
+
+  const commentReactionMutation = useMutation({
+    mutationFn: ({ commentId, reaction }: { commentId: string; reaction: ReactionEnum | null }) =>
+      setCommentReaction(commentId, user!.id, reaction),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["comments", postId] });
     },
   });
 
@@ -452,6 +480,10 @@ export function PostDetailScreen() {
                 avatarUri={c.author_dog_image_url}
                 timestamp={formatRelativeTime(c.created_at)}
                 onAuthorPress={() => handleAuthorPress(c.author_id)}
+                onDeletePress={user?.id === c.author_id ? () => handleDeleteComment(c.id) : undefined}
+                reactionCounts={c.reaction_counts}
+                userReaction={c.user_reaction}
+                onReactionSelect={user ? (reaction) => commentReactionMutation.mutate({ commentId: c.id, reaction }) : undefined}
               />
             ))}
           </View>

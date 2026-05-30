@@ -7,6 +7,7 @@ const PUSH_CHUNK_SIZE = 100;
 type NotificationType =
   | 'COMMENT'
   | 'REACTION'
+  | 'COMMENT_REACTION'
   | 'MEETUP_RSVP'
   | 'DOG_INTERACTION'
   | 'NEW_BREED_POST'
@@ -48,6 +49,7 @@ function buildMessage(
   const messages: Record<NotificationType, { title: string; body: string }> = {
     COMMENT: { title: 'New comment', body: `${actorName} commented on your post` },
     REACTION: { title: 'New reaction', body: `${actorName} reacted to your post` },
+    COMMENT_REACTION: { title: 'New reaction', body: `${actorName} reacted to your comment` },
     MEETUP_RSVP: { title: 'New RSVP', body: `${actorName} joined your meetup` },
     DOG_INTERACTION: { title: 'Dog meetup!', body: `${actorName}'s dog met your dog` },
     NEW_BREED_POST: { title: 'New post', body: `${actorName} posted in a breed you follow` },

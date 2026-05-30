@@ -1,8 +1,11 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { colors, radius, spacing, typography } from "../theme";
 import { Avatar } from "./Avatar";
 import { ReactionPill } from "./ReactionPill";
+import { ReactionBar } from "../components/ReactionBar";
+import type { ReactionEnum } from "../types";
 
 type Props = {
   author: string;
@@ -11,9 +14,13 @@ type Props = {
   timestamp?: string;
   helpfulCount?: number;
   onAuthorPress?: () => void;
+  onDeletePress?: () => void;
+  reactionCounts?: Partial<Record<ReactionEnum, number>>;
+  userReaction?: ReactionEnum | null;
+  onReactionSelect?: (reaction: ReactionEnum | null) => void;
 };
 
-export function AnswerCard({ author, body, avatarUri, timestamp, helpfulCount = 0, onAuthorPress }: Props) {
+export function AnswerCard({ author, body, avatarUri, timestamp, helpfulCount = 0, onAuthorPress, onDeletePress, reactionCounts, userReaction, onReactionSelect }: Props) {
   return (
     <View style={styles.card}>
       <View style={styles.header}>
@@ -28,14 +35,26 @@ export function AnswerCard({ author, body, avatarUri, timestamp, helpfulCount = 
             {timestamp ? <Text style={styles.timestamp}>{timestamp}</Text> : null}
           </View>
         </Pressable>
+        {onDeletePress && (
+          <Pressable onPress={onDeletePress} style={styles.deleteButton} hitSlop={8}>
+            <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
+          </Pressable>
+        )}
       </View>
       <Text style={styles.body}>{body}</Text>
-      {helpfulCount > 0 && (
+      {onReactionSelect ? (
+        <ReactionBar
+          reactions={reactionCounts ?? {}}
+          userReaction={userReaction ?? null}
+          onSelect={onReactionSelect}
+          wrapperStyle={styles.reactionBarWrapper}
+        />
+      ) : helpfulCount > 0 ? (
         <View style={styles.footer}>
           <ReactionPill emoji="🐾" label="Helpful" />
           <Text style={styles.count}>{helpfulCount}</Text>
         </View>
-      )}
+      ) : null}
     </View>
   );
 }
@@ -50,4 +69,6 @@ const styles = StyleSheet.create({
   body: { ...typography.body, fontSize: 14, lineHeight: 19 },
   footer: { flexDirection: "row", alignItems: "center", marginTop: spacing.md },
   count: { ...typography.bodyMuted, marginLeft: spacing.sm, fontWeight: "700" },
+  deleteButton: { padding: spacing.xs, marginLeft: spacing.sm },
+  reactionBarWrapper: { marginTop: spacing.sm },
 });
