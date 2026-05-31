@@ -11,6 +11,7 @@ import {
   type NativeScrollEvent,
 } from "react-native";
 import { MapPinCheck, MapPinPlus } from "lucide-react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { colors, radius, spacing, typography } from "@/theme";
 import type { PackItem } from "@/utils/breedAssets";
 import type { BreedEnum } from "@/types";
@@ -27,6 +28,10 @@ type Props = {
   onBreedPress: (breed: BreedEnum) => void;
   onJoinToggle: (breed: BreedEnum) => void;
   onScroll: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  isGuest?: boolean;
+  bannerDismissed?: boolean;
+  onBannerDismiss?: () => void;
+  onSignUp?: () => void;
 };
 
 export function MoreBreedsTab({
@@ -38,6 +43,10 @@ export function MoreBreedsTab({
   onBreedPress,
   onJoinToggle,
   onScroll,
+  isGuest = false,
+  bannerDismissed = false,
+  onBannerDismiss,
+  onSignUp,
 }: Props) {
   return (
     <ScrollView
@@ -50,7 +59,36 @@ export function MoreBreedsTab({
       onScroll={onScroll}
       scrollEventThrottle={16}
     >
-      <Text style={styles.sectionHint}>View or join one or more breed communities</Text>
+      {isGuest && !bannerDismissed ? (
+        <View style={styles.guestBanner}>
+          <Pressable
+            onPress={onBannerDismiss}
+            style={styles.guestBannerDismiss}
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss guest banner"
+            hitSlop={8}
+          >
+            <Ionicons name="close" size={21} color={colors.textMuted} />
+          </Pressable>
+          <View style={styles.guestBannerTitleRow}>
+            <Ionicons name="paw" size={17} color={colors.primary} />
+            <Text style={styles.guestBannerTitle}>Browsing as a Guest</Text>
+          </View>
+          <Text style={styles.guestBannerBody}>
+            Join breed communities, connect with other dog owners, and participate in the conversation.
+          </Text>
+          <Pressable
+            style={({ pressed }) => [styles.guestBannerCta, pressed && styles.guestBannerCtaPressed]}
+            onPress={onSignUp}
+            accessibilityRole="button"
+            accessibilityLabel="Sign up"
+          >
+            <Text style={styles.guestBannerCtaText}>Sign Up</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <Text style={styles.sectionHint}>View or join one or more breed communities</Text>
+      )}
       <View style={styles.gridWrap}>
         <View style={styles.grid}>
           {packItems.map((item) => (
@@ -276,6 +314,58 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     marginBottom: spacing.lg - 1,
     marginTop: 2,
+  },
+  guestBanner: {
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.lg - 2,
+    gap: spacing.xs + 1,
+  },
+  guestBannerDismiss: {
+    position: 'absolute',
+    top: spacing.xs,
+    right: spacing.xs + 2,
+    padding: spacing.xs,
+    zIndex: 1,
+  },
+  guestBannerTitle: {
+    ...typography.body,
+    color: colors.textPrimary,
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 15,
+  },
+  guestBannerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  guestBannerBody: {
+    ...typography.caption,
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 19,
+  },
+  guestBannerCta: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.sm - 1,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.lg + 10,
+    alignSelf: 'center',
+    marginTop: spacing.xs,
+  },
+  guestBannerCtaPressed: {
+    opacity: 0.8,
+  },
+  guestBannerCtaText: {
+    ...typography.caption,
+    color: colors.surface,
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 13,
   },
   comingSoonText: {
     ...typography.bodyMuted,

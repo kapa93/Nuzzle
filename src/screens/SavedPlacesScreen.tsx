@@ -681,7 +681,7 @@ export function SavedPlacesScreen({ navigation }: Props) {
               accessibilityState={{ selected: placesTab === 'morePlaces' }}
             >
               <Text style={[styles.placesTabChipText, placesTab === 'morePlaces' && styles.placesTabChipTextActive]}>
-                More Places
+                Discover
               </Text>
             </Pressable>
           </View>
@@ -1281,10 +1281,10 @@ const styles = StyleSheet.create({
   },
   guestPlacesSignUp: {
     backgroundColor: colors.primary,
-    borderRadius: 8,
+    borderRadius: radius.sm - 1,
     height: 35,
     paddingTop: spacing.xs,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.lg + 1,
     alignItems: 'center',
   },
   guestPlacesSignUpPressed: {
@@ -1292,15 +1292,16 @@ const styles = StyleSheet.create({
   },
   guestPlacesSignUpText: {
     ...typography.body,
-    fontSize: 15,
+    fontSize: 14,
+    fontFamily: 'Inter_500Medium',
     color: colors.surface,
   },
   guestPlacesLogIn: {
     backgroundColor: colors.surfaceMuted,
-    borderRadius: 8,
+    borderRadius: radius.sm - 1,
     height: 35,
     paddingTop: spacing.xs - 1,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.lg + 1,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.border,
@@ -1310,7 +1311,8 @@ const styles = StyleSheet.create({
   },
   guestPlacesLogInText: {
     ...typography.body,
-    fontSize: 15,
+    fontSize: 14,
+    fontFamily: 'Inter_500Medium',
     color: colors.textPrimary,
   },
 });

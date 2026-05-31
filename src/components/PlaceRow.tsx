@@ -177,6 +177,8 @@ const styles = StyleSheet.create({
   },
   name: {
     ...typography.subtitle,
+    lineHeight: 23,
+    fontSize: 17.5,
   },
   meta: {
     flexDirection: 'row',

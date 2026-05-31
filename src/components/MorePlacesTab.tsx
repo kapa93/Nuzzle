@@ -269,10 +269,15 @@ function PendingPlaceRow({
         >
           {countMeInLoading ? (
             <ActivityIndicator size="small" color={colors.pendingText} />
-          ) : (
-            <Text style={[styles.countMeInText, isInterested && styles.countMeInTextDone]}>
-              {isInterested ? "Interested ✓" : "I'm interested 🐾"}
+          ) : isInterested ? (
+            <Text style={[styles.countMeInText, styles.countMeInTextDone]}>
+              Interested ✓
             </Text>
+          ) : (
+            <View style={styles.countMeInButtonContent}>
+              <Text style={styles.countMeInText}>I'm interested</Text>
+              <Ionicons name="paw" size={12} color={colors.pendingText} />
+            </View>
           )}
         </Pressable>
       </View>
@@ -779,9 +784,10 @@ export function MorePlacesTab({
             heroImageSource={getPlaceImageSource(place, photoAccessToken)}
             isSaved={savedPlaceIds.has(place.id)}
             onPress={() => onPlacePress(place.id)}
-            onSaveToggle={() =>
-              toggleSave.mutate({ placeId: place.id, isSaved: savedPlaceIds.has(place.id) })
-            }
+            onSaveToggle={() => {
+              if (!user) { showGuestPrompt(); return; }
+              toggleSave.mutate({ placeId: place.id, isSaved: savedPlaceIds.has(place.id) });
+            }}
             saveLoading={toggleSave.isPending}
           />
         ))}
@@ -1049,6 +1055,11 @@ const styles = StyleSheet.create({
   countMeInButtonDone: {
     borderColor: colors.pendingText,
     backgroundColor: colors.pendingSoft,
+  },
+  countMeInButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xxs,
   },
   countMeInText: {
     ...typography.caption,

@@ -226,7 +226,7 @@ describe('ExploreScreen places behavior', () => {
     fireEvent.changeText(screen.getByPlaceholderText('Search places'), 'dog park');
 
     expect(await screen.findByText('In Nuzzle')).toBeTruthy();
-    expect(screen.getByText('More Places')).toBeTruthy();
+    expect(screen.getByText('Discover')).toBeTruthy();
     expect(screen.queryByText('On Nuzzle')).toBeNull();
     expect(screen.queryByText('Nearby')).toBeNull();
   });

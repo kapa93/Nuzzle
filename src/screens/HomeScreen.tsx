@@ -85,6 +85,7 @@ export function HomeScreen({
 }) {
   const {
     user,
+    isGuest,
   } = useAuthStore();
   const {
     onboardingDog,
@@ -106,6 +107,7 @@ export function HomeScreen({
   const [isNearPlace, setIsNearPlace] = useState(false);
   const [locationChecked, setLocationChecked] = useState(false);
   const [homeTab, setHomeTab] = useState<HomeTab>(user ? "myBreeds" : "moreBreeds");
+  const [guestBannerDismissed, setGuestBannerDismissed] = useState(false);
   const [homeTabBarHeight, setHomeTabBarHeight] = useState(0);
   const { width } = useWindowDimensions();
   const cardWidth = (width - H_PADDING * 2 - CARD_GAP * (NUM_COLUMNS - 1)) / NUM_COLUMNS + 1;
@@ -275,6 +277,11 @@ export function HomeScreen({
       transform: [{ translateY: tabBarTranslate.value }],
     };
   });
+
+  const handleGuestSignUp = useCallback(() => {
+    useAuthStore.getState().setPendingSignUp(true);
+    useAuthStore.getState().setIsGuest(false);
+  }, []);
 
   const handleJoinPress = useCallback(() => {
     if (!user) { showGuestPrompt(); return; }
@@ -622,6 +629,10 @@ export function HomeScreen({
               }}
               onJoinToggle={handleJoinPressForBreed}
               onScroll={() => {}}
+              isGuest={isGuest && !user}
+              bannerDismissed={guestBannerDismissed}
+              onBannerDismiss={() => setGuestBannerDismissed(true)}
+              onSignUp={handleGuestSignUp}
             />
           )}
         </View>
@@ -761,10 +772,10 @@ const styles = StyleSheet.create({
   },
   guestBreedsSignUp: {
     backgroundColor: colors.primary,
-    borderRadius: 8,
+    borderRadius: radius.sm - 1,
     height: 35,
     paddingTop: spacing.xs,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.lg + 1,
     alignItems: 'center',
   },
   guestBreedsSignUpPressed: {
@@ -772,15 +783,16 @@ const styles = StyleSheet.create({
   },
   guestBreedsSignUpText: {
     ...typography.body,
-    fontSize: 15,
+    fontSize: 14,
+    fontFamily: 'Inter_500Medium',
     color: colors.surface,
   },
   guestBreedsLogIn: {
     backgroundColor: colors.surfaceMuted,
-    borderRadius: 8,
+    borderRadius: radius.sm - 1,
     height: 35,
     paddingTop: spacing.xs - 1,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.lg + 1,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.border,
@@ -790,7 +802,8 @@ const styles = StyleSheet.create({
   },
   guestBreedsLogInText: {
     ...typography.body,
-    fontSize: 15,
+    fontSize: 14,
+    fontFamily: 'Inter_500Medium',
     color: colors.textPrimary,
   },
 });
