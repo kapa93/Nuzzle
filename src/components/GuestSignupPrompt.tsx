@@ -34,25 +34,26 @@ export function GuestSignupPrompt() {
     >
       <Pressable style={styles.overlay} onPress={handleDismiss}>
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
-          <Text style={styles.title}>Create an account to join in</Text>
+          <Text style={styles.title}>Join the Nuzzle Community</Text>
           <Text style={styles.body}>
-            Browse freely, or sign up to post, comment, save places, and share
-            dog-friendly tips.
+            Create an account to join local dog communities, discover dog-friendly spots, find meetups, and share insights with fellow dog owners.
           </Text>
 
-          <Pressable
-            style={({ pressed }) => [styles.signUpBtn, pressed && styles.signUpBtnPressed]}
-            onPress={handleSignUp}
-          >
-            <Text style={styles.signUpText}>Sign Up</Text>
-          </Pressable>
+          <View style={styles.buttonRow}>
+            <Pressable
+              style={({ pressed }) => [styles.signUpBtn, pressed && styles.signUpBtnPressed]}
+              onPress={handleSignUp}
+            >
+              <Text style={styles.signUpText}>Sign Up</Text>
+            </Pressable>
 
-          <Pressable
-            style={({ pressed }) => [styles.logInBtn, pressed && styles.logInBtnPressed]}
-            onPress={handleLogIn}
-          >
-            <Text style={styles.logInText}>Log In</Text>
-          </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.logInBtn, pressed && styles.logInBtnPressed]}
+              onPress={handleLogIn}
+            >
+              <Text style={styles.logInText}>Log In</Text>
+            </Pressable>
+          </View>
 
           <Pressable
             style={({ pressed }) => [styles.dismissBtn, pressed && styles.dismissBtnPressed]}
@@ -80,7 +81,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.md,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
@@ -99,11 +100,11 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   signUpBtn: {
+    flex: 1,
     backgroundColor: colors.primary,
-    borderRadius: radius.md,
-    paddingVertical: spacing.md,
+    borderRadius: radius.sm,
+    paddingVertical: spacing.sm,
     alignItems: "center",
-    marginBottom: spacing.sm,
   },
   signUpBtnPressed: {
     backgroundColor: colors.primaryDark,
@@ -113,11 +114,11 @@ const styles = StyleSheet.create({
     color: colors.surface,
   },
   logInBtn: {
+    flex: 1,
     backgroundColor: colors.surfaceMuted,
-    borderRadius: radius.md,
-    paddingVertical: spacing.md,
+    borderRadius: radius.sm,
+    paddingVertical: spacing.sm,
     alignItems: "center",
-    marginBottom: spacing.sm,
     borderWidth: 1,
     borderColor: colors.border,
   },
@@ -128,10 +129,15 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.textPrimary,
   },
+  buttonRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
   dismissBtn: {
     paddingVertical: spacing.sm,
     alignItems: "center",
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
   },
   dismissBtnPressed: {
     backgroundColor: colors.surfaceMuted,

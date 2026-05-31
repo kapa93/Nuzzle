@@ -52,8 +52,8 @@ function getPlaceImageSource(
 ): ImageSourcePropType | null {
   const bundled = getPlaceHeroImage(place);
   if (bundled) return bundled;
-  if (place.photos[0] && accessToken) {
-    return { uri: getGooglePlacePhotoUrl(place.photos[0], accessToken) };
+  if (place.photos[0]) {
+    return { uri: getGooglePlacePhotoUrl(place.photos[0]) };
   }
   return null;
 }

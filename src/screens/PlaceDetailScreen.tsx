@@ -414,8 +414,8 @@ export function PlaceDetailScreen({ route, navigation }: Props) {
   const locationLine = [place.neighborhood, place.city].filter(Boolean).join(', ');
   const bundledHeroImage = getPlaceHeroImage(place);
   const googleHeroUri =
-    !bundledHeroImage && place.photos[0] && photoAccessToken
-      ? getGooglePlacePhotoUrl(place.photos[0], photoAccessToken)
+    !bundledHeroImage && place.photos[0]
+      ? getGooglePlacePhotoUrl(place.photos[0])
       : null;
   const heroImageSource: ImageSourcePropType | null = bundledHeroImage ?? (googleHeroUri ? { uri: googleHeroUri } : null);
   const hasHeroImage = heroImageSource !== null;

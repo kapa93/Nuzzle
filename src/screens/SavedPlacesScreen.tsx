@@ -559,9 +559,7 @@ export function SavedPlacesScreen({ navigation }: Props) {
           const bundledHero = getPlaceHeroImage(p);
           const heroImage: ImageSourcePropType | null =
             bundledHero ??
-            (p.photos[0] && photoAccessToken
-              ? { uri: getGooglePlacePhotoUrl(p.photos[0], photoAccessToken) }
-              : null);
+            (p.photos[0] ? { uri: getGooglePlacePhotoUrl(p.photos[0]) } : null);
           const hasHeroImage = heroImage !== null;
           const pageContent = (
             <>
@@ -692,8 +690,9 @@ export function SavedPlacesScreen({ navigation }: Props) {
         {placesTab === 'myPlaces' && !user && (
           <View style={[styles.safe, { paddingTop: headerHeight + placesTabBarHeight, paddingBottom: tabBarHeight }]}>
             <View style={[styles.centered, { flex: 1, gap: spacing.lg, paddingHorizontal: spacing.xl }]}>
+              <Ionicons name="paw" size={72} color={"#ced6d1"} style={{ marginBottom: 6, opacity: 0.4 }} />
               <Text style={styles.guestPlacesBody}>
-                The dog spots you join live here.{"\n"}Create a free account to join local dog spot communities — see who's checked in right now, follow posts and meetups, and share what's happening at your favourite spots.
+                Communities you join will appear here.{"\n"}See what's happening at your favorite dog spots, connect with local dog owners, and discover nearby meetups.
               </Text>
               <View style={styles.guestPlacesActions}>
                 <Pressable
@@ -1282,8 +1281,9 @@ const styles = StyleSheet.create({
   },
   guestPlacesSignUp: {
     backgroundColor: colors.primary,
-    borderRadius: 10,
-    paddingVertical: spacing.sm + 2,
+    borderRadius: 8,
+    height: 35,
+    paddingTop: spacing.xs,
     paddingHorizontal: spacing.lg,
     alignItems: 'center',
   },
@@ -1292,12 +1292,14 @@ const styles = StyleSheet.create({
   },
   guestPlacesSignUpText: {
     ...typography.body,
+    fontSize: 15,
     color: colors.surface,
   },
   guestPlacesLogIn: {
     backgroundColor: colors.surfaceMuted,
-    borderRadius: 10,
-    paddingVertical: spacing.sm + 2,
+    borderRadius: 8,
+    height: 35,
+    paddingTop: spacing.xs - 1,
     paddingHorizontal: spacing.lg,
     alignItems: 'center',
     borderWidth: 1,
@@ -1308,6 +1310,7 @@ const styles = StyleSheet.create({
   },
   guestPlacesLogInText: {
     ...typography.body,
+    fontSize: 15,
     color: colors.textPrimary,
   },
 });

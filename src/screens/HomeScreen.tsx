@@ -50,6 +50,7 @@ import { captureHandledError } from '@/lib/sentry';
 import { NotificationBell } from '@/components/NotificationBell';
 import { getPackItems } from "@/utils/breedAssets";
 import { MoreBreedsTab } from "@/components/MoreBreedsTab";
+import { Ionicons } from "@expo/vector-icons";
 
 const CARD_GAP = spacing.md;
 const H_PADDING = spacing.lg;
@@ -542,8 +543,9 @@ export function HomeScreen({
 
           {homeTab === "myBreeds" && !user && (
             <View style={[styles.guestBreedsContainer, { paddingTop: headerHeight + homeTabBarHeight, paddingBottom: tabBarHeight }]}>
+              <Ionicons name="paw" size={72} color={"#ced6d1"} style={{ marginBottom: 20, opacity: 0.4 }} />
               <Text style={styles.guestBreedsBody}>
-                Breed communities you join live here.{"\n"}Create a free account to start posting, asking questions, sharing tips, and meeting local dog owners.
+                Your breed communities will appear here.{"\n"}Connect with other owners, ask questions, and share advice about your breed.
               </Text>
               <View style={styles.guestBreedsActions}>
                 <Pressable
@@ -759,8 +761,9 @@ const styles = StyleSheet.create({
   },
   guestBreedsSignUp: {
     backgroundColor: colors.primary,
-    borderRadius: 10,
-    paddingVertical: spacing.sm + 2,
+    borderRadius: 8,
+    height: 35,
+    paddingTop: spacing.xs,
     paddingHorizontal: spacing.lg,
     alignItems: 'center',
   },
@@ -769,12 +772,14 @@ const styles = StyleSheet.create({
   },
   guestBreedsSignUpText: {
     ...typography.body,
+    fontSize: 15,
     color: colors.surface,
   },
   guestBreedsLogIn: {
     backgroundColor: colors.surfaceMuted,
-    borderRadius: 10,
-    paddingVertical: spacing.sm + 2,
+    borderRadius: 8,
+    height: 35,
+    paddingTop: spacing.xs - 1,
     paddingHorizontal: spacing.lg,
     alignItems: 'center',
     borderWidth: 1,
@@ -785,7 +790,7 @@ const styles = StyleSheet.create({
   },
   guestBreedsLogInText: {
     ...typography.body,
+    fontSize: 15,
     color: colors.textPrimary,
   },
-
 });

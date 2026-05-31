@@ -205,7 +205,7 @@ export function GooglePlacePreviewScreen({ route, navigation }: Props) {
             </View>
 
             <Section title="Photos">
-              {placeQuery.data.photos.length > 0 && photoAccessToken ? (
+              {placeQuery.data.photos.length > 0 ? (
                 <>
                   <ScrollView
                     horizontal
