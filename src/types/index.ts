@@ -132,7 +132,7 @@ export interface ActivePlaceCheckin extends DogLocationCheckin {
 /** @deprecated Use ActivePlaceCheckin */
 export type ActiveDogBeachCheckin = ActivePlaceCheckin;
 
-export type PlaceCommunityStatusEnum = 'active' | 'pending';
+export type PlaceCommunityStatusEnum = 'active' | 'pending' | 'rejected';
 
 export interface Place {
   id: string;
@@ -316,12 +316,15 @@ export interface Notification {
   community_place?: { name: string } | null;
 }
 
+export type ReportStatus = 'pending' | 'reviewed' | 'dismissed';
+
 export interface Report {
   id: string;
   reporter_id: string;
   reportable_type: 'POST' | 'COMMENT';
   reportable_id: string;
   reason: string | null;
+  status: ReportStatus;
   created_at: string;
 }
 

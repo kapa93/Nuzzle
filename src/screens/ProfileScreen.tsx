@@ -6,7 +6,7 @@ import { signOut, updateProfile } from '@/api/auth';
 import { deleteDog } from '@/api/dogs';
 import { UserProfileContent } from '@/components/UserProfileContent';
 import { pickImages, uploadProfileImage } from '@/lib/imageUpload';
-import type { ProfileStackParamList } from '@/navigation/types';
+import type { ProfileStackParamList, RootStackParamList } from '@/navigation/types';
 import { useAuthStore } from '@/store/authStore';
 import { spacing } from '@/theme';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -14,7 +14,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 type ProfileNav = NativeStackNavigationProp<ProfileStackParamList, 'ProfileMain'>;
 
 export function ProfileScreen({ navigation }: { navigation: ProfileNav }) {
-  const { user, signOut: clearSession } = useAuthStore();
+  const { user, profile, signOut: clearSession } = useAuthStore();
   const userId = user?.id ?? '';
   const queryClient = useQueryClient();
   useEffect(() => {
@@ -105,6 +105,14 @@ export function ProfileScreen({ navigation }: { navigation: ProfileNav }) {
         onDeleteDog={handleDeleteDog}
         onChangePhoto={handleChangePhoto}
         onSignOut={handleSignOut}
+        onAdminDashboard={
+          profile?.is_admin
+            ? () =>
+                navigation
+                  .getParent<NativeStackNavigationProp<RootStackParamList>>()
+                  ?.navigate('AdminDashboard')
+            : undefined
+        }
         isPhotoUpdating={photoMutation.isPending}
       />
     </>

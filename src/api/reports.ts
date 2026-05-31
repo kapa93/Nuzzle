@@ -6,13 +6,9 @@ export async function createReport(params: {
   reportable_type: Report['reportable_type'];
   reportable_id: string;
   reason?: string | null;
-}) {
-  const { data, error } = await supabase
-    .from('reports')
-    .insert(params)
-    .select()
-    .single();
+}): Promise<void> {
+  const { error } = await supabase.from('reports').insert(params);
 
-  if (error) throw error;
-  return data;
+  // 23505 = unique_violation — user already reported this content, ignore silently
+  if (error && error.code !== '23505') throw error;
 }

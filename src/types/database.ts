@@ -46,7 +46,7 @@ export type CompatibilityAnswerEnum = 'yes' | 'no' | 'unsure';
 export type DogInteractionSourceTypeEnum = 'dog_beach' | 'meetup' | 'manual';
 
 export type PlaceTypeEnum = 'dog_beach' | 'dog_park' | 'trail' | 'park' | 'other';
-export type PlaceCommunityStatusEnum = 'active' | 'pending';
+export type PlaceCommunityStatusEnum = 'active' | 'pending' | 'rejected';
 
 export type ReactionEnum =
   | 'LIKE'
@@ -490,6 +490,7 @@ export interface Database {
           reportable_type: 'POST' | 'COMMENT';
           reportable_id: string;
           reason: string | null;
+          status: 'pending' | 'reviewed' | 'dismissed';
           created_at: string;
         };
         Insert: {
@@ -498,6 +499,7 @@ export interface Database {
           reportable_type: 'POST' | 'COMMENT';
           reportable_id: string;
           reason?: string | null;
+          status?: 'pending' | 'reviewed' | 'dismissed';
           created_at?: string;
         };
         Update: {
@@ -506,6 +508,7 @@ export interface Database {
           reportable_type?: 'POST' | 'COMMENT';
           reportable_id?: string;
           reason?: string | null;
+          status?: 'pending' | 'reviewed' | 'dismissed';
           created_at?: string;
         };
       };

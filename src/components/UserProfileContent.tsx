@@ -42,6 +42,7 @@ type Props = {
   onDeleteDog?: (dogId: string, dogName: string) => void;
   onChangePhoto?: () => void;
   onSignOut?: () => void;
+  onAdminDashboard?: () => void;
   isPhotoUpdating?: boolean;
 };
 
@@ -152,6 +153,7 @@ export function UserProfileContent({
   onDeleteDog,
   onChangePhoto,
   onSignOut,
+  onAdminDashboard,
   isPhotoUpdating = false,
 }: Props) {
   const headerHeight = useStackHeaderHeight();
@@ -443,6 +445,17 @@ export function UserProfileContent({
             </View>
           )}
         </Section>
+
+        {showPrivateAccountInfo && onAdminDashboard ? (
+          <TapFeedbackPressable
+            style={styles.adminDashboardButton}
+            onPress={onAdminDashboard}
+            fromBackgroundColor={colors.primarySoft}
+            toBackgroundColor={colors.primarySoft}
+          >
+            <Text style={styles.adminDashboardText}>Admin Dashboard</Text>
+          </TapFeedbackPressable>
+        ) : null}
 
         {showPrivateAccountInfo && onSignOut ? (
           <TapFeedbackPressable
@@ -750,6 +763,21 @@ const styles = StyleSheet.create({
   signOutText: {
     ...typography.body,
     color: colors.danger,
+    fontWeight: '700',
+  },
+  adminDashboardButton: {
+    marginTop: spacing.sm,
+    minHeight: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: colors.primarySoft,
+  },
+  adminDashboardText: {
+    ...typography.body,
+    color: colors.primaryDark,
     fontWeight: '700',
   },
 });

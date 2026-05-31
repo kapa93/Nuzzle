@@ -15,6 +15,7 @@ export type RootStackParamList = {
   SearchModal: SearchMainParams;
   PostDetail: { postId: string };
   UserProfile: { userId: string };
+  AdminDashboard: undefined;
 };
 
 export type OnboardingStackParamList = {

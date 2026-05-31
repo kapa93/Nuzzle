@@ -5,7 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, ActivityIndicator, StyleSheet, Platform, Pressable } from 'react-native';
 import { ToastBanner } from '@/components/ToastBanner';
 import { NotificationsSheet } from '@/components/NotificationsSheet';
-import { X } from 'lucide-react-native';
+import { X, ChevronLeft } from 'lucide-react-native';
 import * as Sentry from '@sentry/react-native';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
@@ -31,6 +31,7 @@ import { EditDogScreen } from '@/screens/EditDogScreen';
 import { OnboardingScreen } from '@/screens/OnboardingScreen';
 import { DogProfileScreen } from '@/screens/DogProfileScreen';
 import { UserProfileScreen } from '@/screens/UserProfileScreen';
+import { AdminDashboardScreen } from '@/screens/admin/AdminDashboardScreen';
 import { LegalDocumentScreen } from '@/screens/LegalDocumentScreen';
 import { NuzzleTabBar } from './NuzzleTabBar';
 import { SearchScreen } from '@/screens/SearchScreen';
@@ -329,7 +330,7 @@ function MainTabs() {
 }
 
 export function RootNavigator() {
-  const { session, setSession, user, setProfile } = useAuthStore();
+  const { session, setSession, user, profile, setProfile } = useAuthStore();
   const { hasHydrated, needsOnboarding, onboardingDog } = useOnboardingStore();
   const [loading, setLoading] = React.useState(true);
   const navRef = React.useRef<any>(null);
@@ -549,6 +550,28 @@ export function RootNavigator() {
               />
               <RootStack.Screen name="PostDetail" component={PostDetailScreen} options={{ title: 'Post' }} />
               <RootStack.Screen name="UserProfile" component={UserProfileScreen} options={{ title: 'Profile' }} />
+              {profile?.is_admin && (
+                <RootStack.Screen
+                  name="AdminDashboard"
+                  component={AdminDashboardScreen}
+                  options={({ navigation }) => ({
+                    title: 'Admin Dashboard',
+                    headerShown: true,
+                    headerBackVisible: false,
+                    headerLeft: () => (
+                      <Pressable
+                        onPress={() => navigation.goBack()}
+                        hitSlop={12}
+                        style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, marginLeft: 4 })}
+                        accessibilityRole="button"
+                        accessibilityLabel="Back"
+                      >
+                        <ChevronLeft size={26} color="#111827" strokeWidth={2} />
+                      </Pressable>
+                    ),
+                  })}
+                />
+              )}
             </>
           )
         ) : (
