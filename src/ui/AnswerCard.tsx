@@ -15,6 +15,7 @@ type Props = {
   helpfulCount?: number;
   onAuthorPress?: () => void;
   onDeletePress?: () => void;
+  onReportPress?: () => void;
   reactionCounts?: Partial<Record<ReactionEnum, number>>;
   userReaction?: ReactionEnum | null;
   onReactionSelect?: (reaction: ReactionEnum | null) => void;
@@ -23,7 +24,7 @@ type Props = {
 const AVATAR_SIZE = 32;
 const INDENT = AVATAR_SIZE + spacing.md;
 
-export function AnswerCard({ author, body, avatarUri, timestamp, helpfulCount = 0, onAuthorPress, onDeletePress, reactionCounts, userReaction, onReactionSelect }: Props) {
+export function AnswerCard({ author, body, avatarUri, timestamp, helpfulCount = 0, onAuthorPress, onDeletePress, onReportPress, reactionCounts, userReaction, onReactionSelect }: Props) {
   return (
     <View style={styles.card}>
       <View style={styles.header}>
@@ -58,11 +59,18 @@ export function AnswerCard({ author, body, avatarUri, timestamp, helpfulCount = 
             </View>
           ) : null}
         </View>
-        {onDeletePress && (
-          <Pressable onPress={onDeletePress} style={styles.moreButton} hitSlop={8}>
-            <Ionicons name="trash-outline" size={19} color={colors.textMuted} />
-          </Pressable>
-        )}
+        <View style={styles.footerActions}>
+          {onReportPress && (
+            <Pressable onPress={onReportPress} style={styles.moreButton} hitSlop={8}>
+              <Ionicons name="flag-outline" size={16} color={colors.textMuted} />
+            </Pressable>
+          )}
+          {onDeletePress && (
+            <Pressable onPress={onDeletePress} style={styles.moreButton} hitSlop={8}>
+              <Ionicons name="trash-outline" size={19} color={colors.textMuted} />
+            </Pressable>
+          )}
+        </View>
       </View>
     </View>
   );
@@ -115,6 +123,7 @@ const styles = StyleSheet.create({
   footerLeft: { flex: 1 },
   helpfulRow: { flexDirection: "row", alignItems: "center" },
   count: { ...typography.bodyMuted, marginLeft: spacing.sm, fontWeight: "700" },
+  footerActions: { flexDirection: "row", alignItems: "center" },
   moreButton: { padding: spacing.xs, marginLeft: spacing.sm },
   reactionBarWrapper: { marginTop: 0 },
 });

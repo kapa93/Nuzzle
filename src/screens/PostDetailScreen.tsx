@@ -24,6 +24,8 @@ import { rsvpMeetup, unrsvpMeetup } from "@/api/meetups";
 import { getCommentsByPost, createCommentWithNotification, deleteComment, setCommentReaction } from "@/api/comments";
 import { createReport } from "@/api/reports";
 import { useAuthStore } from "@/store/authStore";
+import { useUIStore } from "@/store/uiStore";
+import { ReportReasonModal, type ReportReason } from "@/components/ReportReasonModal";
 import { useReactionMutation } from "@/hooks/useReactionMutation";
 import { DogAvatar } from "@/components/DogAvatar";
 import { PostImageCarousel } from "@/components/PostImageCarousel";
@@ -52,6 +54,7 @@ export function PostDetailScreen() {
   const postId = routeParams?.postId ?? "";
   const isFromSearch = routeParams?.source === "search";
   const { user, profile } = useAuthStore();
+  const { showToast } = useUIStore();
   const queryClient = useQueryClient();
   const { setScrollDirection } = useScrollDirection();
   const headerHeight = useStackHeaderHeight();
@@ -61,6 +64,7 @@ export function PostDetailScreen() {
   const scrollTopPadding = tabBarHeight > 0 ? headerHeight - 60 + spacing.xxl - 5 : spacing.lg;
   const [commentText, setCommentText] = useState("");
   const [menuVisible, setMenuVisible] = useState(false);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const commentInputRef = useRef<TextInput>(null);
@@ -230,9 +234,26 @@ export function PostDetailScreen() {
   };
 
   const handleReport = () => {
+    setReportModalVisible(true);
+  };
+
+  const handleReportConfirm = (reason: ReportReason) => {
+    setReportModalVisible(false);
+    showToast("Thanks for helping keep Nuzzle welcoming!");
+    createReport({
+      reporter_id: user!.id,
+      reportable_type: "POST",
+      reportable_id: postId,
+      reason,
+    }).then(() => {
+      if (post) track('post_reported', { post_type: post.type });
+    }).catch(() => {});
+  };
+
+  const handleReportComment = (commentId: string) => {
     Alert.alert(
-      "Report post",
-      "Are you sure you want to report this post?",
+      "Report comment",
+      "Are you sure you want to report this comment?",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -241,11 +262,10 @@ export function PostDetailScreen() {
           onPress: async () => {
             await createReport({
               reporter_id: user!.id,
-              reportable_type: "POST",
-              reportable_id: postId,
+              reportable_type: "COMMENT",
+              reportable_id: commentId,
               reason: "User reported",
             });
-            if (post) track('post_reported', { post_type: post.type });
             Alert.alert("Thank you", "Your report has been submitted.");
           },
         },
@@ -481,6 +501,7 @@ export function PostDetailScreen() {
                 timestamp={formatRelativeTime(c.created_at)}
                 onAuthorPress={() => handleAuthorPress(c.author_id)}
                 onDeletePress={user?.id === c.author_id ? () => handleDeleteComment(c.id) : undefined}
+                onReportPress={user && user.id !== c.author_id ? () => handleReportComment(c.id) : undefined}
                 reactionCounts={c.reaction_counts}
                 userReaction={c.user_reaction}
                 onReactionSelect={user ? (reaction) => commentReactionMutation.mutate({ commentId: c.id, reaction }) : undefined}
@@ -519,6 +540,12 @@ export function PostDetailScreen() {
       </KeyboardAvoidingView>
 
       </SafeAreaView>
+
+      <ReportReasonModal
+        visible={reportModalVisible}
+        onSelect={handleReportConfirm}
+        onClose={() => setReportModalVisible(false)}
+      />
     </View>
   );
 }
