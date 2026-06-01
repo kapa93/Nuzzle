@@ -1,8 +1,12 @@
 import { supabase } from '@/lib/supabase';
 import type { CommentWithAuthor, ReactionEnum } from '@/types';
 
-export async function getCommentsByPost(postId: string, userId?: string | null): Promise<CommentWithAuthor[]> {
-  const { data, error } = await supabase
+export async function getCommentsByPost(
+  postId: string,
+  userId?: string | null,
+  blockedIds: string[] = []
+): Promise<CommentWithAuthor[]> {
+  let query = supabase
     .from('comments')
     .select(
       `
@@ -12,6 +16,12 @@ export async function getCommentsByPost(postId: string, userId?: string | null):
     )
     .eq('post_id', postId)
     .order('created_at', { ascending: true });
+
+  if (blockedIds.length > 0) {
+    query = query.not('author_id', 'in', `(${blockedIds.join(',')})`);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
 

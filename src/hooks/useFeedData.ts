@@ -4,6 +4,7 @@ import { useInfiniteQuery, useMutation, useQueryClient, type InfiniteData } from
 import { getFeed, deletePost } from '@/api/posts';
 import { setReaction } from '@/api/reactions';
 import { rsvpMeetup, unrsvpMeetup } from '@/api/meetups';
+import { useBlockedUserIds } from '@/hooks/useBlockedUserIds';
 import { FeedItem } from '@/components/FeedItem';
 import type { PostWithDetails, PostTypeEnum } from '@/types';
 import type { BreedEnum, ReactionEnum } from '@/types';
@@ -35,7 +36,8 @@ export function useFeedData({
   const [reactionMenuOpen, setReactionMenuOpen] = useState(false);
   const [isPullRefreshing, setIsPullRefreshing] = useState(false);
 
-  const feedQueryKey = ['feed', breed, feedFilter, user?.id] as const;
+  const blockedIds = useBlockedUserIds(user?.id);
+  const feedQueryKey = ['feed', breed, feedFilter, user?.id, blockedIds] as const;
 
   const {
     data,
@@ -47,7 +49,7 @@ export function useFeedData({
   } = useInfiniteQuery({
     queryKey: feedQueryKey,
     queryFn: ({ pageParam }) =>
-      getFeed(breed, 'newest', PAGE_SIZE, pageParam as number, user?.id ?? null, typeFilter),
+      getFeed(breed, 'newest', PAGE_SIZE, pageParam as number, user?.id ?? null, typeFilter, blockedIds),
     initialPageParam: 0,
     getNextPageParam: (lastPage, _allPages, lastPageParam) => {
       if (lastPage.length < PAGE_SIZE) return undefined;

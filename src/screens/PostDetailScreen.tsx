@@ -22,6 +22,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getPostById, deletePost } from "@/api/posts";
 import { rsvpMeetup, unrsvpMeetup } from "@/api/meetups";
 import { getCommentsByPost, createCommentWithNotification, deleteComment, setCommentReaction } from "@/api/comments";
+import { useBlockedUserIds } from "@/hooks/useBlockedUserIds";
 import { createReport } from "@/api/reports";
 import { useAuthStore } from "@/store/authStore";
 import { useUIStore } from "@/store/uiStore";
@@ -54,6 +55,7 @@ export function PostDetailScreen() {
   const postId = routeParams?.postId ?? "";
   const isFromSearch = routeParams?.source === "search";
   const { user, profile } = useAuthStore();
+  const blockedIds = useBlockedUserIds(user?.id);
   const { showToast, showGuestPrompt } = useUIStore();
   const queryClient = useQueryClient();
   const { setScrollDirection } = useScrollDirection();
@@ -115,7 +117,7 @@ export function PostDetailScreen() {
 
   const { data: comments } = useQuery({
     queryKey: ["comments", postId],
-    queryFn: () => getCommentsByPost(postId, user?.id ?? null),
+    queryFn: () => getCommentsByPost(postId, user?.id ?? null, blockedIds),
     enabled: !!postId,
   });
 

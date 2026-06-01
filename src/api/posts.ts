@@ -139,7 +139,8 @@ export async function getFeed(
   limit = 20,
   offset = 0,
   userId: string | null = null,
-  typeFilter: PostTypeEnum | null = null
+  typeFilter: PostTypeEnum | null = null,
+  blockedIds: string[] = []
 ): Promise<PostWithDetails[]> {
   let query = supabase
     .from('posts')
@@ -157,6 +158,10 @@ export async function getFeed(
 
   if (typeFilter) {
     query = query.eq('type', typeFilter);
+  }
+
+  if (blockedIds.length > 0) {
+    query = query.not('author_id', 'in', `(${blockedIds.join(',')})`);
   }
 
   const { data, error } = await query;
@@ -329,7 +334,8 @@ export async function searchPosts(
     type?: PostTypeEnum;
     limit?: number;
   },
-  userId: string | null = null
+  userId: string | null = null,
+  blockedIds: string[] = []
 ): Promise<PostWithDetails[]> {
   const { query: searchQuery, breed, tag, type, limit = 20 } = params;
 
@@ -354,6 +360,9 @@ export async function searchPosts(
   if (breed) q = q.eq('breed', breed);
   if (tag) q = q.eq('tag', tag);
   if (type) q = q.eq('type', type);
+  if (blockedIds.length > 0) {
+    q = q.not('author_id', 'in', `(${blockedIds.join(',')})`);
+  }
 
   const { data, error } = await q;
   if (error) throw error;
@@ -368,7 +377,8 @@ export async function searchPosts(
  */
 export async function getPlaceMeetupPosts(
   placeId: string,
-  userId: string | null = null
+  userId: string | null = null,
+  blockedIds: string[] = []
 ): Promise<PostWithDetails[]> {
   const { data: meetupRows, error: mdError } = await supabase
     .from('meetup_details')
@@ -381,7 +391,7 @@ export async function getPlaceMeetupPosts(
 
   const postIds = (meetupRows as Array<{ post_id: string }>).map((r) => r.post_id);
 
-  const { data, error } = await supabase
+  let q = supabase
     .from('posts')
     .select(
       `
@@ -393,6 +403,12 @@ export async function getPlaceMeetupPosts(
     )
     .in('id', postIds)
     .order('created_at', { ascending: false });
+
+  if (blockedIds.length > 0) {
+    q = q.not('author_id', 'in', `(${blockedIds.join(',')})`);
+  }
+
+  const { data, error } = await q;
 
   if (error) throw error;
 
@@ -407,9 +423,10 @@ export async function getPlaceMeetupPosts(
  */
 export async function getPlacePosts(
   placeId: string,
-  userId: string | null = null
+  userId: string | null = null,
+  blockedIds: string[] = []
 ): Promise<PostWithDetails[]> {
-  const { data, error } = await supabase
+  let q = supabase
     .from('posts')
     .select(
       `
@@ -421,6 +438,12 @@ export async function getPlacePosts(
     )
     .eq('place_id', placeId)
     .order('created_at', { ascending: false });
+
+  if (blockedIds.length > 0) {
+    q = q.not('author_id', 'in', `(${blockedIds.join(',')})`);
+  }
+
+  const { data, error } = await q;
 
   if (error) throw error;
 

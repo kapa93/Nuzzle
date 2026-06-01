@@ -21,6 +21,7 @@ import { MetThisDogButton } from '@/components/MetThisDogButton';
 import { DogAvatar } from '@/components/DogAvatar';
 import { ProfileDogCard } from '@/components/ProfileDogCard';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useBlockUser } from '@/hooks/useBlockUser';
 import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
 import { colors, radius, spacing, typography } from '@/theme';
 import {
@@ -183,6 +184,8 @@ export function UserProfileContent({
 
   const canManageProfile = isOwnProfile;
   const joinedLabel = formatJoinedDate(profile?.created_at);
+  const { isBlocked, isPending: isBlockPending, confirmBlock, confirmUnblock, enabled: blockEnabled } =
+    useBlockUser(viewerUserId, profileUserId);
 
   if (isLoading && !profile) {
     return (
@@ -315,6 +318,19 @@ export function UserProfileContent({
                 </TapFeedbackPressable>
               ) : null}
             </View>
+          ) : null}
+
+          {blockEnabled ? (
+            <Pressable
+              style={isBlocked ? styles.unblockButton : styles.blockButton}
+              onPress={isBlocked ? confirmUnblock : confirmBlock}
+              disabled={isBlockPending}
+              hitSlop={8}
+            >
+              <Text style={isBlocked ? styles.unblockButtonText : styles.blockButtonText}>
+                {isBlocked ? 'Unblock Member' : 'Block Member'}
+              </Text>
+            </Pressable>
           ) : null}
         </View>
 
@@ -812,5 +828,31 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.primaryDark,
     fontWeight: '700',
+  },
+  blockButton: {
+    marginTop: spacing.xs,
+    paddingVertical: spacing.xs,
+    minHeight: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  blockButtonText: {
+    ...typography.caption,
+    color: colors.textMuted,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
+  unblockButton: {
+    marginTop: spacing.xs,
+    paddingVertical: spacing.xs,
+    minHeight: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  unblockButtonText: {
+    ...typography.caption,
+    color: colors.danger,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
 });
