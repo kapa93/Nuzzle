@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, ActivityIndicator, StyleSheet, Platform, Pressable } from 'react-native';
 import { GuestSignupPrompt } from '@/components/GuestSignupPrompt';
+import { LocationOnboardingModal } from '@/components/LocationOnboardingModal';
 import { ToastBanner } from '@/components/ToastBanner';
 import { NotificationsSheet } from '@/components/NotificationsSheet';
 import { X, ChevronLeft } from 'lucide-react-native';
@@ -339,7 +340,7 @@ function MainTabs() {
 }
 
 export function RootNavigator() {
-  const { session, setSession, user, profile, setProfile, isGuest } = useAuthStore();
+  const { session, setSession, user, profile, setProfile, isGuest, setIsGuest } = useAuthStore();
   const { hasHydrated, needsOnboarding, onboardingDog } = useOnboardingStore();
   const [loading, setLoading] = React.useState(true);
   const navRef = React.useRef<any>(null);
@@ -364,6 +365,9 @@ export function RootNavigator() {
           setLoading(false);
         });
       } else {
+        // No active session — drop straight into guest mode so the app opens
+        // on the All Breeds tab rather than the login screen.
+        setIsGuest(true);
         setLoading(false);
       }
     });
@@ -374,6 +378,8 @@ export function RootNavigator() {
         getProfile(session.user.id).then(setProfile);
       } else {
         setProfile(null);
+        // After sign-out, return to guest browsing instead of showing the login screen.
+        setIsGuest(true);
       }
     });
 
@@ -592,6 +598,7 @@ export function RootNavigator() {
     </NavigationContainer>
     <ToastBanner />
     <GuestSignupPrompt />
+    <LocationOnboardingModal />
     {session && user && !needsOnboarding && (
       <NotificationsSheet
         onPostPress={(postId) => navRef.current?.navigate('PostDetail', { postId })}

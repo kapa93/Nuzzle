@@ -94,8 +94,8 @@ const styles = StyleSheet.create({
   titleWrap: {},
   titlePressed: { opacity: 0.9 },
   title: {
-    fontSize: 32,
-    lineHeight: 34,
+    fontSize: 30,
+    lineHeight: 33,
     letterSpacing: 0.1,
     ...Platform.select({
       ios: { fontFamily: "System", fontWeight: "700" as const },

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -16,6 +16,8 @@ import * as Location from "expo-location";
 import { getDogSpotsNearby, getGooglePlacePhotoUrl } from "@/api/places";
 import { useListDogSpotVibes } from "@/hooks/useDogSpotVibes";
 import type { PlaceVibeData } from "@/hooks/useDogSpotVibes";
+import { useUIStore } from "@/store/uiStore";
+import { useLocationStore } from "@/store/locationStore";
 import { colors, radius, spacing, typography } from "@/theme";
 import { useStackHeaderHeight } from "@/hooks/useStackHeaderHeight";
 import type { GooglePlaceCandidate } from "@/types";
@@ -226,11 +228,12 @@ export function ExploreScreen({
   navigation: { navigate: (s: string, p?: object) => void; setOptions: (opts: object) => void };
 }) {
   const headerHeight = useStackHeaderHeight();
+  const showLocationModal = useUIStore((s) => s.showLocationModal);
+  const locationSetupVersion = useLocationStore((s) => s.locationSetupVersion);
   const [coords, setCoords] = useState<UserCoords>(null);
   const [placesLocationState, setPlacesLocationState] = useState<PlacesLocationState>("unknown");
   const [dogSpotsDisplayCount, setDogSpotsDisplayCount] = useState(DOG_SPOTS_INITIAL_COUNT);
   const [dogSpotsFilter, setDogSpotsFilter] = useState<DogSpotsFilter>("all");
-  const hasRequestedPermissionRef = useRef(false);
 
   React.useEffect(() => {
     navigation.setOptions({
@@ -257,18 +260,21 @@ export function ExploreScreen({
       let permissionGranted = false;
       try {
         const permission = await Location.getForegroundPermissionsAsync();
-        let status = permission.status;
-
-        if (status !== "granted" && !hasRequestedPermissionRef.current) {
-          hasRequestedPermissionRef.current = true;
-          const requested = await Location.requestForegroundPermissionsAsync();
-          status = requested.status;
-        }
+        const status = permission.status;
 
         if (status !== "granted") {
           if (!cancelled) {
-            setCoords(null);
-            setPlacesLocationState("denied");
+            const { manualLocation, hasSeenLocationModal } = useLocationStore.getState();
+            if (manualLocation) {
+              setCoords({ latitude: manualLocation.latitude, longitude: manualLocation.longitude });
+              setPlacesLocationState("granted");
+            } else {
+              setCoords(null);
+              setPlacesLocationState("denied");
+              if (!hasSeenLocationModal) {
+                useUIStore.getState().showLocationModal();
+              }
+            }
           }
           return;
         }
@@ -307,7 +313,10 @@ export function ExploreScreen({
     return () => {
       cancelled = true;
     };
-  }, []);
+  // locationSetupVersion bumps after the modal completes (GPS granted or manual set),
+  // causing this effect to re-run and pick up the new location.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locationSetupVersion]);
 
   useEffect(() => {
     setDogSpotsDisplayCount(DOG_SPOTS_INITIAL_COUNT);
@@ -437,14 +446,24 @@ export function ExploreScreen({
                   )}
                 </PlacesSection>
               </>
-            ) : placesLocationState === "denied" ? (
-              <Text style={styles.placesHintText}>
-                Enable location in Settings to show dog-friendly spots nearby.
-              </Text>
             ) : (
-              <Text style={styles.placesHintText}>
-                Couldn't get your location. Check your connection and try again.
-              </Text>
+              <View style={styles.locationEmptyState}>
+                <Ionicons name="location-outline" size={40} color={colors.primary} style={styles.locationEmptyIcon} />
+                <Text style={styles.locationEmptyTitle}>Set a location to find dog-friendly spots</Text>
+                <Text style={styles.locationEmptyBody}>
+                  Nuzzle uses your location to show nearby parks, cafes, breweries, and more that welcome dogs.
+                </Text>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.locationEmptyBtn,
+                    pressed && styles.locationEmptyBtnPressed,
+                  ]}
+                  onPress={showLocationModal}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.locationEmptyBtnText}>Set Location</Text>
+                </Pressable>
+              </View>
             )}
           </ScrollView>
         )}
@@ -483,6 +502,40 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: "center",
     marginTop: spacing.xs,
+  },
+  locationEmptyState: {
+    alignItems: "center",
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xxxl,
+  },
+  locationEmptyIcon: {
+    marginBottom: spacing.md,
+    opacity: 0.75,
+  },
+  locationEmptyTitle: {
+    ...typography.subtitle,
+    textAlign: "center",
+    marginBottom: spacing.sm,
+  },
+  locationEmptyBody: {
+    ...typography.bodyMuted,
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: spacing.xl,
+  },
+  locationEmptyBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.sm,
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.xl,
+    alignItems: "center",
+  },
+  locationEmptyBtnPressed: {
+    backgroundColor: colors.primaryDark,
+  },
+  locationEmptyBtnText: {
+    ...typography.body,
+    color: colors.surface,
   },
   nearbyShowMoreText: {
     ...typography.body,

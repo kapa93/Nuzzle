@@ -6,7 +6,14 @@ declare const Deno: {
   serve: (handler: (req: Request) => Response | Promise<Response>) => void;
 };
 
-type Action = "search" | "details" | "import" | "suggest" | "nearby" | "dogSpots";
+type Action = "search" | "details" | "import" | "suggest" | "nearby" | "dogSpots" | "searchLocation";
+
+type LocationResult = {
+  name: string;
+  formattedAddress: string | null;
+  latitude: number | null;
+  longitude: number | null;
+};
 type PlaceCommunityStatus = "active" | "pending";
 type SuggestionStatus = "suggested" | "already_pending" | "already_active";
 type PlaceType = "dog_beach" | "dog_park" | "trail" | "park" | "other";
@@ -379,6 +386,42 @@ async function searchAugmentedOutdoorPlaces(
   return batches.flat();
 }
 
+async function searchLocationPlaces(query: string, apiKey: string): Promise<LocationResult[]> {
+  const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": apiKey,
+      "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.location",
+    },
+    body: JSON.stringify({
+      textQuery: query,
+      maxResultCount: 8,
+      rankPreference: "RELEVANCE",
+      regionCode: "US",
+      languageCode: "en",
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Google Places location search failed: ${text}`);
+  }
+
+  const data = (await response.json()) as { places?: GooglePlace[] };
+  return (data.places ?? [])
+    .map((place) => ({
+      name: place.displayName?.text ?? "",
+      formattedAddress: place.formattedAddress ?? null,
+      latitude: place.location?.latitude ?? null,
+      longitude: place.location?.longitude ?? null,
+    }))
+    .filter(
+      (r): r is { name: string; formattedAddress: string | null; latitude: number; longitude: number } =>
+        !!r.name && r.latitude != null && r.longitude != null
+    );
+}
+
 async function searchGooglePlaces(
   query: string,
   apiKey: string,
@@ -678,6 +721,47 @@ Deno.serve(async (req) => {
       return json({ error: "Invalid action" }, 400);
     }
 
+    const body = (await req.json()) as {
+      action?: Action;
+      query?: string;
+      googlePlaceId?: string;
+      bannerPhotoName?: string | null;
+      latitude?: number | null;
+      longitude?: number | null;
+    };
+
+    // The following actions are intentionally unauthenticated — they only proxy Google Places API
+    // and contain no user-specific data, so guests can use them freely.
+
+    if (body.action === "searchLocation") {
+      const query = body.query?.trim();
+      if (!query || query.length < 2) return json({ locations: [] });
+      const locations = await searchLocationPlaces(query, googleApiKey);
+      return json({ locations });
+    }
+
+    if (body.action === "dogSpots") {
+      const lat = body.latitude;
+      const lng = body.longitude;
+      if (
+        typeof lat !== "number" ||
+        !Number.isFinite(lat) ||
+        typeof lng !== "number" ||
+        !Number.isFinite(lng)
+      ) {
+        return json({ error: "latitude and longitude are required for dog spots search" }, 400);
+      }
+      const places = await searchDogSpots({ latitude: lat, longitude: lng }, googleApiKey);
+      return json({ places });
+    }
+
+    if (body.action === "details") {
+      const googlePlaceId = body.googlePlaceId?.trim();
+      if (!googlePlaceId) return json({ error: "googlePlaceId is required" }, 400);
+      const place = await getGooglePlacePreview(googlePlaceId, googleApiKey);
+      return json({ place });
+    }
+
     const supabaseUrl = getRequiredEnv("SUPABASE_URL");
     const supabaseAnonKey = getRequiredEnv("SUPABASE_ANON_KEY");
     const supabaseServiceRoleKey = getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY");
@@ -690,15 +774,6 @@ Deno.serve(async (req) => {
     });
     const { data: authData, error: authError } = await authClient.auth.getUser();
     if (authError || !authData.user) return json({ error: "Unauthorized" }, 401);
-
-  const body = (await req.json()) as {
-      action?: Action;
-      query?: string;
-      googlePlaceId?: string;
-      bannerPhotoName?: string | null;
-      latitude?: number | null;
-      longitude?: number | null;
-    };
 
     if (body.action === "search") {
       const query = body.query?.trim();
@@ -725,13 +800,6 @@ Deno.serve(async (req) => {
       return json({ places: merged });
     }
 
-    if (body.action === "details") {
-      const googlePlaceId = body.googlePlaceId?.trim();
-      if (!googlePlaceId) return json({ error: "googlePlaceId is required" }, 400);
-      const place = await getGooglePlacePreview(googlePlaceId, googleApiKey);
-      return json({ place });
-    }
-
     if (body.action === "nearby") {
       const lat = body.latitude;
       const lng = body.longitude;
@@ -744,21 +812,6 @@ Deno.serve(async (req) => {
         return json({ error: "latitude and longitude are required for nearby search" }, 400);
       }
       const places = await searchNearbyPlaces({ latitude: lat, longitude: lng }, googleApiKey);
-      return json({ places });
-    }
-
-    if (body.action === "dogSpots") {
-      const lat = body.latitude;
-      const lng = body.longitude;
-      if (
-        typeof lat !== "number" ||
-        !Number.isFinite(lat) ||
-        typeof lng !== "number" ||
-        !Number.isFinite(lng)
-      ) {
-        return json({ error: "latitude and longitude are required for dog spots search" }, 400);
-      }
-      const places = await searchDogSpots({ latitude: lat, longitude: lng }, googleApiKey);
       return json({ places });
     }
 

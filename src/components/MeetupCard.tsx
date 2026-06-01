@@ -414,8 +414,8 @@ const styles = StyleSheet.create({
   menuItemTextDanger: { color: "#DC2626" },
   title: {
     ...typography.titleMD,
-    fontSize: 19,
-    lineHeight: 24,
+    fontSize: 18.5,
+    lineHeight: 23,
     letterSpacing: -0.1,
     marginTop: spacing.sm,
     ...(Platform.OS === "web"

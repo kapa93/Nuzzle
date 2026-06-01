@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   FlatList,
+  Image,
   RefreshControl,
   ScrollView,
   Pressable,
@@ -106,7 +107,7 @@ export function HomeScreen({
   const [selectedBreedIndex, setSelectedBreedIndex] = useState(0);
   const [isNearPlace, setIsNearPlace] = useState(false);
   const [locationChecked, setLocationChecked] = useState(false);
-  const [homeTab, setHomeTab] = useState<HomeTab>(user ? "myBreeds" : "moreBreeds");
+  const [homeTab, setHomeTab] = useState<HomeTab>("myBreeds");
   const [guestBannerDismissed, setGuestBannerDismissed] = useState(false);
   const [homeTabBarHeight, setHomeTabBarHeight] = useState(0);
   const { width } = useWindowDimensions();
@@ -148,7 +149,9 @@ export function HomeScreen({
   });
 
   const selectedDog = dogs?.[selectedDogIndex];
-  const defaultBreed = selectedDog?.breed ?? "GOLDEN_RETRIEVER";
+  const defaultBreed = user
+    ? (selectedDog?.breed ?? "GOLDEN_RETRIEVER")
+    : "LABRADOR_RETRIEVER";
   const breed =
     joinedBreeds.length > 0
       ? joinedBreeds[Math.min(selectedBreedIndex, joinedBreeds.length - 1)] ?? defaultBreed
@@ -395,6 +398,22 @@ export function HomeScreen({
           </ScrollView>
         </View>
       )}
+      {!user && (
+        <Pressable
+          style={({ pressed }) => [styles.breedCtaCard, pressed && styles.breedCtaCardPressed]}
+          onPress={() => setHomeTab("moreBreeds")}
+          accessibilityRole="button"
+        >
+          <Image source={require("../../assets/dog-white.png")} style={styles.breedCtaIcon} />
+          <View style={styles.breedCtaBody}>
+            <Text style={styles.breedCtaTitle}>
+              Not a {BREED_LABELS[breed].split(' ')[0]} owner?
+            </Text>
+            <Text style={styles.breedCtaLink}>Explore all breeds</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={22} color={colors.textMuted} />
+        </Pressable>
+      )}
       <View>
         {joinedBreeds.length >= 1 ? (
           <SwipeableBreedBanner
@@ -463,6 +482,8 @@ export function HomeScreen({
     handleJoinPress,
     handleJoinPressForBreed,
     setFeedFilter,
+    setHomeTab,
+    user,
   ]);
 
   const renderEmpty = useCallback(() => (
@@ -528,53 +549,29 @@ export function HomeScreen({
               if (h > 0 && Math.abs(h - homeTabBarHeight) > 0.5) setHomeTabBarHeight(h);
             }}
           >
-            <View style={styles.homeTabBar}>
-              <Pressable
-                style={[styles.homeTabChip, homeTab === "myBreeds" && styles.homeTabChipActive]}
-                onPress={() => setHomeTab("myBreeds")}
-              >
-                <Text style={[styles.homeTabChipText, homeTab === "myBreeds" && styles.homeTabChipTextActive]}>
-                  My Breeds
-                </Text>
-              </Pressable>
-              <Pressable
-                style={[styles.homeTabChip, homeTab === "moreBreeds" && styles.homeTabChipActive]}
-                onPress={() => { setHomeTab("moreBreeds"); setScrollDirection("up"); }}
-              >
-                <Text style={[styles.homeTabChipText, homeTab === "moreBreeds" && styles.homeTabChipTextActive]}>
-                  All Breeds
-                </Text>
-              </Pressable>
-            </View>
-          </Animated.View>
-
-          {homeTab === "myBreeds" && !user && (
-            <View style={[styles.guestBreedsContainer, { paddingTop: headerHeight + homeTabBarHeight, paddingBottom: tabBarHeight }]}>
-              <Ionicons name="paw" size={72} color={"#ced6d1"} style={{ marginBottom: 20, opacity: 0.4 }} />
-              <Text style={styles.guestBreedsBody}>
-                Your breed communities will appear here.{"\n"}Connect with other owners, ask questions, and share advice about your breed.
-              </Text>
-              <View style={styles.guestBreedsActions}>
+            {!!user && (
+              <View style={styles.homeTabBar}>
                 <Pressable
-                  style={({ pressed }) => [styles.guestBreedsSignUp, pressed && styles.guestBreedsSignUpPressed]}
-                  onPress={() => {
-                    useAuthStore.getState().setPendingSignUp(true);
-                    useAuthStore.getState().setIsGuest(false);
-                  }}
+                  style={[styles.homeTabChip, homeTab === "myBreeds" && styles.homeTabChipActive]}
+                  onPress={() => setHomeTab("myBreeds")}
                 >
-                  <Text style={styles.guestBreedsSignUpText}>Sign Up</Text>
+                  <Text style={[styles.homeTabChipText, homeTab === "myBreeds" && styles.homeTabChipTextActive]}>
+                    My Breeds
+                  </Text>
                 </Pressable>
                 <Pressable
-                  style={({ pressed }) => [styles.guestBreedsLogIn, pressed && styles.guestBreedsLogInPressed]}
-                  onPress={() => useAuthStore.getState().setIsGuest(false)}
+                  style={[styles.homeTabChip, homeTab === "moreBreeds" && styles.homeTabChipActive]}
+                  onPress={() => { setHomeTab("moreBreeds"); setScrollDirection("up"); }}
                 >
-                  <Text style={styles.guestBreedsLogInText}>Log In</Text>
+                  <Text style={[styles.homeTabChipText, homeTab === "moreBreeds" && styles.homeTabChipTextActive]}>
+                    All Breeds
+                  </Text>
                 </Pressable>
               </View>
-            </View>
-          )}
+            )}
+          </Animated.View>
 
-          {homeTab === "myBreeds" && !!user && (
+          {homeTab === "myBreeds" && (
             <FlatList
             ref={flatListRef}
             data={posts}
@@ -805,5 +802,44 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter_500Medium',
     color: colors.textPrimary,
+  },
+  breedCtaCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.md,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md + 3,
+    marginBottom: spacing.sm + 1,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  breedCtaCardPressed: {
+    backgroundColor: "rgba(247, 247, 245, 0.85)",
+  },
+  breedCtaIcon: {
+    width: 27,
+    height: 27,
+    resizeMode: "contain",
+    marginRight: spacing.sm + 2,
+    marginLeft: 1,
+  },
+  breedCtaBody: {
+    flex: 1,
+  },
+  breedCtaTitle: {
+    ...typography.body,
+    fontFamily: 'Inter_600SemiBold',
+    color: colors.textPrimary,
+    fontSize: 14,
+    marginBottom: -2,
+  },
+  breedCtaLink: {
+    ...typography.bodyMuted,
+    color: colors.primary,
+    fontSize: 14,
+    fontFamily: 'Inter_600SemiBold',
   },
 });

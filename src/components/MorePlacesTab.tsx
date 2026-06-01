@@ -27,6 +27,7 @@ import { PlaceRow } from "@/components/PlaceRow";
 import { useSavedPlaces, useToggleSavedPlace } from "@/hooks/useSavedPlaces";
 import { useAuthStore } from "@/store/authStore";
 import { useUIStore } from "@/store/uiStore";
+import { useLocationStore } from "@/store/locationStore";
 import { getDistanceMeters } from "@/utils/location";
 import { getPlaceHeroImage } from "@/utils/placeHeroImage";
 import { colors, spacing, typography, radius, shadow } from "@/theme";
@@ -518,14 +519,14 @@ export function MorePlacesTab({
   onScroll,
 }: Props) {
   const { user, profile } = useAuthStore();
-  const { showGuestPrompt } = useUIStore();
+  const { showGuestPrompt, showLocationModal } = useUIStore();
+  const locationSetupVersion = useLocationStore((s) => s.locationSetupVersion);
   const queryClient = useQueryClient();
   const [coords, setCoords] = useState<UserCoords>(null);
   const [placesLocationState, setPlacesLocationState] = useState<PlacesLocationState>("unknown");
   const [nearbyDisplayCount, setNearbyDisplayCount] = useState(NEARBY_INITIAL_COUNT);
   const [nuzzleDisplayCount, setNuzzleDisplayCount] = useState(NUZZLE_UNBOOKMARKED_INITIAL_COUNT);
   const [nearbySheetVisible, setNearbySheetVisible] = useState(false);
-  const hasRequestedPermissionRef = useRef(false);
 
   const { data: places = [], isLoading: placesLoading } = useQuery({
     queryKey: ["places"],
@@ -541,7 +542,7 @@ export function MorePlacesTab({
       coords ? `${coords.latitude.toFixed(3)},${coords.longitude.toFixed(3)}` : "no-location",
     ],
     queryFn: () => getNearbyGooglePlaces({ latitude: coords!.latitude, longitude: coords!.longitude }),
-    enabled: coords !== null && placesLocationState === "granted",
+    enabled: !!user && coords !== null && placesLocationState === "granted",
     staleTime: 5 * 60_000,
     retry: false,
   });
@@ -603,7 +604,7 @@ export function MorePlacesTab({
     },
   });
 
-  // Location permission + coords
+  // Location check (check-only, no auto-prompt — the LocationOnboardingModal handles requesting).
   useEffect(() => {
     let cancelled = false;
 
@@ -611,18 +612,21 @@ export function MorePlacesTab({
       let permissionGranted = false;
       try {
         const permission = await Location.getForegroundPermissionsAsync();
-        let status = permission.status;
-
-        if (status !== "granted" && !hasRequestedPermissionRef.current) {
-          hasRequestedPermissionRef.current = true;
-          const requested = await Location.requestForegroundPermissionsAsync();
-          status = requested.status;
-        }
+        const status = permission.status;
 
         if (status !== "granted") {
           if (!cancelled) {
-            setCoords(null);
-            setPlacesLocationState("denied");
+            const { manualLocation, hasSeenLocationModal } = useLocationStore.getState();
+            if (manualLocation) {
+              setCoords({ latitude: manualLocation.latitude, longitude: manualLocation.longitude });
+              setPlacesLocationState("granted");
+            } else {
+              setCoords(null);
+              setPlacesLocationState("denied");
+              if (!hasSeenLocationModal) {
+                useUIStore.getState().showLocationModal();
+              }
+            }
           }
           return;
         }
@@ -659,7 +663,10 @@ export function MorePlacesTab({
     return () => {
       cancelled = true;
     };
-  }, []);
+  // locationSetupVersion bumps after the modal completes (GPS granted or manual set),
+  // causing this effect to re-run and pick up the new location.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locationSetupVersion]);
 
   // Reset pagination when location changes
   useEffect(() => {
@@ -770,6 +777,22 @@ export function MorePlacesTab({
       onScroll={onScroll}
       scrollEventThrottle={16}
     >
+      {!coords && placesLocationState !== "unknown" && (
+        <Pressable
+          style={({ pressed }) => [styles.locationBanner, pressed && styles.locationBannerPressed]}
+          onPress={showLocationModal}
+          accessibilityRole="button"
+          accessibilityLabel="Set a location to discover nearby dog communities"
+        >
+          <Ionicons name="location-outline" size={18} color={colors.primary} style={styles.locationBannerIcon} />
+          <View style={styles.locationBannerBody}>
+            <Text style={styles.locationBannerText}>
+              Set a location to discover nearby dog communities and spots.
+            </Text>
+            <Text style={styles.locationBannerLink}>Set Location</Text>
+          </View>
+        </Pressable>
+      )}
       <PlacesSection
         title="Explore local feeds or suggest a new one"
         isEmpty={nuzzlePlaces.length === 0}
@@ -835,43 +858,19 @@ export function MorePlacesTab({
         <Pressable
           onPress={() => {
             if (!user) { showGuestPrompt(); return; }
+            if (!coords) { showLocationModal(); return; }
             setNearbySheetVisible(true);
           }}
           style={({ pressed }) => [
             styles.suggestButton,
-            (placesLocationState === "denied" || placesLocationState === "error") && styles.suggestButtonDisabled,
             pressed && styles.suggestButtonPressed,
           ]}
-          disabled={placesLocationState === "denied" || placesLocationState === "error"}
           accessibilityRole="button"
           accessibilityLabel="Suggest Local Community"
         >
-          <MapPin
-            size={18}
-            strokeWidth={2.3}
-            color={
-              placesLocationState === "denied" || placesLocationState === "error"
-                ? colors.textMuted
-                : colors.primary
-            }
-          />
-          <Text
-            style={[
-              styles.suggestButtonText,
-              (placesLocationState === "denied" || placesLocationState === "error") &&
-                styles.suggestButtonTextDisabled,
-            ]}
-          >
-            Suggest Local Community
-          </Text>
+          <MapPin size={18} strokeWidth={2.3} color={colors.primary} />
+          <Text style={styles.suggestButtonText}>Suggest Local Community</Text>
         </Pressable>
-        {(placesLocationState === "denied" || placesLocationState === "error") && (
-          <Text style={styles.placesHintText}>
-            {placesLocationState === "denied"
-              ? "Enable location in Settings to suggest nearby places."
-              : "Couldn't get your location. Check your connection and try again."}
-          </Text>
-        )}
       </View>
     </ScrollView>
 
@@ -1119,9 +1118,37 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primarySoft,
     marginBottom: spacing.md + 5,
   },
-  suggestButtonDisabled: {
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceMuted,
+  locationBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.md,
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.xs,
+    borderWidth: 1,
+    borderColor: `${colors.primary}30`,
+  },
+  locationBannerPressed: {
+    opacity: 0.8,
+  },
+  locationBannerIcon: {
+    marginRight: spacing.sm,
+    flexShrink: 0,
+  },
+  locationBannerBody: {
+    flex: 1,
+  },
+  locationBannerText: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    lineHeight: 17,
+    marginBottom: 2,
+  },
+  locationBannerLink: {
+    ...typography.caption,
+    color: colors.primary,
+    fontFamily: "Inter_700Bold",
   },
   suggestButtonPressed: {
     opacity: 0.8,

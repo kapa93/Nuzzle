@@ -30,6 +30,9 @@ interface UIState {
   guestPromptVisible: boolean;
   showGuestPrompt: () => void;
   hideGuestPrompt: () => void;
+  locationModalVisible: boolean;
+  showLocationModal: () => void;
+  hideLocationModal: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -50,4 +53,7 @@ export const useUIStore = create<UIState>((set) => ({
   guestPromptVisible: false,
   showGuestPrompt: () => set({ guestPromptVisible: true }),
   hideGuestPrompt: () => set({ guestPromptVisible: false }),
+  locationModalVisible: false,
+  showLocationModal: () => set({ locationModalVisible: true }),
+  hideLocationModal: () => set({ locationModalVisible: false }),
 }));

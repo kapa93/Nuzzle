@@ -60,6 +60,22 @@ async function throwFunctionError(error: unknown): Promise<never> {
   throw new Error('Edge Function failed');
 }
 
+export type LocationCandidate = {
+  name: string;
+  formattedAddress: string | null;
+  latitude: number;
+  longitude: number;
+};
+
+export async function searchLocationCandidates(query: string): Promise<LocationCandidate[]> {
+  const { data, error } = await supabase.functions.invoke<{ locations: LocationCandidate[] }>(
+    'google-places',
+    { body: { action: 'searchLocation', query } }
+  );
+  if (error) await throwFunctionError(error);
+  return data?.locations ?? [];
+}
+
 export async function getPlaceBySlug(slug: string): Promise<Place> {
   const { data, error } = await supabase
     .from('places')

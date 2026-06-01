@@ -1,5 +1,5 @@
-import React from "react";
-import { Modal, View, Text, Pressable, StyleSheet } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { Animated, Easing, Modal, View, Text, Pressable, StyleSheet } from "react-native";
 import { useAuthStore } from "@/store/authStore";
 import { useUIStore } from "@/store/uiStore";
 import { colors, radius, spacing, typography } from "@/theme";
@@ -9,6 +9,20 @@ export function GuestSignupPrompt() {
   const hideGuestPrompt = useUIStore((s) => s.hideGuestPrompt);
   const setIsGuest = useAuthStore((s) => s.setIsGuest);
   const setPendingSignUp = useAuthStore((s) => s.setPendingSignUp);
+
+  const animVal = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      animVal.setValue(0);
+      Animated.timing(animVal, {
+        toValue: 1,
+        duration: 160,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible]);
 
   const handleSignUp = () => {
     hideGuestPrompt();
@@ -25,15 +39,28 @@ export function GuestSignupPrompt() {
     hideGuestPrompt();
   };
 
+  const sheetStyle = {
+    opacity: animVal,
+    transform: [
+      {
+        scale: animVal.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0.88, 1],
+        }),
+      },
+    ],
+  };
+
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="none"
       onRequestClose={handleDismiss}
     >
-      <Pressable style={styles.overlay} onPress={handleDismiss}>
-        <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+      <Animated.View style={[styles.overlay, { opacity: animVal }]}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={handleDismiss} />
+        <Animated.View style={[styles.sheet, sheetStyle]}>
           <Text style={styles.title}>Join the Nuzzle Community</Text>
           <Text style={styles.body}>
             Create an account to join local dog communities, discover dog-friendly spots, find meetups, and share insights with fellow dog owners.
@@ -61,8 +88,8 @@ export function GuestSignupPrompt() {
           >
             <Text style={styles.dismissText}>Not Now</Text>
           </Pressable>
-        </Pressable>
-      </Pressable>
+        </Animated.View>
+      </Animated.View>
     </Modal>
   );
 }
