@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
   },
   guestBannerTitle: {
     ...typography.body,
-    color: colors.textPrimary,
+    color: 'rgba(0,0,0,0.8)',
     fontFamily: 'Inter_600SemiBold',
     fontSize: 15,
   },

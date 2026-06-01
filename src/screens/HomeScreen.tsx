@@ -832,8 +832,8 @@ const styles = StyleSheet.create({
   breedCtaTitle: {
     ...typography.body,
     fontFamily: 'Inter_600SemiBold',
-    color: colors.textPrimary,
-    fontSize: 14,
+    color: 'rgba(0,0,0,0.8)',
+    fontSize: 14.5,
     marginBottom: -2,
   },
   breedCtaLink: {
