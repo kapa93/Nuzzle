@@ -178,6 +178,33 @@ export async function signOut() {
   }
 }
 
+export async function deleteAccount() {
+  const { error } = await supabase.functions.invoke('delete-account', { body: {} });
+
+  if (error) {
+    // Surface the edge function's JSON error message when available.
+    const context = (error as { context?: unknown }).context;
+    if (context instanceof Response) {
+      try {
+        const body = await context.json();
+        if (typeof body?.error === 'string') throw new Error(body.error);
+      } catch (parseError) {
+        if (
+          parseError instanceof Error &&
+          parseError.message !== 'Unexpected end of JSON input'
+        ) {
+          throw parseError;
+        }
+      }
+    }
+    throw error instanceof Error ? error : new Error('Account deletion failed');
+  }
+
+  // The server-side user no longer exists, so a global sign out would fail —
+  // clear the local session only.
+  await supabase.auth.signOut({ scope: 'local' });
+}
+
 export async function getProfile(userId: string): Promise<Profile | null> {
   const { data, error } = await supabase
     .from('profiles')

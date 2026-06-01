@@ -5,6 +5,12 @@
 # auth check via authClient.auth.getUser().
 verify_jwt = false
 
+[functions.delete-account]
+# Requires a valid JWT at the gateway. The function additionally resolves the
+# caller via authClient.auth.getUser() and only ever deletes that user's own
+# account, using the service role key for the privileged deletion.
+verify_jwt = true
+
 [auth.email]
 enable_confirmations = true
 

@@ -6,6 +6,9 @@ jest.mock('@/lib/supabase', () => ({
       signOut: jest.fn(),
     },
     from: jest.fn(),
+    functions: {
+      invoke: jest.fn(),
+    },
   },
 }));
 
@@ -14,10 +17,11 @@ jest.mock('expo-apple-authentication', () => ({}));
 jest.mock('react-native', () => ({ Platform: { OS: 'ios' } }));
 
 import { supabase } from '@/lib/supabase';
-import { signUp, signIn, signOut, getProfile, updateProfile } from '../auth';
+import { signUp, signIn, signOut, getProfile, updateProfile, deleteAccount } from '../auth';
 
 const mockAuth = supabase.auth as jest.Mocked<typeof supabase.auth>;
 const mockFrom = supabase.from as jest.Mock;
+const mockInvoke = supabase.functions.invoke as jest.Mock;
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -145,5 +149,44 @@ describe('updateProfile', () => {
     chain.single.mockResolvedValue({ data: updated, error: null });
     const result = await updateProfile('u1', { name: 'Bob' });
     expect(result).toEqual(updated);
+  });
+});
+
+// ─── deleteAccount ───────────────────────────────────────────────────────────
+
+describe('deleteAccount', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('invokes the delete-account function and clears the local session on success', async () => {
+    mockInvoke.mockResolvedValue({ data: { success: true }, error: null });
+    mockAuth.signOut.mockResolvedValue({ error: null } as never);
+
+    await deleteAccount();
+
+    expect(mockInvoke).toHaveBeenCalledWith('delete-account', { body: {} });
+    expect(mockAuth.signOut).toHaveBeenCalledTimes(1);
+    expect(mockAuth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+  });
+
+  it("surfaces the edge function's JSON error message and does not sign out", async () => {
+    const context = new Response(JSON.stringify({ error: 'User not found' }), { status: 500 });
+    mockInvoke.mockResolvedValue({ data: null, error: Object.assign(new Error('Edge Function returned a non-2xx status code'), { context }) });
+
+    await expect(deleteAccount()).rejects.toThrow('User not found');
+    expect(mockAuth.signOut).not.toHaveBeenCalled();
+  });
+
+  it('throws the original error when there is no Response context', async () => {
+    mockInvoke.mockResolvedValue({ data: null, error: new Error('network failure') });
+
+    await expect(deleteAccount()).rejects.toThrow('network failure');
+    expect(mockAuth.signOut).not.toHaveBeenCalled();
+  });
+
+  it('falls back to a generic error when a non-Error value is returned', async () => {
+    mockInvoke.mockResolvedValue({ data: null, error: 'boom' });
+
+    await expect(deleteAccount()).rejects.toThrow('Account deletion failed');
+    expect(mockAuth.signOut).not.toHaveBeenCalled();
   });
 });

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Animated, Easing, Modal, View, Text, Pressable, StyleSheet } from "react-native";
+import { Animated, Easing, Modal, View, Text, Pressable, StyleSheet, Image } from "react-native";
 import { useAuthStore } from "@/store/authStore";
 import { useUIStore } from "@/store/uiStore";
 import { colors, radius, spacing, typography } from "@/theme";
@@ -61,6 +61,11 @@ export function GuestSignupPrompt() {
       <Animated.View style={[styles.overlay, { opacity: animVal }]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={handleDismiss} />
         <Animated.View style={[styles.sheet, sheetStyle]}>
+          <Image
+            source={require("../../assets/small-group.png")}
+            style={styles.illustration}
+            resizeMode="contain"
+          />
           <Text style={styles.title}>Join the Nuzzle Community</Text>
           <Text style={styles.body}>
             Create an account to join local dog communities, discover dog-friendly spots, find meetups, and share insights with fellow dog owners.
@@ -114,6 +119,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 12,
     elevation: 6,
+  },
+  illustration: {
+    width: "100%",
+    height: 140,
+    marginBottom: spacing.md,
   },
   title: {
     ...typography.titleMD,

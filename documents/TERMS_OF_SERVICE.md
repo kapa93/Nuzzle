@@ -155,7 +155,7 @@ Nuzzle uses third-party services (including Supabase for infrastructure and Appl
 
 ### 14.1 By You
 
-You may stop using Nuzzle and delete your account at any time through the app settings.
+You may stop using Nuzzle and delete your account at any time from your profile in the app.
 
 ### 14.2 By Nuzzle
 

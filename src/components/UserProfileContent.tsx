@@ -42,8 +42,10 @@ type Props = {
   onDeleteDog?: (dogId: string, dogName: string) => void;
   onChangePhoto?: () => void;
   onSignOut?: () => void;
+  onDeleteAccount?: () => void;
   onAdminDashboard?: () => void;
   isPhotoUpdating?: boolean;
+  isDeletingAccount?: boolean;
 };
 
 const BUTTON_PRESS_ANIMATION = { duration: 180 };
@@ -153,8 +155,10 @@ export function UserProfileContent({
   onDeleteDog,
   onChangePhoto,
   onSignOut,
+  onDeleteAccount,
   onAdminDashboard,
   isPhotoUpdating = false,
+  isDeletingAccount = false,
 }: Props) {
   const headerHeight = useStackHeaderHeight();
   const {
@@ -459,13 +463,28 @@ export function UserProfileContent({
 
         {showPrivateAccountInfo && onSignOut ? (
           <TapFeedbackPressable
-            style={[styles.signOutButton, styles.signOutButtonFooter]}
+            style={[styles.signOutButton, !onDeleteAccount && styles.signOutButtonFooter]}
             onPress={onSignOut}
             fromBackgroundColor={colors.dangerSurface}
             toBackgroundColor={colors.dangerPressedSurface}
           >
             <Text style={styles.signOutText}>Sign Out</Text>
           </TapFeedbackPressable>
+        ) : null}
+
+        {showPrivateAccountInfo && onDeleteAccount ? (
+          <Pressable
+            style={styles.deleteAccountButton}
+            onPress={onDeleteAccount}
+            disabled={isDeletingAccount}
+            hitSlop={8}
+          >
+            {isDeletingAccount ? (
+              <ActivityIndicator size="small" color={colors.danger} />
+            ) : (
+              <Text style={styles.deleteAccountText}>Delete Account</Text>
+            )}
+          </Pressable>
         ) : null}
       </ScrollView>
     </View>
@@ -764,6 +783,20 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.danger,
     fontWeight: '700',
+  },
+  deleteAccountButton: {
+    marginTop: spacing.md,
+    marginBottom: spacing.xxl,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+  },
+  deleteAccountText: {
+    ...typography.caption,
+    color: colors.danger,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
   adminDashboardButton: {
     marginTop: spacing.sm,
