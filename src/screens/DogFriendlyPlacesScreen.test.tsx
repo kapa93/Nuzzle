@@ -73,7 +73,7 @@ import { useQuery } from '@tanstack/react-query';
 import * as Location from 'expo-location';
 import { useSavedPlaces, useToggleSavedPlace, useSavedPlacesWithActivity } from '@/hooks/useSavedPlaces';
 import { useAuthStore } from '@/store/authStore';
-import { ExploreScreen } from '@/screens/ExploreScreen';
+import { DogFriendlyPlacesScreen } from '@/screens/DogFriendlyPlacesScreen';
 import type { Place } from '@/types';
 
 const mockUseQuery = useQuery as jest.Mock;
@@ -184,10 +184,10 @@ function setup({
 
   const navigation = { navigate: jest.fn(), setOptions: jest.fn() };
   const route = { params: { initialTab: 'places' as const } };
-  render(<ExploreScreen navigation={navigation} route={route} />);
+  render(<DogFriendlyPlacesScreen navigation={navigation} route={route} />);
 }
 
-describe('ExploreScreen places behavior', () => {
+describe('DogFriendlyPlacesScreen places behavior', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });

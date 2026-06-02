@@ -110,7 +110,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import { useUIStore } from '@/store/uiStore';
 import { useFeedData } from '@/hooks/useFeedData';
-import { HomeScreen } from '@/screens/HomeScreen';
+import { DogsScreen } from '@/screens/DogsScreen';
 
 const mockUseFeedData = useFeedData as jest.Mock;
 const mockUseQuery = useQuery as jest.Mock;
@@ -172,7 +172,7 @@ function setupDefaultMocks({ user = { id: 'u1' }, dogs = [{ id: 'd1', breed: 'GO
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
-describe('HomeScreen', () => {
+describe('DogsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     setupDefaultMocks();
@@ -180,19 +180,19 @@ describe('HomeScreen', () => {
 
   it('renders without crashing when user is logged in', () => {
     expect(() => render(
-      <HomeScreen navigation={{ navigate: jest.fn(), setOptions: jest.fn() } as never} />
+      <DogsScreen navigation={{ navigate: jest.fn(), setOptions: jest.fn() } as never} />
     )).not.toThrow();
   });
 
   it('shows "Sign in to see your feed" when user is null', () => {
     setupDefaultMocks({ user: null as never });
-    render(<HomeScreen navigation={{ navigate: jest.fn(), setOptions: jest.fn() } as never} />);
+    render(<DogsScreen navigation={{ navigate: jest.fn(), setOptions: jest.fn() } as never} />);
     expect(screen.getByText('Sign in to see your feed')).toBeTruthy();
   });
 
   it('shows "Add a dog profile" message when user has no dogs and no onboarding dog', () => {
     setupDefaultMocks({ dogs: [] });
-    render(<HomeScreen navigation={{ navigate: jest.fn(), setOptions: jest.fn() } as never} />);
+    render(<DogsScreen navigation={{ navigate: jest.fn(), setOptions: jest.fn() } as never} />);
     expect(screen.getByText(/Add a dog profile/)).toBeTruthy();
   });
 
@@ -215,7 +215,7 @@ describe('HomeScreen', () => {
       renderFeedItem: () => null,
     });
 
-    render(<HomeScreen navigation={{ navigate: jest.fn(), setOptions: jest.fn() } as never} />);
+    render(<DogsScreen navigation={{ navigate: jest.fn(), setOptions: jest.fn() } as never} />);
     const indicators = screen.UNSAFE_getAllByType(require('react-native').ActivityIndicator);
     expect(indicators.length).toBeGreaterThan(0);
   });
@@ -224,7 +224,7 @@ describe('HomeScreen', () => {
     setupDefaultMocks({ user: null as never });
     // If there were a hooks ordering violation, this render would throw
     expect(() => render(
-      <HomeScreen navigation={{ navigate: jest.fn(), setOptions: jest.fn() } as never} />
+      <DogsScreen navigation={{ navigate: jest.fn(), setOptions: jest.fn() } as never} />
     )).not.toThrow();
   });
 });

@@ -83,7 +83,7 @@ type Props = {
   };
 };
 
-export function SavedPlacesScreen({ navigation }: Props) {
+export function DogSpotsScreen({ navigation }: Props) {
   const { user } = useAuthStore();
   const tabBarHeight = useBottomTabBarHeight();
   const tabBarScrollPad = Math.max(0, tabBarHeight - NUZZLE_TAB_BAR_LAYOUT_EXTENDS_BELOW_SCREEN);
@@ -442,7 +442,7 @@ export function SavedPlacesScreen({ navigation }: Props) {
     />
   ), [user?.id, myDogs, place?.name, handleDogPress, handleLeave]);
 
-  const ListHeader = useCallback(function SavedPlacesListHeader() {
+  const ListHeader = useCallback(function DogSpotsListHeader() {
     return (
       <>
         {carouselHeaderRef.current}
@@ -671,7 +671,7 @@ export function SavedPlacesScreen({ navigation }: Props) {
               accessibilityState={{ selected: placesTab === 'myPlaces' }}
             >
               <Text style={[styles.placesTabChipText, placesTab === 'myPlaces' && styles.placesTabChipTextActive]}>
-                My Places
+                Dog Spots
               </Text>
             </Pressable>
             <Pressable

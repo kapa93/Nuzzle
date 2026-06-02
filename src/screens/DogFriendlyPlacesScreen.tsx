@@ -222,7 +222,7 @@ function PlacesSection({
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 
-export function ExploreScreen({
+export function DogFriendlyPlacesScreen({
   navigation,
 }: {
   navigation: { navigate: (s: string, p?: object) => void; setOptions: (opts: object) => void };
@@ -342,7 +342,7 @@ export function ExploreScreen({
   const { vibesByPlace } = useListDogSpotVibes(visibleSpotIds);
 
   const handleDogSpotPress = (candidate: GooglePlaceCandidate) => {
-    navigation.navigate("DogSpotPreview", {
+    navigation.navigate("DogFriendlyPlacePreview", {
       googlePlaceId: candidate.googlePlaceId,
       initialName: candidate.name,
     });

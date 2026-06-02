@@ -104,7 +104,7 @@ type Props = {
   navigation: { setOptions: (opts: object) => void };
 };
 
-export function DogSpotPreviewScreen({ route, navigation }: Props) {
+export function DogFriendlyPlacePreviewScreen({ route, navigation }: Props) {
   const { googlePlaceId, initialName } = route.params;
   const headerHeight = useStackHeaderHeight();
 

@@ -31,14 +31,14 @@ export type AuthStackParamList = {
 
 export type MainTabParamList = {
   Home: undefined;
-  SavedPlaces: undefined;
+  DogSpots: undefined;
   Create: undefined;
-  Explore: undefined;
+  DogFriendly: undefined;
   Profile: undefined;
 };
 
-export type SavedPlacesStackParamList = {
-  SavedPlacesFeed: undefined;
+export type DogSpotsStackParamList = {
+  DogSpotsFeed: undefined;
   GooglePlacePreview: { googlePlaceId: string; initialName?: string };
   PlaceDetail: { placeId: string };
   PlaceNow: { placeId: string };
@@ -50,8 +50,8 @@ export type SavedPlacesStackParamList = {
   SearchMain: SearchMainParams;
 };
 
-export type HomeStackParamList = {
-  HomeFeed: undefined;
+export type DogsStackParamList = {
+  DogsFeed: undefined;
   BreedFeed: { breed: BreedEnum };
   SearchMain: SearchMainParams;
   PlaceDetail: { placeId: string };
@@ -63,8 +63,8 @@ export type HomeStackParamList = {
   UserProfile: { userId: string };
 };
 
-export type ExploreStackParamList = {
-  ExploreList: undefined;
+export type DogFriendlyPlacesStackParamList = {
+  DogFriendlyPlacesList: undefined;
   BreedFeed: { breed: BreedEnum };
   SearchMain: SearchMainParams;
   DogProfile: { dogId: string };
@@ -74,7 +74,7 @@ export type ExploreStackParamList = {
   UserProfile: { userId: string };
   PlaceDetail: { placeId: string };
   GooglePlacePreview: { googlePlaceId: string; initialName?: string };
-  DogSpotPreview: { googlePlaceId: string; initialName?: string };
+  DogFriendlyPlacePreview: { googlePlaceId: string; initialName?: string };
   PlaceNow: { placeId: string };
 };
 

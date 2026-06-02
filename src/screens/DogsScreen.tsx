@@ -76,7 +76,7 @@ const FILTER_TO_TAB = (f: FeedFilter): TabKey =>
 const SCROLL_ANIM_DURATION = 220;
 const TAB_BAR_HIDE_OVERSHOOT = 40;
 
-export function HomeScreen({
+export function DogsScreen({
   navigation,
 }: {
   navigation: {
@@ -527,7 +527,7 @@ export function HomeScreen({
         onGoToFeed={dismissOnboardingCard}
         onExplore={() => {
           dismissOnboardingCard();
-          navigation.navigate('Explore');
+          navigation.navigate('DogFriendly');
         }}
       />
       <SafeAreaView style={styles.safe} edges={["left", "right"]}>

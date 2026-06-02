@@ -23,9 +23,9 @@ import { colors, spacing } from "@/theme";
 
 const TAB_CONFIG = [
   { key: "Home", label: "Dogs" },
-  { key: "SavedPlaces", label: "Dog Spots" },
+  { key: "DogSpots", label: "Dog Spots" },
   { key: "Create", label: "Create" },
-  { key: "Explore", label: "Dog Friendly" },
+  { key: "DogFriendly", label: "Dog Friendly" },
   { key: "Profile", label: "Profile" },
 ];
 
@@ -54,7 +54,7 @@ function TabBarItem({
   onPress,
   badgeCount,
 }: {
-  tabKey: "Home" | "SavedPlaces" | "Explore" | "Profile";
+  tabKey: "Home" | "DogSpots" | "DogFriendly" | "Profile";
   label: string;
   accessibilityLabel: string;
   isActive: boolean;
@@ -84,7 +84,7 @@ function TabBarItem({
               style={styles.homeIcon}
               resizeMode="contain"
             />
-          ) : tabKey === "SavedPlaces" ? (
+          ) : tabKey === "DogSpots" ? (
             <View style={styles.islandIcon}>
               <IslandIcon
                 size={24}
@@ -92,7 +92,7 @@ function TabBarItem({
                 strokeWidth={isActive ? TAB_BAR_LUCIDE_STROKE_ACTIVE : TAB_BAR_LUCIDE_STROKE}
               />
             </View>
-          ) : tabKey === "Explore" ? (
+          ) : tabKey === "DogFriendly" ? (
             <View style={styles.tabIconStore}>
               <StorefrontIcon
                 size={29}
@@ -291,7 +291,7 @@ export function NuzzleTabBar({ state, navigation }: BottomTabBarProps) {
           return (
             <TabBarItem
               key={item.key}
-              tabKey={item.key as "Home" | "SavedPlaces" | "Explore" | "Profile"}
+              tabKey={item.key as "Home" | "DogSpots" | "DogFriendly" | "Profile"}
               label={item.label}
               accessibilityLabel={item.label}
               isActive={isActive}

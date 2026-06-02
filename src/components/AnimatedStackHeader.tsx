@@ -19,11 +19,11 @@ const HEADER_ANIM_DURATION = 220;
 /** Matches header notifications bell / tab bar Lucide stroke weight */
 const HEADER_LUCIDE_STROKE = 2.25;
 const SEARCH_ENABLED_ROUTES = new Set([
-  "HomeFeed",
-  "ExploreList",
+  "DogsFeed",
+  "DogFriendlyPlacesList",
   "BreedFeed",
   "NotificationsMain",
-  "SavedPlacesFeed",
+  "DogSpotsFeed",
   // ProfileMain excluded — gear icon replaces search in the profile header
 ]);
 

@@ -16,14 +16,14 @@ import { getProfile } from '@/api/auth';
 import type { RootStackParamList, AuthStackParamList, MainTabParamList, OnboardingStackParamList } from './types';
 import { SignInScreen } from '@/screens/SignInScreen';
 import { SignUpScreen } from '@/screens/SignUpScreen';
-import { HomeScreen } from '@/screens/HomeScreen';
+import { DogsScreen } from '@/screens/DogsScreen';
 import { PlaceCheckinScreen } from '@/screens/PlaceCheckinScreen';
 import { PlaceDetailScreen } from '@/screens/PlaceDetailScreen';
-import { ExploreScreen } from '@/screens/ExploreScreen';
+import { DogFriendlyPlacesScreen } from '@/screens/DogFriendlyPlacesScreen';
 import { GooglePlacePreviewScreen } from '@/screens/GooglePlacePreviewScreen';
-import { DogSpotPreviewScreen } from '@/screens/DogSpotPreviewScreen';
+import { DogFriendlyPlacePreviewScreen } from '@/screens/DogFriendlyPlacePreviewScreen';
 import { ProfileScreen } from '@/screens/ProfileScreen';
-import { SavedPlacesScreen } from '@/screens/SavedPlacesScreen';
+import { DogSpotsScreen } from '@/screens/DogSpotsScreen';
 import { BreedFeedScreen } from '@/screens/BreedFeedScreen';
 import { PostDetailScreen } from '@/screens/PostDetailScreen';
 import { CreatePostScreen } from '@/screens/CreatePostScreen';
@@ -48,10 +48,10 @@ import {
   CREATE_POST_STACK_HEADER_BAR,
 } from '@/hooks/useStackHeaderHeight';
 import type {
-  ExploreStackParamList,
-  HomeStackParamList,
+  DogFriendlyPlacesStackParamList,
+  DogsStackParamList,
   ProfileStackParamList,
-  SavedPlacesStackParamList,
+  DogSpotsStackParamList,
 } from './types';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -99,21 +99,21 @@ function TabErrorFallback() {
   );
 }
 
-function HomeTabWithBoundary() {
-  return <Sentry.ErrorBoundary fallback={<TabErrorFallback />}><HomeTab /></Sentry.ErrorBoundary>;
+function DogsTabWithBoundary() {
+  return <Sentry.ErrorBoundary fallback={<TabErrorFallback />}><DogsTab /></Sentry.ErrorBoundary>;
 }
-function ExploreTabWithBoundary() {
-  return <Sentry.ErrorBoundary fallback={<TabErrorFallback />}><ExploreTab /></Sentry.ErrorBoundary>;
+function DogFriendlyPlacesTabWithBoundary() {
+  return <Sentry.ErrorBoundary fallback={<TabErrorFallback />}><DogFriendlyPlacesTab /></Sentry.ErrorBoundary>;
 }
-function SavedPlacesTabWithBoundary() {
-  return <Sentry.ErrorBoundary fallback={<TabErrorFallback />}><SavedPlacesTab /></Sentry.ErrorBoundary>;
+function DogSpotsTabWithBoundary() {
+  return <Sentry.ErrorBoundary fallback={<TabErrorFallback />}><DogSpotsTab /></Sentry.ErrorBoundary>;
 }
 function ProfileTabWithBoundary() {
   return <Sentry.ErrorBoundary fallback={<TabErrorFallback />}><ProfileTab /></Sentry.ErrorBoundary>;
 }
 
-function HomeTab() {
-  const Stack = createNativeStackNavigator<HomeStackParamList>();
+function DogsTab() {
+  const Stack = createNativeStackNavigator<DogsStackParamList>();
   return (
     <Stack.Navigator
       screenOptions={{
@@ -122,7 +122,7 @@ function HomeTab() {
         header: (props) => <AnimatedStackHeader {...props} animateOnScroll />,
       }}
     >
-      <Stack.Screen name="HomeFeed" component={HomeScreen} options={{ title: 'Nuzzle' }} />
+      <Stack.Screen name="DogsFeed" component={DogsScreen} options={{ title: 'Nuzzle' }} />
       <Stack.Screen name="BreedFeed" component={BreedFeedScreen} options={{ title: '' }} />
       <Stack.Screen name="SearchMain" component={SearchScreen} options={{ title: 'Search' }} />
       <Stack.Screen name="PlaceDetail" component={PlaceDetailScreen} options={{ title: 'Place' }} />
@@ -149,8 +149,8 @@ function HomeTab() {
   );
 }
 
-function ExploreTab() {
-  const Stack = createNativeStackNavigator<ExploreStackParamList>();
+function DogFriendlyPlacesTab() {
+  const Stack = createNativeStackNavigator<DogFriendlyPlacesStackParamList>();
   return (
     <Stack.Navigator
       screenOptions={{
@@ -160,10 +160,10 @@ function ExploreTab() {
       }}
     >
       <Stack.Screen
-        name="ExploreList"
-        component={ExploreScreen}
+        name="DogFriendlyPlacesList"
+        component={DogFriendlyPlacesScreen}
         options={{
-          title: 'Explore',
+          title: 'Dog Friendly Places',
           header: (props) => (
             <AnimatedStackHeader {...props} animateOnScroll={false} />
           ),
@@ -203,9 +203,9 @@ function ExploreTab() {
         options={{ title: 'Place Preview' }}
       />
       <Stack.Screen
-        name="DogSpotPreview"
-        component={DogSpotPreviewScreen}
-        options={{ title: 'Dog Spot Preview' }}
+        name="DogFriendlyPlacePreview"
+        component={DogFriendlyPlacePreviewScreen}
+        options={{ title: 'Dog Friendly Place Preview' }}
       />
       <Stack.Screen name="PlaceNow" component={PlaceCheckinScreen} options={{ title: 'Dogs Here Now' }} />
     </Stack.Navigator>
@@ -216,8 +216,8 @@ function EmptyCreateTab() {
   return <View style={{ flex: 1, backgroundColor: colors.background }} />;
 }
 
-function SavedPlacesTab() {
-  const Stack = createNativeStackNavigator<SavedPlacesStackParamList>();
+function DogSpotsTab() {
+  const Stack = createNativeStackNavigator<DogSpotsStackParamList>();
   return (
     <Stack.Navigator
       screenOptions={{
@@ -227,10 +227,10 @@ function SavedPlacesTab() {
       }}
     >
       <Stack.Screen
-        name="SavedPlacesFeed"
-        component={SavedPlacesScreen}
+        name="DogSpotsFeed"
+        component={DogSpotsScreen}
         options={{
-          title: 'My Places',
+          title: 'Dog Spots',
           header: (props) => <AnimatedStackHeader {...props} animateOnScroll />,
         }}
       />
@@ -342,10 +342,10 @@ function MainTabs() {
         tabBarStyle,
       }}
     >
-      <Tab.Screen name="Home" component={HomeTabWithBoundary} />
-      <Tab.Screen name="SavedPlaces" component={SavedPlacesTabWithBoundary} />
+      <Tab.Screen name="Home" component={DogsTabWithBoundary} />
+      <Tab.Screen name="DogSpots" component={DogSpotsTabWithBoundary} />
       <Tab.Screen name="Create" component={EmptyCreateTab} />
-      <Tab.Screen name="Explore" component={ExploreTabWithBoundary} />
+      <Tab.Screen name="DogFriendly" component={DogFriendlyPlacesTabWithBoundary} />
       <Tab.Screen name="Profile" component={ProfileTabWithBoundary} />
     </Tab.Navigator>
   );
