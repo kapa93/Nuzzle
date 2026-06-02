@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Image,
   Pressable,
   ScrollView,
@@ -23,6 +24,10 @@ import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
 import { colors, radius, shadow, spacing, typography } from '@/theme';
+
+const PHOTO_ITEM_WIDTH = 220; // matches styles.photo width
+const PHOTO_ITEM_SEPARATOR = 8; // matches spacing.sm
+const PHOTO_ITEM_STRIDE = PHOTO_ITEM_WIDTH + PHOTO_ITEM_SEPARATOR;
 
 type Props = {
   route: { params: { googlePlaceId: string; initialName?: string } };
@@ -207,16 +212,25 @@ export function GooglePlacePreviewScreen({ route, navigation }: Props) {
             <Section title="Photos">
               {placeQuery.data.photos.length > 0 ? (
                 <>
-                  <ScrollView
+                  <FlatList
                     horizontal
+                    data={placeQuery.data.photos}
+                    keyExtractor={(photo) => photo.name}
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.photoStrip}
-                  >
-                    {placeQuery.data.photos.map((photo, index) => {
+                    initialNumToRender={1}
+                    windowSize={3}
+                    extraData={selectedPhotoName}
+                    getItemLayout={(_data, index) => ({
+                      length: PHOTO_ITEM_WIDTH,
+                      offset: PHOTO_ITEM_STRIDE * index,
+                      index,
+                    })}
+                    ItemSeparatorComponent={() => <View style={styles.photoSeparator} />}
+                    renderItem={({ item: photo, index }) => {
                       const isSelected = photo.name === selectedPhotoName;
                       return (
                         <Pressable
-                          key={photo.name}
                           onPress={() => setSelectedPhotoName(photo.name)}
                           accessibilityRole="button"
                           accessibilityLabel={`Photo ${index + 1}${isSelected ? ', selected as cover' : ', tap to use as cover'}`}
@@ -234,8 +248,8 @@ export function GooglePlacePreviewScreen({ route, navigation }: Props) {
                           )}
                         </Pressable>
                       );
-                    })}
-                  </ScrollView>
+                    }}
+                  />
                   <Text style={styles.photoHint}>
                     {selectedPhotoName ? 'Cover photo selected ✓' : 'Tap a photo to use as the cover'}
                   </Text>
@@ -397,8 +411,10 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   photoStrip: {
-    gap: spacing.sm,
     paddingRight: spacing.lg,
+  },
+  photoSeparator: {
+    width: PHOTO_ITEM_SEPARATOR,
   },
   photo: {
     width: 220,

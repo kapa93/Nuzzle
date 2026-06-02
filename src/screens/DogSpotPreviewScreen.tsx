@@ -201,28 +201,6 @@ export function DogSpotPreviewScreen({ route, navigation }: Props) {
               <DogVibesCard googlePlaceId={googlePlaceId} />
             </Section>
 
-            {/* ── Photos ────────────────────────────────────────── */}
-            <Section icon="images-outline" title="Photos">
-              {place.photos.length > 0 ? (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.photoStrip}
-                >
-                  {place.photos.map((photo, index) => (
-                    <Image
-                      key={photo.name}
-                      source={{ uri: getGooglePlacePhotoUrl(photo.name) }}
-                      style={styles.photo}
-                      accessibilityLabel={`${place.displayName} photo ${index + 1}`}
-                    />
-                  ))}
-                </ScrollView>
-              ) : (
-                <Text style={styles.emptyValue}>No photos available.</Text>
-              )}
-            </Section>
-
             {/* ── Hours ─────────────────────────────────────────── */}
             <Section icon="time-outline" title="Hours">
               {parsedHours.length > 0 ? (
@@ -383,18 +361,6 @@ const styles = StyleSheet.create({
     ...typography.subtitle,
     color: colors.textPrimary,
     flex: 1,
-  },
-
-  // ── Photos
-  photoStrip: {
-    gap: spacing.sm,
-    paddingRight: spacing.xxs,
-  },
-  photo: {
-    width: 130,
-    height: 120,
-    borderRadius: radius.sm,
-    backgroundColor: colors.surfaceMuted,
   },
 
   // ── Hours
