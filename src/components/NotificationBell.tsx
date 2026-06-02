@@ -26,7 +26,7 @@ export function NotificationBell() {
       accessibilityRole="button"
       accessibilityLabel={count > 0 ? `Notifications, ${count} unread` : 'Notifications'}
     >
-      <Bell size={24} color="#000000" />
+      <Bell size={24} strokeWidth={2.15} color="#000000" />
       {badgeLabel !== null && (
         <View style={[styles.badge, badgeLabel.length > 1 && styles.badgeWide]}>
           <Text style={styles.badgeText}>{badgeLabel}</Text>

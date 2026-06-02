@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View, Text } from 'react-native';
+import { Settings } from 'lucide-react-native';
 import { NotificationBell } from '@/components/NotificationBell';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { deleteAccount, signOut, updateProfile } from '@/api/auth';
@@ -21,6 +22,15 @@ export function ProfileScreen({ navigation }: { navigation: ProfileNav }) {
   useEffect(() => {
     navigation.setOptions({
       headerLeft: () => <NotificationBell />,
+      headerRight: () => (
+        <Pressable
+          onPress={() => navigation.navigate('Settings')}
+          hitSlop={12}
+          style={({ pressed }) => [styles.headerButton, pressed && styles.headerButtonPressed]}
+        >
+          <Settings size={24} color={"#000000"} strokeWidth={2.25} />
+        </Pressable>
+      ),
     });
   }, [navigation]);
 
@@ -183,7 +193,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     position: 'relative',
     bottom: 1,
-    left: 5,
+    right: 4,
     transform: [{ translateX: 1 }],
   },
   headerButtonPressed: { opacity: 0.7 },

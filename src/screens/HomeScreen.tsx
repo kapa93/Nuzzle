@@ -808,7 +808,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.primarySoft,
     borderRadius: radius.md,
-    marginHorizontal: spacing.lg,
+    marginHorizontal: spacing.lg - 2,
     marginTop: spacing.md + 3,
     marginBottom: spacing.sm + 1,
     paddingVertical: spacing.sm,

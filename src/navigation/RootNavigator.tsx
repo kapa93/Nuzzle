@@ -35,6 +35,7 @@ import { DogProfileScreen } from '@/screens/DogProfileScreen';
 import { UserProfileScreen } from '@/screens/UserProfileScreen';
 import { AdminDashboardScreen } from '@/screens/admin/AdminDashboardScreen';
 import { LegalDocumentScreen } from '@/screens/LegalDocumentScreen';
+import { SettingsScreen } from '@/screens/SettingsScreen';
 import { NuzzleTabBar } from './NuzzleTabBar';
 import { SearchScreen } from '@/screens/SearchScreen';
 import { AnimatedStackHeader } from '@/components/AnimatedStackHeader';
@@ -282,6 +283,17 @@ function ProfileTab() {
       <Stack.Screen name="DogProfile" component={DogProfileScreen} options={{ title: 'Dog' }} />
       <Stack.Screen name="PostDetail" component={PostDetailScreen} options={{ title: 'Post' }} />
       <Stack.Screen name="UserProfile" component={UserProfileScreen} options={{ title: 'Profile' }} />
+      <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
+      <Stack.Screen
+        name="LegalDocument"
+        component={LegalDocumentScreen}
+        options={{
+          headerShown: true,
+          title: 'Legal',
+          headerTransparent: true,
+          header: (props) => <AnimatedStackHeader {...props} animateOnScroll={false} />,
+        }}
+      />
     </Stack.Navigator>
   );
 }

@@ -27,6 +27,7 @@ import { BREED_LABELS, POST_TYPE_LABELS, POST_TAG_LABELS, MEETUP_KIND_LABELS } f
 import { BREED_PACK_IMAGES } from '@/utils/breedAssets';
 import { getPlaceHeroImage } from '@/utils/placeHeroImage';
 import { postSchema } from '@/utils/validation';
+import { screenContent } from '@/utils/contentFilter';
 import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
 import { colors, shadow, spacing } from '@/theme';
 import type { BreedEnum, PostTypeEnum, PostTagEnum, MeetupKind } from '@/types';
@@ -290,6 +291,11 @@ export function CreatePostScreen() {
 
   const handleSubmit = () => {
     setError('');
+    const screenResult = screenContent(title, content, locationName);
+    if (!screenResult.ok) {
+      setError(screenResult.message!);
+      return;
+    }
     try {
       const payload: Record<string, unknown> = {
         content_text: content,

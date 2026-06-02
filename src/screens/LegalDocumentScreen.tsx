@@ -1,12 +1,12 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRoute, type RouteProp } from '@react-navigation/native';
-import type { AuthStackParamList } from '@/navigation/types';
 import { LEGAL_DOCUMENTS } from '@/content/legalDocuments';
 import { colors } from '@/theme';
 import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
 
-type LegalRoute = RouteProp<AuthStackParamList, 'LegalDocument'>;
+type LegalDocumentParams = { documentType: 'terms' | 'communityGuidelines' | 'privacyPolicy' };
+type LegalRoute = RouteProp<{ LegalDocument: LegalDocumentParams }, 'LegalDocument'>;
 
 export function LegalDocumentScreen() {
   const route = useRoute<LegalRoute>();

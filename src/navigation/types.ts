@@ -89,6 +89,8 @@ export type SearchStackParamList = {
 
 export type ProfileStackParamList = {
   ProfileMain: undefined;
+  Settings: undefined;
+  LegalDocument: { documentType: 'terms' | 'communityGuidelines' | 'privacyPolicy' };
   SearchMain: SearchMainParams;
   EditProfile: undefined;
   EditDog: { dogId?: string; fromOnboarding?: boolean };

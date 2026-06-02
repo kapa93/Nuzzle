@@ -23,6 +23,7 @@ import { getPostById, deletePost } from "@/api/posts";
 import { rsvpMeetup, unrsvpMeetup } from "@/api/meetups";
 import { getCommentsByPost, createCommentWithNotification, deleteComment, setCommentReaction } from "@/api/comments";
 import { useBlockedUserIds } from "@/hooks/useBlockedUserIds";
+import { screenContent } from "@/utils/contentFilter";
 import { createReport } from "@/api/reports";
 import { useAuthStore } from "@/store/authStore";
 import { useUIStore } from "@/store/uiStore";
@@ -193,6 +194,11 @@ export function PostDetailScreen() {
     const parsed = commentSchema.safeParse({ content: commentText.trim() });
     if (!parsed.success) {
       Alert.alert("Error", parsed.error.issues[0]?.message ?? "Invalid comment");
+      return;
+    }
+    const screenResult = screenContent(commentText.trim());
+    if (!screenResult.ok) {
+      showToast(screenResult.message!);
       return;
     }
     commentMutation.mutate();

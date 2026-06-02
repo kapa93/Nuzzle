@@ -23,8 +23,8 @@ const SEARCH_ENABLED_ROUTES = new Set([
   "ExploreList",
   "BreedFeed",
   "NotificationsMain",
-  "ProfileMain",
   "SavedPlacesFeed",
+  // ProfileMain excluded — gear icon replaces search in the profile header
 ]);
 
 type Props = NativeStackHeaderProps & {
@@ -51,9 +51,15 @@ export function AnimatedStackHeader({
   const insets = useSafeAreaInsets();
   const topInset = includeTopInset ? insets.top : 0;
   const headerHeight = baseHeaderHeight + topInset;
-  const { scrollDirection } = useScrollDirection();
+  const { scrollDirection, setScrollDirection } = useScrollDirection();
   const translateY = useSharedValue(0);
   const showSearchAction = SEARCH_ENABLED_ROUTES.has(route.name);
+
+  // Each pushed stack screen inherits global scroll direction from the feed
+  // underneath; reset so header (and tab bar) are visible on entry.
+  useEffect(() => {
+    setScrollDirection("up");
+  }, [route.key, setScrollDirection]);
 
   useEffect(() => {
     const shouldHide = animateOnScroll && scrollDirection === "down";
