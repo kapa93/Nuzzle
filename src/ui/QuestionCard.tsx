@@ -29,12 +29,13 @@ type Props = {
   onEdit?: (postId: string) => void;
   onDelete?: (postId: string) => void;
   onShare?: () => void;
+  onReport?: () => void;
 };
 
 const COMMENT_PRESS_ANIMATION = { duration: 180 };
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-const QuestionCardInner = ({ data, onPress, onAuthorPress, onReactionSelect, onReactionMenuOpenChange, currentUserId, onEdit, onDelete, onShare }: Props) => {
+const QuestionCardInner = ({ data, onPress, onAuthorPress, onReactionSelect, onReactionMenuOpenChange, currentUserId, onEdit, onDelete, onShare, onReport }: Props) => {
   const commentButtonPress = useSharedValue(0);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuLayout, setMenuLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
@@ -228,6 +229,21 @@ const QuestionCardInner = ({ data, onPress, onAuthorPress, onReactionSelect, onR
             </View>
           </Pressable>
         )}
+        {onReport && (
+          <Pressable
+            onPress={(event) => {
+              event.stopPropagation();
+              onReport();
+            }}
+            style={styles.reportBtn}
+            hitSlop={8}
+          >
+            <View style={styles.reportIconWrap}>
+              <Ionicons name="flag-outline" size={14} color={colors.textMuted} />
+            </View>
+            <Text style={styles.reportText}>Report</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -354,4 +370,7 @@ const styles = StyleSheet.create({
   pillPressed: { backgroundColor: colors.border },
   reactionPlaceholder: { marginTop: spacing.sm },
   reactionPlaceholderText: { ...typography.bodyMuted, fontSize: 14 },
+  reportBtn: { marginLeft: "auto", padding: spacing.xs, flexDirection: "row", alignItems: "center" },
+  reportIconWrap: { marginRight: 2 },
+  reportText: { ...typography.caption },
 });

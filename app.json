@@ -59,6 +59,14 @@
     "plugins": [
       "@react-native-community/datetimepicker",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Nuzzle uses your photo library so you can add photos to posts and your profile.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      [
         "expo-location",
         {
           "locationWhenInUsePermission": "Nuzzle uses your location to find dog parks, beaches, and trails near you."

@@ -1,7 +1,10 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { Platform, Share, StyleSheet, View } from "react-native";
 import { QuestionCard } from "@/ui/QuestionCard";
 import { MeetupCard } from "@/components/MeetupCard";
+import { ReportReasonModal, type ReportReason } from "@/components/ReportReasonModal";
+import { createReport } from "@/api/reports";
+import { useUIStore } from "@/store/uiStore";
 import { postToQuestionCardData } from "@/utils/postToQuestionCard";
 import { colors, spacing } from "@/theme";
 import type { PostWithDetails, ReactionEnum } from "@/types";
@@ -56,6 +59,25 @@ function FeedItemInner({
   onEdit,
   onDelete,
 }: Props) {
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const { showToast } = useUIStore();
+
+  const isOwnPost = !!currentUserId && item.author_id === currentUserId;
+  const handleReportPress = useCallback(() => setReportModalVisible(true), []);
+  const handleReportConfirm = useCallback(
+    (reason: ReportReason) => {
+      setReportModalVisible(false);
+      showToast("Thanks for helping keep Nuzzle welcoming!");
+      createReport({
+        reporter_id: currentUserId!,
+        reportable_type: "POST",
+        reportable_id: item.id,
+        reason,
+      }).catch(() => {});
+    },
+    [currentUserId, item.id, showToast]
+  );
+
   const handlePress = useCallback(() => onPostPress(item.id), [item.id, onPostPress]);
   const handleReactionSelect = useCallback(
     (reaction: ReactionEnum | null) => onReactionSelect(item.id, reaction),
@@ -87,6 +109,8 @@ function FeedItemInner({
     ? colors.primary
     : toneStyles[tagTone[item.tag] ?? "neutral"].text;
 
+  const onReport = currentUserId && !isOwnPost ? handleReportPress : undefined;
+
   if (item.type === "MEETUP") {
     return (
       <View style={[styles.cardWrap, { borderLeftColor: borderColor }]}>
@@ -101,6 +125,12 @@ function FeedItemInner({
           onEdit={onEdit}
           onDelete={onDelete}
           onShare={handleShare}
+          onReport={onReport}
+        />
+        <ReportReasonModal
+          visible={reportModalVisible}
+          onSelect={handleReportConfirm}
+          onClose={() => setReportModalVisible(false)}
         />
       </View>
     );
@@ -118,6 +148,12 @@ function FeedItemInner({
         onEdit={onEdit}
         onDelete={onDelete}
         onShare={handleShare}
+        onReport={onReport}
+      />
+      <ReportReasonModal
+        visible={reportModalVisible}
+        onSelect={handleReportConfirm}
+        onClose={() => setReportModalVisible(false)}
       />
     </View>
   );

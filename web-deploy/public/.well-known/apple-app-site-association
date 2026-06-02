@@ -2,7 +2,7 @@
   "applinks": {
     "details": [
       {
-        "appIDs": ["L3VDBFUD7G.com.kapa.nuzzle-dev"],
+        "appIDs": ["L3VDBFUD7G.com.kapa.nuzzle", "L3VDBFUD7G.com.kapa.nuzzle-dev"],
         "components": [
           { "/": "/post/*", "comment": "Match post deep links" },
           { "/": "/user/*", "comment": "Match user deep links" }

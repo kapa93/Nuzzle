@@ -50,6 +50,7 @@ type Props = {
   onEdit?: (postId: string) => void;
   onDelete?: (postId: string) => void;
   onShare?: () => void;
+  onReport?: () => void;
 };
 
 const COMMENT_PRESS_ANIMATION = { duration: 180 };
@@ -70,6 +71,7 @@ export function MeetupCard({
   onEdit,
   onDelete,
   onShare,
+  onReport,
 }: Props) {
   const commentButtonPress = useSharedValue(0);
   const [menuVisible, setMenuVisible] = useState(false);
@@ -304,6 +306,21 @@ export function MeetupCard({
             </View>
           </Pressable>
         )}
+        {onReport && (
+          <Pressable
+            onPress={(event) => {
+              event.stopPropagation();
+              onReport();
+            }}
+            style={styles.reportBtn}
+            hitSlop={8}
+          >
+            <View style={styles.reportIconWrap}>
+              <Ionicons name="flag-outline" size={14} color={colors.textMuted} />
+            </View>
+            <Text style={styles.reportText}>Report</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -485,4 +502,7 @@ const styles = StyleSheet.create({
   },
   pressed: { opacity: 0.95 },
   pillPressed: { backgroundColor: colors.border },
+  reportBtn: { marginLeft: "auto", padding: spacing.xs, flexDirection: "row", alignItems: "center" },
+  reportIconWrap: { marginRight: 2 },
+  reportText: { ...typography.caption },
 });
