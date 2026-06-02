@@ -40,14 +40,6 @@ function parseOpeningHours(value: unknown): ParsedDay[] {
     });
 }
 
-function formatPlaceCategory(placeType: string): string {
-  if (placeType === 'dog_park') return 'Dog Park';
-  if (placeType === 'dog_beach') return 'Beach';
-  if (placeType === 'trail') return 'Trail';
-  if (placeType === 'park') return 'Park';
-  return 'Other';
-}
-
 function formatExtraTypes(types: string[]): string {
   return types
     .filter((t) => !IGNORED_PLACE_TYPES.has(t))
@@ -172,9 +164,7 @@ export function DogFriendlyPlacePreviewScreen({ route, navigation }: Props) {
                 <View style={styles.heroRow}>
                   <Ionicons name="paw-outline" size={13} color={colors.textMuted} style={styles.heroRowIcon} />
                   <Text style={styles.heroRowText} numberOfLines={1}>
-                    {[formatPlaceCategory(place.placeType), formatExtraTypes(place.types)]
-                      .filter(Boolean)
-                      .join(' • ')}
+                    {formatExtraTypes(place.types)}
                   </Text>
                 </View>
                 {place.shortFormattedAddress ? (

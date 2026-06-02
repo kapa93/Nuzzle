@@ -43,10 +43,7 @@ type Props = {
   onDeleteDog?: (dogId: string, dogName: string) => void;
   onChangePhoto?: () => void;
   onSignOut?: () => void;
-  onDeleteAccount?: () => void;
-  onAdminDashboard?: () => void;
   isPhotoUpdating?: boolean;
-  isDeletingAccount?: boolean;
 };
 
 const BUTTON_PRESS_ANIMATION = { duration: 180 };
@@ -156,10 +153,7 @@ export function UserProfileContent({
   onDeleteDog,
   onChangePhoto,
   onSignOut,
-  onDeleteAccount,
-  onAdminDashboard,
   isPhotoUpdating = false,
-  isDeletingAccount = false,
 }: Props) {
   const headerHeight = useStackHeaderHeight();
   const {
@@ -466,41 +460,15 @@ export function UserProfileContent({
           )}
         </Section>
 
-        {showPrivateAccountInfo && onAdminDashboard ? (
-          <TapFeedbackPressable
-            style={styles.adminDashboardButton}
-            onPress={onAdminDashboard}
-            fromBackgroundColor={colors.primarySoft}
-            toBackgroundColor={colors.primarySoft}
-          >
-            <Text style={styles.adminDashboardText}>Admin Dashboard</Text>
-          </TapFeedbackPressable>
-        ) : null}
-
         {showPrivateAccountInfo && onSignOut ? (
           <TapFeedbackPressable
-            style={[styles.signOutButton, !onDeleteAccount && styles.signOutButtonFooter]}
+            style={[styles.signOutButton, styles.signOutButtonFooter]}
             onPress={onSignOut}
             fromBackgroundColor={colors.dangerSurface}
             toBackgroundColor={colors.dangerPressedSurface}
           >
             <Text style={styles.signOutText}>Sign Out</Text>
           </TapFeedbackPressable>
-        ) : null}
-
-        {showPrivateAccountInfo && onDeleteAccount ? (
-          <Pressable
-            style={styles.deleteAccountButton}
-            onPress={onDeleteAccount}
-            disabled={isDeletingAccount}
-            hitSlop={8}
-          >
-            {isDeletingAccount ? (
-              <ActivityIndicator size="small" color={colors.danger} />
-            ) : (
-              <Text style={styles.deleteAccountText}>Delete Account</Text>
-            )}
-          </Pressable>
         ) : null}
       </ScrollView>
     </View>
@@ -798,35 +766,6 @@ const styles = StyleSheet.create({
   signOutText: {
     ...typography.body,
     color: colors.danger,
-    fontWeight: '700',
-  },
-  deleteAccountButton: {
-    marginTop: spacing.md,
-    marginBottom: spacing.xxl,
-    minHeight: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.sm,
-  },
-  deleteAccountText: {
-    ...typography.caption,
-    color: colors.danger,
-    fontWeight: '700',
-    textDecorationLine: 'underline',
-  },
-  adminDashboardButton: {
-    marginTop: spacing.sm,
-    minHeight: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    backgroundColor: colors.primarySoft,
-  },
-  adminDashboardText: {
-    ...typography.body,
-    color: colors.primaryDark,
     fontWeight: '700',
   },
   blockButton: {

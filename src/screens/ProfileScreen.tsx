@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Alert, Pressable, StyleSheet, View, Text } from 'react-native';
 import { Settings } from 'lucide-react-native';
 import { NotificationBell } from '@/components/NotificationBell';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { deleteAccount, signOut, updateProfile } from '@/api/auth';
+import { signOut, updateProfile } from '@/api/auth';
 import { deleteDog } from '@/api/dogs';
 import { UserProfileContent } from '@/components/UserProfileContent';
 import { pickImages, uploadProfileImage } from '@/lib/imageUpload';
-import type { ProfileStackParamList, RootStackParamList } from '@/navigation/types';
+import type { ProfileStackParamList } from '@/navigation/types';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { colors, spacing, typography } from '@/theme';
@@ -16,7 +16,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 type ProfileNav = NativeStackNavigationProp<ProfileStackParamList, 'ProfileMain'>;
 
 export function ProfileScreen({ navigation }: { navigation: ProfileNav }) {
-  const { user, profile, signOut: clearSession } = useAuthStore();
+  const { user, signOut: clearSession } = useAuthStore();
   const userId = user?.id ?? '';
   const queryClient = useQueryClient();
   useEffect(() => {
@@ -59,20 +59,6 @@ export function ProfileScreen({ navigation }: { navigation: ProfileNav }) {
       queryClient.invalidateQueries({ queryKey: ['comments'] });
     },
     onError: (err: Error) => Alert.alert('Error', err.message),
-  });
-
-  const deleteAccountMutation = useMutation({
-    mutationFn: () => deleteAccount(),
-    onSuccess: () => {
-      queryClient.clear();
-      clearSession();
-    },
-    onError: (err: Error) => {
-      Alert.alert(
-        'Could not delete account',
-        err.message || 'Please try again in a moment.'
-      );
-    },
   });
 
   const { showGuestPrompt } = useUIStore();
@@ -119,22 +105,6 @@ export function ProfileScreen({ navigation }: { navigation: ProfileNav }) {
     ]);
   };
 
-  const handleDeleteAccount = () => {
-    if (deleteAccountMutation.isPending) return;
-    Alert.alert(
-      'Delete account',
-      'This permanently deletes your account, your dogs, posts, comments, and photos. This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => deleteAccountMutation.mutate(),
-        },
-      ]
-    );
-  };
-
   const handleDeleteDog = (dogId: string, dogName: string) => {
     Alert.alert('Remove dog', `Remove ${dogName} from your profile?`, [
       { text: 'Cancel', style: 'cancel' },
@@ -171,16 +141,6 @@ export function ProfileScreen({ navigation }: { navigation: ProfileNav }) {
         onDeleteDog={handleDeleteDog}
         onChangePhoto={handleChangePhoto}
         onSignOut={handleSignOut}
-        onDeleteAccount={handleDeleteAccount}
-        isDeletingAccount={deleteAccountMutation.isPending}
-        onAdminDashboard={
-          profile?.is_admin
-            ? () =>
-                navigation
-                  .getParent<NativeStackNavigationProp<RootStackParamList>>()
-                  ?.navigate('AdminDashboard')
-            : undefined
-        }
         isPhotoUpdating={photoMutation.isPending}
       />
     </>

@@ -1,5 +1,7 @@
 import React from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Linking,
   Pressable,
   ScrollView,
@@ -9,9 +11,12 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { ProfileStackParamList } from '@/navigation/types';
+import { deleteAccount } from '@/api/auth';
+import type { ProfileStackParamList, RootStackParamList } from '@/navigation/types';
 import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
+import { useAuthStore } from '@/store/authStore';
 import { colors, spacing, typography } from '@/theme';
 
 type SettingsNav = NativeStackNavigationProp<ProfileStackParamList, 'Settings'>;
@@ -33,6 +38,36 @@ function Row({ label, onPress }: RowProps) {
   );
 }
 
+function DestructiveRow({
+  label,
+  onPress,
+  disabled,
+  loading,
+}: {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+}) {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.row,
+        pressed && !disabled && styles.rowPressed,
+        disabled && styles.rowDisabled,
+      ]}
+      onPress={onPress}
+      disabled={disabled}
+    >
+      {loading ? (
+        <ActivityIndicator size="small" color={colors.danger} />
+      ) : (
+        <Text style={styles.destructiveRowLabel}>{label}</Text>
+      )}
+    </Pressable>
+  );
+}
+
 const LEGAL_ROWS: { label: string; documentType: 'terms' | 'privacyPolicy' | 'communityGuidelines' }[] = [
   { label: 'Terms of Service', documentType: 'terms' },
   { label: 'Privacy Policy', documentType: 'privacyPolicy' },
@@ -42,6 +77,45 @@ const LEGAL_ROWS: { label: string; documentType: 'terms' | 'privacyPolicy' | 'co
 export function SettingsScreen() {
   const navigation = useNavigation<SettingsNav>();
   const headerHeight = useStackHeaderHeight();
+  const queryClient = useQueryClient();
+  const clearSession = useAuthStore((state) => state.signOut);
+  const profile = useAuthStore((state) => state.profile);
+
+  const deleteAccountMutation = useMutation({
+    mutationFn: () => deleteAccount(),
+    onSuccess: () => {
+      queryClient.clear();
+      clearSession();
+    },
+    onError: (err: Error) => {
+      Alert.alert(
+        'Could not delete account',
+        err.message || 'Please try again in a moment.'
+      );
+    },
+  });
+
+  const handleDeleteAccount = () => {
+    if (deleteAccountMutation.isPending) return;
+    Alert.alert(
+      'Delete account',
+      'This permanently deletes your account, your dogs, posts, comments, and photos. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => deleteAccountMutation.mutate(),
+        },
+      ]
+    );
+  };
+
+  const handleOpenAdminDashboard = () => {
+    navigation
+      .getParent<NativeStackNavigationProp<RootStackParamList>>()
+      ?.navigate('AdminDashboard');
+  };
 
   return (
     <ScrollView
@@ -67,6 +141,25 @@ export function SettingsScreen() {
         <Row
           label="Contact Support"
           onPress={() => Linking.openURL('mailto:support@nuzzle.app')}
+        />
+      </View>
+
+      {profile?.is_admin ? (
+        <>
+          <Text style={styles.sectionLabel}>Admin</Text>
+          <View style={styles.section}>
+            <Row label="Admin Dashboard" onPress={handleOpenAdminDashboard} />
+          </View>
+        </>
+      ) : null}
+
+      <Text style={styles.sectionLabel}>Account</Text>
+      <View style={styles.section}>
+        <DestructiveRow
+          label="Delete Account"
+          onPress={handleDeleteAccount}
+          disabled={deleteAccountMutation.isPending}
+          loading={deleteAccountMutation.isPending}
         />
       </View>
     </ScrollView>
@@ -111,9 +204,17 @@ const styles = StyleSheet.create({
   rowPressed: {
     backgroundColor: colors.surfaceMuted,
   },
+  rowDisabled: {
+    opacity: 0.6,
+  },
   rowLabel: {
     ...typography.body,
     color: colors.textPrimary,
+  },
+  destructiveRowLabel: {
+    ...typography.body,
+    color: colors.danger,
+    fontWeight: '600',
   },
   separator: {
     height: 1,
