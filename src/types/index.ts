@@ -83,7 +83,7 @@ export const REACTIONS: { type: ReactionEnum; emoji: string }[] = [
 export interface Profile {
   id: string;
   name: string;
-  email: string;
+  email?: string;
   city: string | null;
   profile_image_url: string | null;
   is_admin: boolean;

@@ -2,13 +2,13 @@
 
 **Nuzzle**
 **Effective Date: April 12, 2026**
-**Last Updated: April 12, 2026**
+**Last Updated: June 2, 2026**
 
 ---
 
 ## 1. Introduction
 
-Welcome to Nuzzle ("we," "our," or "us"). Nuzzle is a social community app for dog breed enthusiasts, connecting dog owners through breed-specific feeds, meetups, Dog Beach check-ins, and dog-to-dog social interactions.
+Welcome to Nuzzle ("we," "our," or "us"). Nuzzle is a social community app for dog breed enthusiasts, connecting dog owners through breed-specific feeds, meetups, Dog Spots (dog parks, beaches, and trails), Dog Friendly Places (nearby dog-welcoming businesses), place check-ins, and dog-to-dog social interactions.
 
 This Privacy Policy explains what information we collect, how we use it, with whom we share it, and the choices you have regarding your information. By creating an account or using Nuzzle, you agree to the practices described in this policy.
 
@@ -44,11 +44,19 @@ We collect content you create and share within the app, including:
 - **Comments** on posts
 - **Emoji reactions** to posts
 - **Meetup details** and RSVPs
-- **Dog interaction logs** — records of dog-to-dog meetings you log (e.g., at Dog Beach or meetups)
+- **Dog interaction logs** — records of dog-to-dog meetings you log (e.g., at Dog Spots or meetups)
+- **Place vibes** — short impressions or reviews you leave on a Dog Spot page
+- **Community suggestions** — records of Dog Spot communities you have proposed or expressed interest in
 
 ### 2.4 Location Information
 
-When you use the **Dog Beach Now** check-in feature, we request access to your **device's location** solely to verify proximity to Ocean Beach Dog Beach in San Francisco. We do not continuously track your location; location access is only requested at the moment of a check-in action.
+We request access to your **device's location** in the following situations:
+
+- **Dog Spot check-ins** — to verify that you are near a Dog Spot (dog beach, dog park, trail, or other curated location) when you check in
+- **Nearby Dog Spot alerts** — when enabled, the home feed may check your proximity to a nearby Dog Spot and display a check-in prompt if you are close
+- **Dog Friendly Places discovery** — the Dog Friendly Places tab uses your location to show nearby dog-welcoming businesses
+
+We do not continuously track your location in the background. Location access is requested on-device only at the moment each of the above actions is triggered. You can revoke location permission at any time via your device settings; doing so will disable proximity-based features.
 
 ### 2.5 Usage and Activity Data
 
@@ -78,8 +86,10 @@ We use the information we collect to:
 - **Provide and operate** the Nuzzle app, including your personalized home feed, breed-community feeds, and notifications
 - **Authenticate you** and maintain your session securely
 - **Display your profile and your dogs' profiles** to other users in the community
-- **Enable social features** — posts, comments, reactions, meetup RSVPs, and dog-to-dog interaction logs
-- **Power the Dog Beach Now feature** by verifying your location proximity to the check-in location
+- **Enable social features** — posts, comments, reactions, meetup RSVPs, dog-to-dog interaction logs, and place vibes
+- **Power Dog Spots** — verify location proximity for place check-ins and show which dogs are currently present at a Dog Spot
+- **Power Dog Friendly Places** — use your location to surface nearby dog-welcoming businesses via the Google Places API
+- **Enable guest browsing** — serve read-only content to users who have not created an account
 - **Send in-app notifications** when someone comments on or reacts to your posts, RSVPs to your meetups, or logs a dog interaction involving your dog
 - **Support search and discovery** — full-text search across posts and breed communities
 - **Moderate content** — process reports on posts and comments and enforce our community guidelines
@@ -102,7 +112,10 @@ Nuzzle is a social community. The following information is visible to other user
 
 ### 4.2 Service Providers
 
-We use **Supabase** to host our database, authentication services, and file storage (profile photos, dog photos, and post images). Supabase processes data on our behalf under their own privacy and security terms. We do not sell your personal information to third parties.
+- **Supabase** — hosts our database, authentication services, and file storage (profile photos, dog photos, and post images). Supabase processes data on our behalf under their own privacy and security terms.
+- **Google** — we use the Google Places API to look up and display nearby dog-friendly businesses in the Dog Friendly Places feature. When you use that feature, your device location may be sent to Google to retrieve nearby place results, subject to Google's Privacy Policy.
+
+We do not sell your personal information to third parties.
 
 ### 4.3 Apple Sign In
 
@@ -126,7 +139,13 @@ Photos you upload (profile photos, dog photos, and post images) are stored in Su
 
 ## 6. Location Data
 
-Location access is requested on-device only when you initiate a Dog Beach Now check-in. We use your precise location at that moment solely to confirm proximity to Ocean Beach Dog Beach. We do not store your precise GPS coordinates beyond what is needed for the check-in action, and we do not share precise location data with other users.
+Location access is requested on-device only when you use a proximity-dependent feature:
+
+- **Place check-ins** — we use your location to confirm you are near a Dog Spot before allowing a check-in. We do not store your precise GPS coordinates beyond what is needed to complete the check-in.
+- **Nearby Dog Spot alerts** — when enabled, the home feed periodically checks your proximity to a nearby Dog Spot to display an optional check-in prompt. This check is performed on-device and is not used for any other purpose.
+- **Dog Friendly Places discovery** — your location is used to query the Google Places API for nearby dog-welcoming businesses. We do not store your coordinates for this query beyond the immediate request.
+
+We do not continuously track your location, and we do not share your precise location with other users. You can revoke location permission at any time via your device settings.
 
 ---
 
@@ -170,7 +189,7 @@ Depending on your location, you may have the following rights regarding your per
 - **Correction** — update or correct inaccurate information via your profile settings
 - **Deletion** — request deletion of your account and associated personal data
 - **Portability** — request a portable copy of your data
-- **Withdraw consent** — revoke location access at any time via your device settings; this will disable Dog Beach Now check-ins
+- **Withdraw consent** — revoke location access at any time via your device settings; this will disable Dog Spot check-ins, nearby-place alerts, and Dog Friendly Places proximity discovery
 
 To exercise any of these rights, please contact us using the information in Section 13.
 

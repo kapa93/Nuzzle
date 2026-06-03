@@ -6,7 +6,6 @@ export interface AdminNewUsersData {
   recent_users: Array<{
     id: string;
     name: string;
-    email: string;
     city: string | null;
     profile_image_url: string | null;
     created_at: string;
@@ -40,7 +39,7 @@ export async function fetchNewUsers(): Promise<AdminNewUsersData> {
     supabase.from('profiles').select('id', { count: 'exact', head: true }),
     supabase
       .from('profiles')
-      .select('id, name, email, city, profile_image_url, created_at')
+      .select('id, name, city, profile_image_url, created_at')
       .order('created_at', { ascending: false })
       .limit(20),
   ]);

@@ -88,6 +88,12 @@ async function sendChunk(messages: PushMessage[]): Promise<ExpoPushTicket[]> {
 }
 
 Deno.serve(async (req: Request) => {
+  const expectedSecret = Deno.env.get('PUSH_WEBHOOK_SECRET') ?? '';
+  const requestSecret  = req.headers.get('X-Webhook-Secret') ?? '';
+  if (!expectedSecret || !requestSecret || requestSecret !== expectedSecret) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
   try {
     const payload = await req.json();
     // Supabase Database Webhooks send the row under payload.record

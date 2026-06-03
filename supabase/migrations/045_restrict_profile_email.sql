@@ -1,0 +1,11 @@
+-- Prevent any client-side query (anon or authenticated role) from reading
+-- profiles.email. The existing USING (true) row policy is unchanged —
+-- only column-level access is removed.
+--
+-- service_role retains full column access, so edge functions and admin
+-- SQL in the Supabase dashboard continue to work normally.
+--
+-- After this change:
+--   select('*')         → email column silently omitted from results
+--   select('...,email') → PostgREST returns permission-denied error
+REVOKE SELECT (email) ON public.profiles FROM anon, authenticated;

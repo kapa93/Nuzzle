@@ -2,7 +2,7 @@
 
 **Nuzzle**
 **Effective Date: April 12, 2026**
-**Last Updated: April 12, 2026**
+**Last Updated: June 2, 2026**
 
 ---
 
@@ -44,10 +44,15 @@ Nuzzle provides a social community platform for dog breed enthusiasts, including
 - **Posts** — Questions, Updates/Stories, Tips, and Meetups with photos
 - **Comments and reactions** on posts
 - **Meetups** — create and RSVP to dog meetup events
-- **Dog Beach Now** — real-time location-based check-ins at Ocean Beach Dog Beach, San Francisco
+- **Dog Spots** — community pages for dog parks, dog beaches, trails, and other outdoor locations, each with a feed, real-time check-ins, and meetups
+- **Dog Friendly Places** — discover nearby dog-friendly businesses (cafes, bars, breweries, restaurants, and stores) and browse community content tied to those locations
+- **Place check-ins** — real-time location-based check-ins at Dog Spots to show which dogs are currently present
 - **Dog profiles** and **dog-to-dog interaction logs**
+- **Saved places** — bookmark Dog Spots and Dog Friendly Places for quick access
+- **Community suggestions** — propose a new local Dog Spot community; communities are activated once sufficient user interest is recorded
 - **Search and discovery** across breeds, posts, and users
 - **In-app notifications** for community activity
+- **Guest browsing** — limited read-only access to the app without creating an account; posting, reacting, checking in, and RSVPing require a registered account
 
 We reserve the right to modify, suspend, or discontinue any feature of the Service at any time, with or without notice.
 
@@ -117,13 +122,14 @@ Nuzzle enables users to organize and RSVP to dog meetup events. You acknowledge 
 
 ---
 
-## 9. Dog Beach Now
+## 9. Dog Spots and Place Check-Ins
 
-The Dog Beach Now feature uses your device's location to verify proximity to Ocean Beach Dog Beach in San Francisco. By using this feature:
+Dog Spots are curated outdoor locations (dog beaches, dog parks, trails, and similar places) with community feeds, real-time check-ins, and meetups. When you use check-in or nearby-location features:
 
-- You consent to the one-time location access required to verify proximity
+- You consent to location access as needed to verify proximity to a Dog Spot or to show you nearby locations
 - You represent that your check-in is genuine and that you or your dog are present at or near the location
-- You agree not to submit false check-ins
+- You agree not to submit false check-ins at any Dog Spot
+- Location access for proximity detection is requested at the time of the relevant action and is not used for continuous background tracking
 
 ---
 
@@ -147,7 +153,13 @@ Your use of Nuzzle is also governed by our [Privacy Policy](PRIVACY_POLICY.md), 
 
 ## 13. Third-Party Services and Links
 
-Nuzzle uses third-party services (including Supabase for infrastructure and Apple for authentication). Your use of those services is governed by their respective terms and policies. We are not responsible for the practices of any third-party service.
+Nuzzle uses third-party services, including:
+
+- **Supabase** — database, authentication, and file storage infrastructure
+- **Apple** — Sign in with Apple authentication
+- **Google** — Places API used to look up and display dog-friendly businesses in the Dog Friendly Places feature
+
+Your use of those services is governed by their respective terms and policies. We are not responsible for the practices of any third-party service.
 
 ---
 

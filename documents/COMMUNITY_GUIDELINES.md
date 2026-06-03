@@ -33,7 +33,7 @@ Nuzzle is a community built on a shared love of dogs. Treat every member the way
 Nuzzle is a dog community, not a general social network or political forum.
 
 **Do:**
-- Post content relevant to dogs, breeds, dog care, meetups, or the Dog Beach
+- Post content relevant to dogs, breeds, dog care, meetups, Dog Spots, or Dog Friendly Places
 - Share related lifestyle content that naturally involves your dog(s)
 
 **Don't:**
@@ -55,7 +55,7 @@ Trust is the foundation of a useful community.
 **Don't:**
 - Create fake accounts or impersonate other users
 - Post misleading information presented as fact
-- Fabricate dog interaction logs or check-ins
+- Fabricate dog interaction logs, place check-ins, or place reviews (vibes)
 - Log dog interactions on behalf of another owner without their knowledge or consent
 
 ---
@@ -154,7 +154,26 @@ Nuzzle meetups are a highlight of the community. Make them safe and welcoming.
 
 ---
 
-## 10. Dog Compatibility and Interaction Logs
+## 10. Dog Spots and Dog Friendly Places
+
+Dog Spots are curated outdoor locations (dog beaches, parks, and trails) with community feeds and real-time check-ins. Dog Friendly Places are nearby businesses where dogs are welcome (cafes, bars, restaurants, etc.). Keep them useful and trustworthy for everyone.
+
+**Do:**
+- Check in only when you and your dog are genuinely present at or near the location
+- Leave honest, helpful place vibes based on your actual experience
+- Suggest new Dog Spot communities for real locations your dog frequents
+
+**Don't:**
+- Submit false or duplicate check-ins
+- Leave fake, malicious, or exaggerated place reviews (vibes)
+- Suggest communities for places you have not visited or that have no relevance to dogs
+- Use place pages to harass or target specific businesses or their staff
+
+> Nuzzle is not affiliated with any third-party business listed in Dog Friendly Places. Listings are sourced from Google Places and community contributions.
+
+---
+
+## 11. Dog Compatibility and Interaction Logs
 
 Dog profiles include compatibility fields (e.g., play style, good with puppies/large/small dogs) to help owners make informed decisions about introductions.
 
@@ -170,7 +189,7 @@ Dog profiles include compatibility fields (e.g., play style, good with puppies/l
 
 ---
 
-## 11. Reporting and Moderation
+## 12. Reporting and Moderation
 
 If you see content that violates these guidelines, please report it. Every report helps keep the community safe.
 
@@ -187,7 +206,7 @@ We aim to be fair, consistent, and transparent in our moderation decisions.
 
 ---
 
-## 12. Enforcement
+## 13. Enforcement
 
 Depending on the nature and severity of a violation, we may take the following actions:
 

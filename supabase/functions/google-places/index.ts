@@ -141,6 +141,28 @@ const IMPORT_BLOCKED_TYPE_HINTS = new Set([
   "hotel",
 ]);
 
+// ---------------------------------------------------------------------------
+// Per-IP sliding-window rate limiter (in-memory, per Edge Function instance)
+// ---------------------------------------------------------------------------
+const RL = new Map<string, { count: number; resetAt: number }>();
+
+function clientIp(req: Request): string {
+  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+}
+
+/** Returns false (→ 429) when the caller has exceeded limit within windowMs. */
+function checkRateLimit(key: string, limit: number, windowMs: number): boolean {
+  const now = Date.now();
+  const entry = RL.get(key);
+  if (!entry || now > entry.resetAt) {
+    RL.set(key, { count: 1, resetAt: now + windowMs });
+    return true;
+  }
+  if (entry.count >= limit) return false;
+  entry.count++;
+  return true;
+}
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -714,6 +736,9 @@ Deno.serve(async (req) => {
     // time-limited strings that contain no user-specific data.
     if (req.method === "GET") {
       if (url.searchParams.get("action") === "photo") {
+        if (!checkRateLimit(`photo:${clientIp(req)}`, 60, 60_000)) {
+          return json({ error: "Too many requests" }, 429);
+        }
         const photoName = url.searchParams.get("name")?.trim();
         if (!photoName) return json({ error: "name is required" }, 400);
         return await proxyGooglePhoto(photoName, googleApiKey);
@@ -732,8 +757,12 @@ Deno.serve(async (req) => {
 
     // The following actions are intentionally unauthenticated — they only proxy Google Places API
     // and contain no user-specific data, so guests can use them freely.
+    // Rate limits are enforced per IP to prevent billing abuse.
 
     if (body.action === "searchLocation") {
+      if (!checkRateLimit(`searchLocation:${clientIp(req)}`, 30, 60_000)) {
+        return json({ error: "Too many requests" }, 429);
+      }
       const query = body.query?.trim();
       if (!query || query.length < 2) return json({ locations: [] });
       const locations = await searchLocationPlaces(query, googleApiKey);
@@ -741,6 +770,9 @@ Deno.serve(async (req) => {
     }
 
     if (body.action === "dogSpots") {
+      if (!checkRateLimit(`dogSpots:${clientIp(req)}`, 10, 60_000)) {
+        return json({ error: "Too many requests" }, 429);
+      }
       const lat = body.latitude;
       const lng = body.longitude;
       if (
@@ -756,6 +788,9 @@ Deno.serve(async (req) => {
     }
 
     if (body.action === "details") {
+      if (!checkRateLimit(`details:${clientIp(req)}`, 20, 60_000)) {
+        return json({ error: "Too many requests" }, 429);
+      }
       const googlePlaceId = body.googlePlaceId?.trim();
       if (!googlePlaceId) return json({ error: "googlePlaceId is required" }, 400);
       const place = await getGooglePlacePreview(googlePlaceId, googleApiKey);
@@ -816,6 +851,13 @@ Deno.serve(async (req) => {
     }
 
     if (body.action === "import") {
+      const { data: callerProfile } = await authClient
+        .from("profiles")
+        .select("is_admin")
+        .eq("id", authData.user.id)
+        .single();
+      if (!callerProfile?.is_admin) return json({ error: "Forbidden" }, 403);
+
       const googlePlaceId = body.googlePlaceId?.trim();
       if (!googlePlaceId) return json({ error: "googlePlaceId is required" }, 400);
 
