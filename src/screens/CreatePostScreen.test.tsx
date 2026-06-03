@@ -163,6 +163,7 @@ describe('CreatePostScreen', () => {
       params: { initialPlaceId: 'place-1', initialPlaceName: 'Dog Park' },
     });
     render(<CreatePostScreen />);
-    expect(screen.getByText(/Posting at: Dog Park/)).toBeTruthy();
+    expect(screen.getAllByText('Dog Park').length).toBeGreaterThan(0);
+    expect(screen.getByLabelText('Place: Dog Park')).toBeTruthy();
   });
 });

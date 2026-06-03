@@ -55,6 +55,20 @@ jest.mock('react-native-safe-area-context', () => {
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock')
 );
+jest.mock('@expo/vector-icons', () => {
+  const React = require('react');
+  const { Text } = require('react-native');
+  const icon = (props: { name?: string; testID?: string }) =>
+    React.createElement(Text, { testID: props.testID }, props.name ?? '');
+  return new Proxy(
+    {},
+    {
+      get: (_target, prop) =>
+        prop === '__esModule' ? true : icon,
+    }
+  );
+});
+
 jest.mock('react-native-reanimated', () => {
   const ReactNative = require('react-native');
   const Animated = {

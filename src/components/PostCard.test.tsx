@@ -147,10 +147,10 @@ describe('PostCard', () => {
         onReactionSelect={mockOnReactionSelect}
       />
     );
-    expect(screen.getByText('5 comments')).toBeTruthy();
+    expect(screen.getByText('5')).toBeTruthy();
   });
 
-  it('shows 0 comments when comment_count is null', () => {
+  it('hides comment count when comment_count is null', () => {
     render(
       <PostCard
         post={makePost({ comment_count: null as unknown as number })}
@@ -158,7 +158,7 @@ describe('PostCard', () => {
         onReactionSelect={mockOnReactionSelect}
       />
     );
-    expect(screen.getByText('0 comments')).toBeTruthy();
+    expect(screen.queryByText('0')).toBeNull();
   });
 
   it('calls onPress when the card is tapped', () => {

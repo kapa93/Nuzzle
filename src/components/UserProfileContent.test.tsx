@@ -2,6 +2,17 @@ jest.mock('@/hooks/useUserProfile', () => ({
   useUserProfile: jest.fn(),
 }));
 
+jest.mock('@/hooks/useBlockUser', () => ({
+  useBlockUser: jest.fn(() => ({
+    isBlocked: false,
+    isCheckingBlock: false,
+    blockUser: jest.fn(),
+    unblockUser: jest.fn(),
+    isBlocking: false,
+    isUnblocking: false,
+  })),
+}));
+
 jest.mock('@/hooks/useStackHeaderHeight', () => ({
   useStackHeaderHeight: jest.fn(() => 0),
 }));
@@ -236,7 +247,7 @@ describe('UserProfileContent', () => {
     );
 
     expect(screen.getByText('Ben Dogtester')).toBeTruthy();
-    expect(screen.getByText('Dogs')).toBeTruthy();
+    expect(screen.getAllByText('Dogs').length).toBeGreaterThan(0);
     expect(screen.getByText('Recent Posts')).toBeTruthy();
     expect(screen.getByText('Scout')).toBeTruthy();
     expect(screen.getByText('Daisy')).toBeTruthy();

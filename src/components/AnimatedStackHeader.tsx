@@ -22,7 +22,6 @@ const SEARCH_ENABLED_ROUTES = new Set([
   "DogsFeed",
   "DogFriendlyPlacesList",
   "BreedFeed",
-  "NotificationsMain",
   "DogSpotsFeed",
   // ProfileMain excluded — gear icon replaces search in the profile header
 ]);

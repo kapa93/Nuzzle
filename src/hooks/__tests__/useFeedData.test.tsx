@@ -3,6 +3,10 @@ jest.mock('@/api/posts', () => ({
   deletePost: jest.fn(),
 }));
 
+jest.mock('@/hooks/useBlockedUserIds', () => ({
+  useBlockedUserIds: jest.fn(() => []),
+}));
+
 jest.mock('@/api/reactions', () => ({
   setReaction: jest.fn(),
 }));
@@ -93,6 +97,7 @@ describe('useFeedData — feedQueryKey', () => {
       'GOLDEN_RETRIEVER',
       'newest',
       'user-1',
+      [],
     ]);
   });
 
@@ -109,6 +114,7 @@ describe('useFeedData — feedQueryKey', () => {
       'GOLDEN_RETRIEVER',
       'newest',
       undefined,
+      [],
     ]);
   });
 });

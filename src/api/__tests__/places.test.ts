@@ -171,7 +171,7 @@ describe('Google Places wrappers', () => {
 
     expect(result).toEqual(place);
     expect(mockInvoke).toHaveBeenCalledWith('google-places', {
-      body: { action: 'import', googlePlaceId: 'google-1' },
+      body: { action: 'import', googlePlaceId: 'google-1', bannerPhotoName: null },
     });
   });
 
@@ -207,7 +207,7 @@ describe('Google Places wrappers', () => {
 
   it('builds Google place photo proxy URLs', () => {
     expect(getGooglePlacePhotoUrl('places/google-1/photos/photo-1', 'access-token')).toBe(
-      'https://example.supabase.co/functions/v1/google-places?action=photo&name=places%2Fgoogle-1%2Fphotos%2Fphoto-1&access_token=access-token'
+      'https://example.supabase.co/functions/v1/google-places?action=photo&name=places%2Fgoogle-1%2Fphotos%2Fphoto-1'
     );
   });
 

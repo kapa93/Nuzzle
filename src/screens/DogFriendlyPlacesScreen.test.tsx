@@ -2,23 +2,6 @@ jest.mock('@expo/vector-icons', () => ({
   Ionicons: () => null,
 }));
 
-jest.mock('lucide-react-native', () => ({
-  MapPinned: () => null,
-}));
-
-jest.mock('react-native-reanimated', () => {
-  const React = require('react');
-  const { View } = require('react-native');
-  return {
-    __esModule: true,
-    default: { View: (props: React.ComponentProps<typeof View>) => React.createElement(View, props) },
-    interpolate: () => 1,
-    useSharedValue: (value: unknown) => ({ value }),
-    useAnimatedStyle: (cb: () => object) => cb(),
-    withTiming: (value: unknown) => value,
-  };
-});
-
 jest.mock('react-native-safe-area-context', () => {
   const React = require('react');
   const { View } = require('react-native');
@@ -33,10 +16,11 @@ jest.mock('react-native-safe-area-context', () => {
 });
 
 jest.mock('expo-location', () => ({
-  Accuracy: { Balanced: 1 },
+  Accuracy: { Balanced: 1, High: 3 },
   getForegroundPermissionsAsync: jest.fn(),
   requestForegroundPermissionsAsync: jest.fn(),
   getCurrentPositionAsync: jest.fn(),
+  getLastKnownPositionAsync: jest.fn(),
 }));
 
 jest.mock('@tanstack/react-query', () => ({
@@ -47,204 +31,176 @@ jest.mock('@/hooks/useStackHeaderHeight', () => ({
   useStackHeaderHeight: jest.fn(() => 0),
 }));
 
-jest.mock('@/utils/breedAssets', () => ({
-  getPackItems: jest.fn(() => []),
+jest.mock('@/hooks/useDogSpotVibes', () => ({
+  useListDogSpotVibes: jest.fn(() => ({ vibesByPlace: new Map() })),
 }));
 
-jest.mock('@/hooks/useSavedPlaces', () => ({
-  useSavedPlaces: jest.fn(),
-  useToggleSavedPlace: jest.fn(),
-  useSavedPlacesWithActivity: jest.fn(),
+jest.mock('@/store/uiStore', () => ({
+  useUIStore: jest.fn((selector: (s: { showLocationModal: () => void }) => unknown) =>
+    selector({ showLocationModal: jest.fn() })
+  ),
+}));
+
+jest.mock('@/store/locationStore', () => {
+  const mockGetState = jest.fn(() => ({
+    manualLocation: null,
+    hasSeenLocationModal: false,
+    locationSetupVersion: 0,
+  }));
+  return {
+    useLocationStore: Object.assign(
+      jest.fn((selector: (s: { locationSetupVersion: number }) => unknown) =>
+        selector({ locationSetupVersion: 0 })
+      ),
+      { getState: mockGetState }
+    ),
+    __mockGetState: mockGetState,
+  };
+});
+
+jest.mock('@/components/NotificationBell', () => ({
+  NotificationBell: () => null,
 }));
 
 jest.mock('@/api/places', () => ({
-  listActivePlaces: jest.fn(),
-  getPlacePopularitySignals: jest.fn(),
-  searchGooglePlacesWithOptions: jest.fn(),
-}));
-
-jest.mock('@/store/authStore', () => ({
-  useAuthStore: jest.fn(),
+  getDogSpotsNearby: jest.fn(),
+  getGooglePlacePhotoUrl: jest.fn(() => 'https://example.com/photo.jpg'),
 }));
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, screen, waitFor } from '@testing-library/react-native';
 import { useQuery } from '@tanstack/react-query';
 import * as Location from 'expo-location';
-import { useSavedPlaces, useToggleSavedPlace, useSavedPlacesWithActivity } from '@/hooks/useSavedPlaces';
-import { useAuthStore } from '@/store/authStore';
 import { DogFriendlyPlacesScreen } from '@/screens/DogFriendlyPlacesScreen';
-import type { Place } from '@/types';
+import type { GooglePlaceCandidate } from '@/types';
 
 const mockUseQuery = useQuery as jest.Mock;
 const mockLocationPerms = Location.getForegroundPermissionsAsync as jest.Mock;
-const mockLocationRequest = Location.requestForegroundPermissionsAsync as jest.Mock;
 const mockLocationPosition = Location.getCurrentPositionAsync as jest.Mock;
-const mockUseSavedPlaces = useSavedPlaces as jest.Mock;
-const mockUseToggleSavedPlace = useToggleSavedPlace as jest.Mock;
-const mockUseSavedPlacesWithActivity = useSavedPlacesWithActivity as jest.Mock;
-const mockUseAuthStore = useAuthStore as unknown as jest.Mock;
+const mockLocationLastKnown = Location.getLastKnownPositionAsync as jest.Mock;
 
-const places: Place[] = [
-  {
-    id: 'saved-1',
-    name: 'Saved Dog Park',
-    slug: 'saved-dog-park',
-    google_place_id: null,
-    place_type: 'dog_park',
-    city: 'San Diego',
-    neighborhood: 'North Park',
-    latitude: 32.73,
-    longitude: -117.13,
-    check_in_radius_meters: 250,
-    check_in_duration_minutes: 60,
-    description: null,
-    is_active: true,
-    status: 'active' as const,
-    supports_check_in: true,
-    photos: [],
-    created_at: '2026-01-01T00:00:00.000Z',
-    updated_at: '2026-01-01T00:00:00.000Z',
-  },
-  {
-    id: 'place-2',
-    name: 'Ocean Trail',
-    slug: 'ocean-trail',
-    google_place_id: null,
-    place_type: 'trail',
-    city: 'San Diego',
-    neighborhood: 'La Jolla',
-    latitude: 32.84,
-    longitude: -117.28,
-    check_in_radius_meters: 250,
-    check_in_duration_minutes: 60,
-    description: null,
-    is_active: true,
-    status: 'active' as const,
-    supports_check_in: true,
-    photos: [],
-    created_at: '2026-01-01T00:00:00.000Z',
-    updated_at: '2026-01-01T00:00:00.000Z',
-  },
-];
+const MOCK_NAVIGATION = { navigate: jest.fn(), setOptions: jest.fn() };
 
-function setup({
-  searchResults = [],
-  locationGranted = true,
-  permissionStatus,
-  canAskAgain,
-  requestedStatus = 'granted',
-}: {
-  searchResults?: Array<{
-    googlePlaceId: string;
-    name: string;
-    formattedAddress: string | null;
-    latitude: number | null;
-    longitude: number | null;
-    city: string | null;
-    neighborhood: string | null;
-    placeType: 'dog_beach' | 'dog_park' | 'trail' | 'park' | 'other';
-    types: string[];
-  }>;
-  locationGranted?: boolean;
-  permissionStatus?: 'granted' | 'denied' | 'undetermined';
-  canAskAgain?: boolean;
-  requestedStatus?: 'granted' | 'denied';
-} = {}) {
-  mockUseAuthStore.mockReturnValue({ user: { id: 'user-1' } });
-  mockUseSavedPlaces.mockReturnValue({ savedPlaceIds: new Set(['saved-1']) });
-  mockUseSavedPlacesWithActivity.mockReturnValue({ savedPlaces: [], dogCounts: {}, isLoading: false });
-  mockUseToggleSavedPlace.mockReturnValue({ mutate: jest.fn(), isPending: false });
+const MOCK_CANDIDATE: GooglePlaceCandidate = {
+  googlePlaceId: 'google-1',
+  name: 'Balboa Park',
+  formattedAddress: 'San Diego, CA',
+  shortFormattedAddress: 'San Diego, CA',
+  latitude: 32.73,
+  longitude: -117.14,
+  city: 'San Diego',
+  neighborhood: null,
+  placeType: 'park',
+  types: ['park'],
+  rating: 4.5,
+  ratingCount: 100,
+  photos: [],
+  attributions: [],
+};
 
-  const status = permissionStatus ?? (locationGranted ? 'granted' : 'denied');
-  mockLocationPerms.mockResolvedValue({
-    status,
-    canAskAgain: canAskAgain ?? status === 'undetermined',
-  });
-  mockLocationRequest.mockResolvedValue({ status: requestedStatus, canAskAgain: requestedStatus !== 'denied' });
+function setupGranted(candidates: GooglePlaceCandidate[] = []) {
+  mockLocationPerms.mockResolvedValue({ status: 'granted', canAskAgain: true });
   mockLocationPosition.mockResolvedValue({
     coords: { latitude: 32.72, longitude: -117.16 },
   });
 
   mockUseQuery.mockImplementation((opts: { queryKey: unknown[] }) => {
     const key = opts.queryKey[0];
-    if (key === 'places') return { data: places, isLoading: false };
-    if (key === 'placePopularitySignals') {
-      return {
-        data: {
-          'saved-1': { savedCount: 6, checkinCount: 2 },
-          'place-2': { savedCount: 3, checkinCount: 10 },
-        },
-        isLoading: false,
-      };
-    }
-    if (key === 'googlePlaces') return { data: searchResults, isFetching: false, isError: false, error: null };
-    return { data: [], isLoading: false };
+    if (key === 'dogSpots') return { data: candidates, isLoading: false, isError: false };
+    return { data: undefined, isLoading: false, isError: false };
   });
-
-  const navigation = { navigate: jest.fn(), setOptions: jest.fn() };
-  const route = { params: { initialTab: 'places' as const } };
-  render(<DogFriendlyPlacesScreen navigation={navigation} route={route} />);
 }
 
-describe('DogFriendlyPlacesScreen places behavior', () => {
+function setupDenied() {
+  mockLocationPerms.mockResolvedValue({ status: 'denied', canAskAgain: false });
+
+  mockUseQuery.mockImplementation(() => ({
+    data: undefined,
+    isLoading: false,
+    isError: false,
+  }));
+}
+
+describe('DogFriendlyPlacesScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (MOCK_NAVIGATION.navigate as jest.Mock).mockClear();
+    (MOCK_NAVIGATION.setOptions as jest.Mock).mockClear();
   });
 
-  it('shows sectioned default places UI when search is empty', async () => {
-    setup();
-    expect(await screen.findByText('On Nuzzle')).toBeTruthy();
-    expect(screen.getByText('Nearby')).toBeTruthy();
-    expect(screen.getAllByText('Saved Dog Park')).toHaveLength(1);
+  it('shows loading spinner on initial render', () => {
+    mockLocationPerms.mockReturnValue(new Promise(() => {}));
+    mockUseQuery.mockReturnValue({ data: undefined, isLoading: true, isError: false });
+
+    render(<DogFriendlyPlacesScreen navigation={MOCK_NAVIGATION} />);
+    expect(screen.getByText('Finding dog-friendly spots…')).toBeTruthy();
   });
 
-  it('omits Nearby section when location is unavailable', async () => {
-    setup({ locationGranted: false, requestedStatus: 'denied' });
-    expect(await screen.findByText('On Nuzzle')).toBeTruthy();
-    expect(screen.queryByText('Nearby')).toBeNull();
-    expect(screen.getByText('Enable location in Settings to show nearby places.')).toBeTruthy();
-  });
-
-  it('shows grouped search results and hides sectioned browsing while searching', async () => {
-    setup({
-      searchResults: [
-        {
-          googlePlaceId: 'google-1',
-          name: 'Fiesta Island Dog Park',
-          formattedAddress: 'San Diego, CA',
-          latitude: 32.77,
-          longitude: -117.22,
-          city: 'San Diego',
-          neighborhood: null,
-          placeType: 'dog_park',
-          types: ['dog_park'],
-        },
-      ],
-    });
-
-    fireEvent.changeText(screen.getByPlaceholderText('Search places'), 'dog park');
-
-    expect(await screen.findByText('In Nuzzle')).toBeTruthy();
-    expect(screen.getByText('Discover')).toBeTruthy();
-    expect(screen.queryByText('On Nuzzle')).toBeNull();
-    expect(screen.queryByText('Nearby')).toBeNull();
-  });
-
-  it('requests location permission when Places tab is active and status is undetermined', async () => {
-    setup({ permissionStatus: 'undetermined', requestedStatus: 'granted' });
+  it('shows dog-friendly spots section when location is granted', async () => {
+    setupGranted();
+    render(<DogFriendlyPlacesScreen navigation={MOCK_NAVIGATION} />);
 
     await waitFor(() => {
-      expect(mockLocationRequest).toHaveBeenCalledTimes(1);
+      expect(screen.getByText('Dog-Friendly Spots Nearby')).toBeTruthy();
     });
-    expect(screen.getByText('Nearby')).toBeTruthy();
   });
 
-  it('requests location permission when not granted but askable', async () => {
-    setup({ permissionStatus: 'denied', canAskAgain: true, requestedStatus: 'granted' });
+  it('shows filter chips when location is granted', async () => {
+    setupGranted();
+    render(<DogFriendlyPlacesScreen navigation={MOCK_NAVIGATION} />);
 
     await waitFor(() => {
-      expect(mockLocationRequest).toHaveBeenCalledTimes(1);
+      expect(screen.getByText('All')).toBeTruthy();
+    });
+    expect(screen.getByText('Cafes')).toBeTruthy();
+    expect(screen.getByText('Bars')).toBeTruthy();
+    expect(screen.getByText('Breweries')).toBeTruthy();
+  });
+
+  it('shows the location empty state when location is denied and no manual location', async () => {
+    setupDenied();
+    render(<DogFriendlyPlacesScreen navigation={MOCK_NAVIGATION} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Set a location to find dog-friendly spots')).toBeTruthy();
+    });
+    expect(screen.getByText('Set Location')).toBeTruthy();
+  });
+
+  it('renders candidate spot names when results are available', async () => {
+    setupGranted([MOCK_CANDIDATE]);
+    render(<DogFriendlyPlacesScreen navigation={MOCK_NAVIGATION} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Balboa Park')).toBeTruthy();
+    });
+  });
+
+  it('does not show loading spinner after location resolves', async () => {
+    setupGranted();
+    render(<DogFriendlyPlacesScreen navigation={MOCK_NAVIGATION} />);
+
+    await waitFor(() => {
+      expect(screen.queryByText('Finding dog-friendly spots…')).toBeNull();
+    });
+  });
+
+  it('falls back to last known position when getCurrentPositionAsync fails', async () => {
+    mockLocationPerms.mockResolvedValue({ status: 'granted', canAskAgain: true });
+    mockLocationPosition.mockRejectedValue(new Error('GPS timeout'));
+    mockLocationLastKnown.mockResolvedValue({
+      coords: { latitude: 32.70, longitude: -117.15 },
+    });
+    mockUseQuery.mockImplementation(() => ({
+      data: [],
+      isLoading: false,
+      isError: false,
+    }));
+
+    render(<DogFriendlyPlacesScreen navigation={MOCK_NAVIGATION} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Dog-Friendly Spots Nearby')).toBeTruthy();
     });
   });
 });

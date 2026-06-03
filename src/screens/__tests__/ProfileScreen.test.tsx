@@ -56,16 +56,14 @@ describe('ProfileScreen', () => {
     (fakeNav.setOptions as jest.Mock).mockClear();
   });
 
-  it('renders null when userId is falsy — hooks order is correct', () => {
-    // This test verifies the previously-broken "Rules of Hooks" pattern is fixed.
-    // Before the fix, useMutation calls appeared AFTER the early return, causing
-    // React to detect a change in hook call order when user toggled between
-    // null and non-null. Rendering with and without userId must not throw.
+  it('renders guest UI when userId is falsy — hooks order is correct', () => {
+    // This test verifies hook call order is stable regardless of auth state.
+    // Rendering with and without userId must not throw.
     mockUseAuthStore.mockReturnValue({ user: null, signOut: jest.fn() });
 
-    // First render with no user
+    // First render with no user — should show guest sign-up prompt
     const { unmount } = render(<ProfileScreen navigation={fakeNav} />);
-    expect(screen.toJSON()).toBeNull();
+    expect(screen.getByText('Your profile')).toBeTruthy();
     unmount();
 
     // Second render with a user — hook count must be identical
@@ -73,10 +71,11 @@ describe('ProfileScreen', () => {
     expect(() => render(<ProfileScreen navigation={fakeNav} />)).not.toThrow();
   });
 
-  it('returns null when there is no userId', () => {
+  it('renders guest sign-up prompt when there is no userId', () => {
     mockUseAuthStore.mockReturnValue({ user: null, signOut: jest.fn() });
-    const { toJSON } = render(<ProfileScreen navigation={fakeNav} />);
-    expect(toJSON()).toBeNull();
+    render(<ProfileScreen navigation={fakeNav} />);
+    expect(screen.getByText('Your profile')).toBeTruthy();
+    expect(screen.getByText('Sign Up')).toBeTruthy();
   });
 
   it('renders UserProfileContent when userId is present', () => {

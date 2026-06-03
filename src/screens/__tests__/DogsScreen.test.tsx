@@ -99,6 +99,7 @@ jest.mock('@/utils/breedAssets', () => ({
   getBreedHeroImageSource: jest.fn(() => null),
   getBreedHeroImageStyle: jest.fn(() => ({})),
   getBreedHeroTitle: jest.fn(() => 'Golden Retriever'),
+  getPackItems: jest.fn(() => []),
 }));
 
 // ─── Imports ──────────────────────────────────────────────────────────────────
@@ -147,8 +148,13 @@ function setupDefaultMocks({ user = { id: 'u1' }, dogs = [{ id: 'd1', breed: 'GO
 
   mockUseMutation.mockReturnValue({ mutate: jest.fn(), isPending: false });
 
-  // Dogs query
-  mockUseQuery.mockReturnValue({ data: dogs, isLoading: false, refetch: jest.fn() });
+  // Route queries by key so joinedBreeds doesn't accidentally receive dog objects
+  mockUseQuery.mockImplementation((opts: { queryKey: unknown[] }) => {
+    const key = opts.queryKey[0];
+    if (key === 'joinedBreeds') return { data: [], isLoading: false, refetch: jest.fn() };
+    if (key === 'dogs') return { data: dogs, isLoading: false, refetch: jest.fn() };
+    return { data: undefined, isLoading: false, refetch: jest.fn() };
+  });
 
   // Feed data
   mockUseFeedData.mockReturnValue({
@@ -184,16 +190,16 @@ describe('DogsScreen', () => {
     )).not.toThrow();
   });
 
-  it('shows "Sign in to see your feed" when user is null', () => {
+  it('shows breed exploration CTA when user is null', () => {
     setupDefaultMocks({ user: null as never });
     render(<DogsScreen navigation={{ navigate: jest.fn(), setOptions: jest.fn() } as never} />);
-    expect(screen.getByText('Sign in to see your feed')).toBeTruthy();
+    expect(screen.getByText('Explore all breeds')).toBeTruthy();
   });
 
-  it('shows "Add a dog profile" message when user has no dogs and no onboarding dog', () => {
+  it('shows empty feed message when user has no dogs and no joined breeds', () => {
     setupDefaultMocks({ dogs: [] });
     render(<DogsScreen navigation={{ navigate: jest.fn(), setOptions: jest.fn() } as never} />);
-    expect(screen.getByText(/Add a dog profile/)).toBeTruthy();
+    expect(screen.getByText(/No posts yet in/)).toBeTruthy();
   });
 
   it('shows loading spinner when feed is loading', () => {
