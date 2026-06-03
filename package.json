@@ -75,7 +75,6 @@
     "react-native-svg-transformer": "^1.5.3",
     "react-refresh": "^0.18.0",
     "react-test-renderer": "^19.2.0",
-    "sharp": "^0.34.5",
     "supabase": "^2.95.3",
     "tsx": "^4.21.0",
     "typescript": "~5.9.2"
