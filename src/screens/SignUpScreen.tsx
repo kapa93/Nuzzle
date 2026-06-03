@@ -162,7 +162,7 @@ export function SignUpScreen() {
           resizeMode="contain"
         />
         <Image
-          source={require('../../assets/breeds/nuzzle-logo.png')}
+          source={require('../../assets/nuzzle-logo.png')}
           style={styles.logo}
           resizeMode="contain"
         />

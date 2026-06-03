@@ -82,7 +82,7 @@ export function AnimatedStackHeader({
 
   const defaultHeaderTitle = () => (
     <Image
-      source={require("../../assets/breeds/nuzzle-logo.png")}
+      source={require("../../assets/nuzzle-logo.png")}
       style={{ width: 178.79, height: 41.58, marginTop: titleImageMarginTop }}
       resizeMode="contain"
     />
@@ -232,7 +232,7 @@ export function AnimatedStackHeader({
             }}
           >
             <Image
-              source={require("../../assets/breeds/nuzzle-logo.png")}
+              source={require("../../assets/nuzzle-logo.png")}
               style={{ width: 178.79, height: 41.58, marginTop: titleImageMarginTop }}
               resizeMode="contain"
             />
