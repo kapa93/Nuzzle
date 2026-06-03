@@ -29,7 +29,7 @@ export function postToQuestionCardData(post: PostWithDetails): QuestionCardData 
     authorId: post.author_id,
     authorMeta: formatRelativeTime(post.created_at),
     authorAvatarUri: post.author_dog_image_url,
-    breedKey: BREED_TO_COLOR[post.breed],
+    breedKey: post.breed ? BREED_TO_COLOR[post.breed] : 'mixed',
     badge: POST_TAG_LABELS[post.tag],
     badgeTone: tagTone[post.tag] ?? "neutral",
     hasTitle,

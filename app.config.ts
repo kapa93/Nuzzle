@@ -5,6 +5,7 @@ const IS_PROD = process.env.APP_VARIANT === 'production';
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: IS_PROD ? 'Nuzzle' : 'Nuzzle Dev',
+  slug: config.slug ?? 'nuzzle',
   icon: './assets/dog-linear-black.png',
   ios: {
     ...config.ios,

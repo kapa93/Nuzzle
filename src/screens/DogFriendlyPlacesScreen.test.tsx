@@ -93,9 +93,8 @@ const MOCK_CANDIDATE: GooglePlaceCandidate = {
   placeType: 'park',
   types: ['park'],
   rating: 4.5,
-  ratingCount: 100,
-  photos: [],
-  attributions: [],
+  userRatingCount: 100,
+  coverPhotoName: null,
 };
 
 function setupGranted(candidates: GooglePlaceCandidate[] = []) {

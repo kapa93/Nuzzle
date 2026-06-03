@@ -8,5 +8,5 @@
     }
   },
   "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["supabase/functions/**"]
+  "exclude": ["supabase/functions/**", "web-deploy/**"]
 }

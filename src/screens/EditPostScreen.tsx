@@ -191,7 +191,7 @@ export function EditPostScreen() {
         contentContainerStyle={[styles.content, { paddingTop: headerHeight }]}
       >
       <Text style={styles.label}>Breed</Text>
-      <Text style={styles.breedValue}>{BREED_LABELS[breed]}</Text>
+      <Text style={styles.breedValue}>{breed ? (BREED_LABELS[breed] ?? breed) : ''}</Text>
 
       <Text style={styles.label}>Title</Text>
       <TextInput

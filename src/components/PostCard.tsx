@@ -29,7 +29,7 @@ interface PostCardProps {
 
 export function PostCard({ post, onPress, onReactionSelect, onAuthorPress }: PostCardProps) {
   const commentButtonPress = useSharedValue(0);
-  const breedLabel = BREED_LABELS[post.breed] ?? post.breed;
+  const breedLabel = post.breed ? (BREED_LABELS[post.breed] ?? post.breed) : null;
   const typeLabel = POST_TYPE_LABELS[post.type] ?? post.type;
   const tagLabel = POST_TAG_LABELS[post.tag] ?? post.tag;
   const title = post.title ?? post.content_text.slice(0, 80) + (post.content_text.length > 80 ? '…' : '');

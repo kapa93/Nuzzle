@@ -23,6 +23,7 @@ export function ToastBanner() {
   const { toast, hideToast } = useUIStore();
   const translateY = useRef(new Animated.Value(-100)).current;
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const everShownRef = useRef(false);
 
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -55,7 +56,8 @@ export function ToastBanner() {
 
   const insets = useSafeAreaInsets();
 
-  if (!toast.visible && translateY._value === -100) return null;
+  if (toast.visible) everShownRef.current = true;
+  if (!toast.visible && !everShownRef.current) return null;
 
   return (
     <Animated.View
