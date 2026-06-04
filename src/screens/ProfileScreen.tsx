@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: spacing.xl,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surface,
   },
   guestTitle: {
     ...typography.titleMD,

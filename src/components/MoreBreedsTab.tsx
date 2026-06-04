@@ -165,7 +165,6 @@ export function MoreBreedsTab({
           ))}
         </View>
       </View>
-      <Text style={styles.comingSoonText}>More breeds coming soon!</Text>
     </ScrollView>
   );
 }
@@ -366,13 +365,5 @@ const styles = StyleSheet.create({
     color: colors.surface,
     fontFamily: 'Inter_600SemiBold',
     fontSize: 13,
-  },
-  comingSoonText: {
-    ...typography.bodyMuted,
-    color: colors.textMuted,
-    textAlign: "center",
-    fontFamily: 'Inter_500Medium',
-    marginTop: spacing.lg - 2,
-    letterSpacing: 0.2,
   },
 });

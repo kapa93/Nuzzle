@@ -8,6 +8,9 @@
       "developmentClient": true,
       "distribution": "internal",
       "channel": "development",
+      "android": {
+        "googleServicesFile": "$GOOGLE_SERVICES_JSON"
+      },
       "env": {
         "APP_VARIANT": "development",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
@@ -16,6 +19,9 @@
     "preview": {
       "distribution": "internal",
       "channel": "preview",
+      "android": {
+        "googleServicesFile": "$GOOGLE_SERVICES_JSON_PROD"
+      },
       "env": {
         "APP_VARIANT": "production",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
@@ -23,6 +29,9 @@
     },
     "production": {
       "channel": "production",
+      "android": {
+        "googleServicesFile": "$GOOGLE_SERVICES_JSON_PROD"
+      },
       "env": {
         "APP_VARIANT": "production"
       }

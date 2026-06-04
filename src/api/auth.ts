@@ -9,6 +9,12 @@ import type { Profile } from '@/types';
 const AUTH_CALLBACK_PATH = 'auth/callback';
 const FALLBACK_PROFILE_NAME = 'Dog Lover';
 
+// Client roles (anon/authenticated) no longer have SELECT on profiles.email
+// (see migrations 045/046). Selecting '*' would trigger a column-level
+// permission error, so we must request these columns explicitly.
+const PROFILE_SELECT_COLUMNS =
+  'id, name, city, profile_image_url, is_admin, created_at, updated_at';
+
 export type SocialAuthProvider = 'apple' | 'google';
 
 export function getAuthCallbackUrl() {
@@ -208,7 +214,7 @@ export async function deleteAccount() {
 export async function getProfile(userId: string): Promise<Profile | null> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('*')
+    .select(PROFILE_SELECT_COLUMNS)
     .eq('id', userId)
     .single();
 
@@ -224,7 +230,7 @@ export async function updateProfile(
     .from('profiles')
     .update(updates)
     .eq('id', userId)
-    .select()
+    .select(PROFILE_SELECT_COLUMNS)
     .single();
 
   if (error) throw error;

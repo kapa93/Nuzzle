@@ -10,6 +10,7 @@ import { colors, spacing } from "@/theme";
 import type { PostWithDetails, ReactionEnum } from "@/types";
 import { toneStyles } from "@/ui/TagChip";
 import { tagTone } from "@/utils/postToQuestionCard";
+import { captureHandledError } from "@/lib/sentry";
 
 const POST_DEEP_LINK_BASE = "https://www.nuzzleapp.io/post/";
 
@@ -101,7 +102,7 @@ function FeedItemInner({
           : { message }
       );
     } catch (err) {
-      console.warn("Share failed", err);
+      captureHandledError(err, { area: "FeedItem.share" });
     }
   }, [item]);
 

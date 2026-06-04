@@ -80,6 +80,7 @@ export function SettingsScreen() {
   const queryClient = useQueryClient();
   const clearSession = useAuthStore((state) => state.signOut);
   const profile = useAuthStore((state) => state.profile);
+  const isGuest = useAuthStore((state) => state.isGuest);
 
   const deleteAccountMutation = useMutation({
     mutationFn: () => deleteAccount(),
@@ -153,15 +154,19 @@ export function SettingsScreen() {
         </>
       ) : null}
 
-      <Text style={styles.sectionLabel}>Account</Text>
-      <View style={styles.section}>
-        <DestructiveRow
-          label="Delete Account"
-          onPress={handleDeleteAccount}
-          disabled={deleteAccountMutation.isPending}
-          loading={deleteAccountMutation.isPending}
-        />
-      </View>
+      {!isGuest && (
+        <>
+          <Text style={styles.sectionLabel}>Account</Text>
+          <View style={styles.section}>
+            <DestructiveRow
+              label="Delete Account"
+              onPress={handleDeleteAccount}
+              disabled={deleteAccountMutation.isPending}
+              loading={deleteAccountMutation.isPending}
+            />
+          </View>
+        </>
+      )}
     </ScrollView>
   );
 }
