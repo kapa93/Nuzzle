@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
+    "postinstall": "patch-package",
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
@@ -74,6 +75,8 @@
     "jest": "^29.7.0",
     "jest-expo": "~55.0.18",
     "openai": "^6.34.0",
+    "patch-package": "^8.0.1",
+    "postinstall-postinstall": "^2.1.0",
     "react-native-svg-transformer": "^1.5.3",
     "react-refresh": "^0.18.0",
     "react-test-renderer": "^19.2.0",

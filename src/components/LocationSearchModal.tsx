@@ -79,7 +79,7 @@ export function LocationSearchModal({
           >
             <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
           </Pressable>
-          <Text style={styles.headerTitle}>Search for a Location</Text>
+          <Text style={styles.headerTitle}>Set Your Location</Text>
           <View style={styles.headerSpacer} />
         </View>
 

@@ -671,7 +671,7 @@ export function DogSpotsScreen({ navigation }: Props) {
               accessibilityState={{ selected: placesTab === 'myPlaces' }}
             >
               <Text style={[styles.placesTabChipText, placesTab === 'myPlaces' && styles.placesTabChipTextActive]}>
-                Dog Spots
+                My Spots
               </Text>
             </Pressable>
             <Pressable
@@ -759,9 +759,9 @@ export function DogSpotsScreen({ navigation }: Props) {
               setScrollDirection('up');
               navigation.navigate('PlaceDetail', { placeId });
             }}
-            onGooglePlacePress={(googlePlaceId, initialName) => {
+            onGooglePlacePress={(googlePlaceId, initialName, pendingPlaceId) => {
               setScrollDirection('up');
-              navigation.navigate('GooglePlacePreview', { googlePlaceId, initialName });
+              navigation.navigate('GooglePlacePreview', { googlePlaceId, initialName, pendingPlaceId });
             }}
             onScroll={() => {}}
           />

@@ -13,11 +13,13 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Lock, Mail, MapPin, User } from 'lucide-react-native';
-import { signUp } from '@/api/auth';
+import { Lock, Mail, User } from 'lucide-react-native';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import { signUp, signInWithProvider, type SocialAuthProvider } from '@/api/auth';
 import { ScreenWithWallpaper } from '@/components/ScreenWithWallpaper';
 import { AuthLegalNotice } from '@/components/AuthLegalNotice';
 import { colors } from '@/theme';
+import { useAuthStore } from '@/store/authStore';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import { signUpSchema } from '@/utils/validation';
 import { captureHandledError } from '@/lib/sentry';
@@ -25,6 +27,30 @@ import { track } from '@/lib/posthog';
 
 const INPUT_MUTED = colors.textMuted;
 const INPUT_BORDER = colors.border;
+
+type RuntimePlatform = 'ios' | 'android' | 'web';
+type SocialButtonVariant = 'apple-native' | 'google';
+type SocialProviderConfig = {
+  provider: SocialAuthProvider;
+  label: string;
+  visibleOn: RuntimePlatform[];
+  buttonVariant: SocialButtonVariant;
+};
+
+const SOCIAL_PROVIDER_CONFIGS: SocialProviderConfig[] = [
+  {
+    provider: 'apple',
+    label: 'Apple',
+    visibleOn: ['ios'],
+    buttonVariant: 'apple-native',
+  },
+  {
+    provider: 'google',
+    label: 'Google',
+    visibleOn: ['ios', 'android'],
+    buttonVariant: 'google',
+  },
+];
 
 export function SignUpScreen() {
   const insets = useSafeAreaInsets();
@@ -35,8 +61,8 @@ export function SignUpScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [city, setCity] = useState('');
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<SocialAuthProvider | null>(null);
   const [error, setError] = useState('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [keyboardTopY, setKeyboardTopY] = useState<number | null>(null);
@@ -115,7 +141,7 @@ export function SignUpScreen() {
     // navigator already sees needsOnboarding: true and skips Main entirely.
     useOnboardingStore.getState().setNeedsOnboarding(true);
     try {
-      const authData = await signUp(email, password, name.trim(), city.trim() || undefined);
+      const authData = await signUp(email, password, name.trim());
       track('sign_up_completed', { method: 'email' });
       if (!authData.session) {
         // Leave needsOnboarding: true — it is persisted and will route the
@@ -135,6 +161,30 @@ export function SignUpScreen() {
       setError(err instanceof Error ? err.message : 'Sign up failed');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const visibleSocialProviders = SOCIAL_PROVIDER_CONFIGS.filter((config) =>
+    config.visibleOn.includes(Platform.OS as RuntimePlatform),
+  );
+
+  const handleSocialSignIn = async (provider: SocialAuthProvider, label: string) => {
+    setError('');
+    setSocialLoading(provider);
+    try {
+      const data = await signInWithProvider(provider);
+      if (data.isNewUser) {
+        useOnboardingStore.getState().setNeedsOnboarding(true);
+      }
+      useAuthStore.getState().setSession(data.session);
+    } catch (err: unknown) {
+      captureHandledError(err, {
+        area: 'auth.sign-up',
+        tags: { auth_flow: provider },
+      });
+      setError(err instanceof Error ? err.message : `${label} sign up failed`);
+    } finally {
+      setSocialLoading(null);
     }
   };
 
@@ -166,8 +216,8 @@ export function SignUpScreen() {
           style={styles.logo}
           resizeMode="contain"
         />
-        <Text style={styles.title}>Create Account</Text>
 
+      <View style={styles.formContentShiftUp}>
         <View style={styles.inputRow}>
           <User size={20} color={INPUT_MUTED} strokeWidth={2} />
           <TextInput
@@ -207,18 +257,6 @@ export function SignUpScreen() {
             autoComplete="password-new"
           />
         </View>
-        <View style={styles.inputRow}>
-          <MapPin size={20} color={INPUT_MUTED} strokeWidth={2} />
-          <TextInput
-            style={styles.inputField}
-            placeholder="City (optional)"
-            placeholderTextColor={INPUT_MUTED}
-            value={city}
-            onChangeText={setCity}
-            onFocus={handleInputFocus}
-            autoCapitalize="words"
-          />
-        </View>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -236,10 +274,59 @@ export function SignUpScreen() {
           </TouchableOpacity>
         </View>
 
-      <TouchableOpacity style={styles.link} onPress={() => (navigation as any).navigate('SignIn')}>
-        <Text style={styles.linkText}>Already have an account? Sign in</Text>
-      </TouchableOpacity>
-      <AuthLegalNotice />
+        {visibleSocialProviders.map((config) => (
+          <View
+            key={config.provider}
+            style={[
+              styles.socialButton,
+              socialLoading === config.provider || loading
+                ? styles.socialButtonDisabled
+                : null,
+            ]}
+            pointerEvents={
+              socialLoading === config.provider || loading ? 'none' : 'auto'
+            }
+          >
+            {config.buttonVariant === 'apple-native' ? (
+              <AppleAuthentication.AppleAuthenticationButton
+                buttonType={
+                  AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP
+                }
+                buttonStyle={
+                  AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+                }
+                cornerRadius={12}
+                style={styles.appleButton}
+                onPress={() => handleSocialSignIn(config.provider, config.label)}
+              />
+            ) : null}
+            {config.buttonVariant === 'google' ? (
+              <TouchableOpacity
+                style={styles.googleButton}
+                onPress={() => handleSocialSignIn(config.provider, config.label)}
+                activeOpacity={0.85}
+              >
+                <Image
+                  source={require('../../assets/google-icon.png')}
+                  style={styles.googleIconImage}
+                />
+                <Text style={styles.googleButtonText}>Sign up with Google</Text>
+              </TouchableOpacity>
+            ) : null}
+            {socialLoading === config.provider ? (
+              <ActivityIndicator
+                style={styles.appleLoading}
+                color={colors.primary}
+              />
+            ) : null}
+          </View>
+        ))}
+
+        <TouchableOpacity style={styles.link} onPress={() => (navigation as any).navigate('SignIn')}>
+          <Text style={styles.linkText}>Already have an account? Sign in</Text>
+        </TouchableOpacity>
+        <AuthLegalNotice />
+      </View>
     </ScrollView>
     </View>
     </ScreenWithWallpaper>
@@ -249,6 +336,9 @@ export function SignUpScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  formContentShiftUp: {
+    transform: [{ translateY: -20 }],
   },
   linearDogSilhouette: {
     width: 68.4,
@@ -306,16 +396,11 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: 14,
+    borderRadius: 12,
+    paddingVertical: 11,
     paddingHorizontal: 16,
-    alignItems: 'center',
-    marginTop: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 3,
+    alignItems: "center",
+    marginTop: 3,
   },
   buttonDisabled: {
     opacity: 0.7,
@@ -326,11 +411,52 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   link: {
-    marginTop: 24,
+    marginTop: 20,
     alignItems: 'center',
   },
   linkText: {
     color: colors.primary,
     fontSize: 15,
+  },
+  socialButton: {
+    marginTop: 12,
+    position: 'relative',
+  },
+  socialButtonDisabled: {
+    opacity: 0.7,
+  },
+  appleButton: {
+    width: '100%',
+    height: 40,
+  },
+  appleLoading: {
+    position: 'absolute',
+    right: 14,
+    top: 9,
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#dadce0',
+    borderRadius: 12,
+    height: 40,
+    width: '100%',
+    gap: 10,
+  },
+  googleIconImage: {
+    width: 28,
+    height: 28,
+    resizeMode: 'contain',
+    position: 'relative',
+    right: -12,
+    marginLeft: -14,
+  },
+  googleButtonText: {
+    color: '#3c4043',
+    fontSize: 15.5,
+    fontWeight: '600',
   },
 });

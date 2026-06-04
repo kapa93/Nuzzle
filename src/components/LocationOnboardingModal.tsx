@@ -154,7 +154,7 @@ export function LocationOnboardingModal() {
               onPress={handleSearchLocation}
               accessibilityRole="button"
             >
-              <Text style={styles.secondaryBtnText}>Search for a Location</Text>
+              <Text style={styles.secondaryBtnText}>Enter Location</Text>
             </Pressable>
 
             <Pressable

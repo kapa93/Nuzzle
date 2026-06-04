@@ -18,6 +18,8 @@ export function usePushNotifications(userId: string) {
     let cancelled = false;
 
     async function register() {
+      // Don't prompt until the user is signed in
+      if (!userId) return;
       // Push tokens only work on physical devices
       if (!Device.isDevice) return;
       // Web is unsupported
@@ -49,9 +51,10 @@ export function usePushNotifications(userId: string) {
       }
     }
 
-    register();
+    const timer = setTimeout(register, 5000);
 
     return () => {
+      clearTimeout(timer);
       cancelled = true;
       // Remove the token from Supabase when the user signs out
       if (tokenRef.current) {

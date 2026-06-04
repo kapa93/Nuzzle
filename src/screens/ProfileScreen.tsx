@@ -9,7 +9,6 @@ import { UserProfileContent } from '@/components/UserProfileContent';
 import { pickImages, uploadProfileImage } from '@/lib/imageUpload';
 import type { ProfileStackParamList } from '@/navigation/types';
 import { useAuthStore } from '@/store/authStore';
-import { useUIStore } from '@/store/uiStore';
 import { colors, spacing, typography } from '@/theme';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -61,7 +60,6 @@ export function ProfileScreen({ navigation }: { navigation: ProfileNav }) {
     onError: (err: Error) => Alert.alert('Error', err.message),
   });
 
-  const { showGuestPrompt } = useUIStore();
 
   if (!userId) {
     return (
@@ -72,7 +70,10 @@ export function ProfileScreen({ navigation }: { navigation: ProfileNav }) {
         </Text>
         <Pressable
           style={({ pressed }) => [styles.guestSignUpBtn, pressed && styles.guestSignUpBtnPressed]}
-          onPress={showGuestPrompt}
+          onPress={() => {
+            useAuthStore.getState().setPendingSignUp(true);
+            useAuthStore.getState().setIsGuest(false);
+          }}
         >
           <Text style={styles.guestSignUpText}>Sign Up</Text>
         </Pressable>

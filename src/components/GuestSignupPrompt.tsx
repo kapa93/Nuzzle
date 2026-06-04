@@ -68,7 +68,7 @@ export function GuestSignupPrompt() {
           />
           <Text style={styles.title}>Join the Nuzzle Community</Text>
           <Text style={styles.body}>
-            Create an account to join local dog communities, discover dog-friendly spots, find meetups, and share insights with fellow dog owners.
+            Stay connected with local dog owners, join communities, and discover dog-friendly spots.
           </Text>
 
           <View style={styles.buttonRow}>
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   },
   illustration: {
     width: "100%",
-    height: 140,
+    height: 125,
     marginBottom: spacing.md,
   },
   title: {
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.primary,
     borderRadius: radius.sm,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.sm - 2,
     alignItems: "center",
   },
   signUpBtnPressed: {
@@ -148,13 +148,15 @@ const styles = StyleSheet.create({
   },
   signUpText: {
     ...typography.body,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 15,
     color: colors.surface,
   },
   logInBtn: {
     flex: 1,
     backgroundColor: colors.surfaceMuted,
     borderRadius: radius.sm,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.sm - 2,
     alignItems: "center",
     borderWidth: 1,
     borderColor: colors.border,
@@ -164,6 +166,8 @@ const styles = StyleSheet.create({
   },
   logInText: {
     ...typography.body,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 15,
     color: colors.textPrimary,
   },
   buttonRow: {
@@ -172,7 +176,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   dismissBtn: {
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.sm - 2,
     alignItems: "center",
     borderRadius: radius.sm,
   },
@@ -181,6 +185,8 @@ const styles = StyleSheet.create({
   },
   dismissText: {
     ...typography.body,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 15,
     color: colors.textMuted,
   },
 });

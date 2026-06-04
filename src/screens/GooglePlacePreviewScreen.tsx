@@ -18,19 +18,20 @@ import {
   getGooglePlacePhotoUrl,
   getGooglePlacePreview,
 } from '@/api/places';
-import { suggestLocalCommunity } from '@/api/communityInterests';
+import { suggestLocalCommunity, markCommunityInterest, removeCommunityInterest } from '@/api/communityInterests';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
 import { colors, radius, shadow, spacing, typography } from '@/theme';
+import type { PendingPlaceWithInterests } from '@/types';
 
 const PHOTO_ITEM_WIDTH = 220; // matches styles.photo width
 const PHOTO_ITEM_SEPARATOR = 8; // matches spacing.sm
 const PHOTO_ITEM_STRIDE = PHOTO_ITEM_WIDTH + PHOTO_ITEM_SEPARATOR;
 
 type Props = {
-  route: { params: { googlePlaceId: string; initialName?: string } };
+  route: { params: { googlePlaceId: string; initialName?: string; pendingPlaceId?: string } };
   navigation: {
     navigate: (screen: string, params?: object) => void;
     setOptions: (opts: object) => void;
@@ -39,7 +40,7 @@ type Props = {
 };
 
 export function GooglePlacePreviewScreen({ route, navigation }: Props) {
-  const { googlePlaceId, initialName } = route.params;
+  const { googlePlaceId, initialName, pendingPlaceId } = route.params;
   const headerHeight = useStackHeaderHeight();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
@@ -106,6 +107,63 @@ export function GooglePlacePreviewScreen({ route, navigation }: Props) {
       );
     },
   });
+
+  const isAlreadyPending = !!pendingPlaceId;
+
+  const cachedPendingPlace = pendingPlaceId
+    ? queryClient.getQueryData<PendingPlaceWithInterests[]>(['pendingPlaces'])?.find(
+        (p) => p.id === pendingPlaceId,
+      )
+    : undefined;
+
+  const isUserInterested = user && cachedPendingPlace
+    ? cachedPendingPlace.interests.some((i) => i.user_id === user.id)
+    : false;
+
+  const interestMutation = useMutation({
+    mutationFn: async ({ placeId, removing }: { placeId: string; removing: boolean }) => {
+      if (!user) throw new Error('You must be signed in.');
+      if (removing) {
+        await removeCommunityInterest(placeId, user.id);
+      } else {
+        await markCommunityInterest(placeId, user.id);
+      }
+    },
+    onMutate: async ({ placeId, removing }) => {
+      if (!user) return { previous: undefined };
+      await queryClient.cancelQueries({ queryKey: ['pendingPlaces'] });
+      const previous = queryClient.getQueryData<PendingPlaceWithInterests[]>(['pendingPlaces']);
+      queryClient.setQueryData<PendingPlaceWithInterests[]>(['pendingPlaces'], (old) => {
+        if (!old) return old;
+        return old.flatMap((p) => {
+          if (p.id !== placeId) return [p];
+          if (removing) {
+            const updated = p.interests.filter((i) => i.user_id !== user.id);
+            // Mirror the DB trigger: drop the place when no interests remain
+            if (updated.length === 0) return [];
+            return [{ ...p, interests: updated }];
+          }
+          if (p.interests.some((i) => i.user_id === user.id)) return [p];
+          return [{ ...p, interests: [...p.interests, { user_id: user.id, profile_image_url: null }] }];
+        });
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous !== undefined) {
+        queryClient.setQueryData(['pendingPlaces'], ctx.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['pendingPlaces'] });
+    },
+  });
+
+  const handleInterest = () => {
+    if (!user) { showGuestPrompt(); return; }
+    if (!pendingPlaceId) return;
+    interestMutation.mutate({ placeId: pendingPlaceId, removing: isUserInterested });
+  };
 
   useEffect(() => {
     navigation.setOptions({ title: placeQuery.data?.displayName ?? initialName ?? 'Place Preview' });
@@ -182,31 +240,58 @@ export function GooglePlacePreviewScreen({ route, navigation }: Props) {
               <View style={styles.suggestionNote}>
                 <Ionicons name="information-circle-outline" size={15} color={colors.textMuted} />
                 <Text style={styles.suggestionNoteText}>
-                  Suggesting a place lets us know there's interest. Communities go live once enough
-                  people have joined the list.
+                  {isAlreadyPending
+                    ? 'This community is launching soon. Express interest to join when it goes live.'
+                    : 'Suggesting a place lets us know there\'s interest. Communities go live once enough people have joined the list.'}
                 </Text>
               </View>
 
-              <Pressable
-                onPress={handleSuggest}
-                disabled={suggestMutation.isPending}
-                style={({ pressed }) => [
-                  styles.saveButton,
-                  pressed && !suggestMutation.isPending && styles.saveButtonPressed,
-                  suggestMutation.isPending && styles.saveButtonDisabled,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel="Suggest a local community for this place"
-              >
-                {suggestMutation.isPending ? (
-                  <ActivityIndicator size="small" color={colors.surface} />
-                ) : (
-                  <Users size={19} color={colors.surface} />
-                )}
-                <Text style={styles.saveButtonText}>
-                  {suggestMutation.isPending ? 'Submitting…' : 'Suggest Local Community'}
-                </Text>
-              </Pressable>
+              {isAlreadyPending ? (
+                <Pressable
+                  onPress={handleInterest}
+                  disabled={interestMutation.isPending}
+                  style={({ pressed }) => [
+                    styles.interestButton,
+                    isUserInterested && styles.interestButtonDone,
+                    pressed && !interestMutation.isPending && styles.saveButtonPressed,
+                    interestMutation.isPending && styles.saveButtonDisabled,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={isUserInterested ? 'Remove interest in this community' : "I'm interested in this community"}
+                >
+                  {interestMutation.isPending ? (
+                    <ActivityIndicator size="small" color={colors.pendingText} />
+                  ) : isUserInterested ? (
+                    <Text style={styles.interestButtonText}>Interested ✓</Text>
+                  ) : (
+                    <>
+                      <Text style={styles.interestButtonText}>I'm interested</Text>
+                      <Ionicons name="paw" size={14} color={colors.pendingText} />
+                    </>
+                  )}
+                </Pressable>
+              ) : (
+                <Pressable
+                  onPress={handleSuggest}
+                  disabled={suggestMutation.isPending}
+                  style={({ pressed }) => [
+                    styles.saveButton,
+                    pressed && !suggestMutation.isPending && styles.saveButtonPressed,
+                    suggestMutation.isPending && styles.saveButtonDisabled,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Suggest a local community for this place"
+                >
+                  {suggestMutation.isPending ? (
+                    <ActivityIndicator size="small" color={colors.surface} />
+                  ) : (
+                    <Users size={19} color={colors.surface} />
+                  )}
+                  <Text style={styles.saveButtonText}>
+                    {suggestMutation.isPending ? 'Submitting…' : 'Suggest Local Community'}
+                  </Text>
+                </Pressable>
+              )}
             </View>
 
             <Section title="Photos">
@@ -470,5 +555,26 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.surface,
     fontFamily: 'Inter_700Bold',
+  },
+  interestButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.25,
+    borderColor: colors.pendingText,
+    borderRadius: radius.pill,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+    backgroundColor: colors.pendingSoft,
+  },
+  interestButtonDone: {
+    backgroundColor: colors.pendingSoft,
+  },
+  interestButtonText: {
+    ...typography.body,
+    color: colors.pendingText,
+    fontFamily: 'Inter_600SemiBold',
   },
 });

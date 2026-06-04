@@ -39,7 +39,7 @@ export type MainTabParamList = {
 
 export type DogSpotsStackParamList = {
   DogSpotsFeed: undefined;
-  GooglePlacePreview: { googlePlaceId: string; initialName?: string };
+  GooglePlacePreview: { googlePlaceId: string; initialName?: string; pendingPlaceId?: string };
   PlaceDetail: { placeId: string };
   PlaceNow: { placeId: string };
   DogProfile: { dogId: string };
@@ -73,7 +73,7 @@ export type DogFriendlyPlacesStackParamList = {
   EditPost: { postId: string };
   UserProfile: { userId: string };
   PlaceDetail: { placeId: string };
-  GooglePlacePreview: { googlePlaceId: string; initialName?: string };
+  GooglePlacePreview: { googlePlaceId: string; initialName?: string; pendingPlaceId?: string };
   DogFriendlyPlacePreview: { googlePlaceId: string; initialName?: string };
   PlaceNow: { placeId: string };
 };

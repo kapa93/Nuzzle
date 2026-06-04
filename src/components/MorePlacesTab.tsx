@@ -506,7 +506,7 @@ type Props = {
   placesTabBarHeight: number;
   photoAccessToken: string | null;
   onPlacePress: (placeId: string) => void;
-  onGooglePlacePress: (googlePlaceId: string, initialName?: string) => void;
+  onGooglePlacePress: (googlePlaceId: string, initialName?: string, pendingPlaceId?: string) => void;
   onScroll: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
 };
 
@@ -573,22 +573,22 @@ export function MorePlacesTab({
       const currentAvatar = profile?.profile_image_url ?? null;
       queryClient.setQueryData<PendingPlaceWithInterests[]>(["pendingPlaces"], (old) => {
         if (!old) return old;
-        return old.map((p) => {
-          if (p.id !== placeId) return p;
+        return old.flatMap((p) => {
+          if (p.id !== placeId) return [p];
           if (isInterested) {
-            return {
-              ...p,
-              interests: p.interests.filter((i) => i.user_id !== currentUserId),
-            };
+            const updated = p.interests.filter((i) => i.user_id !== currentUserId);
+            // Mirror the DB trigger: drop the place optimistically when no interests remain
+            if (updated.length === 0) return [];
+            return [{ ...p, interests: updated }];
           }
-          if (p.interests.some((i) => i.user_id === currentUserId)) return p;
-          return {
+          if (p.interests.some((i) => i.user_id === currentUserId)) return [p];
+          return [{
             ...p,
             interests: [
               ...p.interests,
               { user_id: currentUserId, profile_image_url: currentAvatar },
             ],
-          };
+          }];
         });
       });
       return { previous };
@@ -839,7 +839,7 @@ export function MorePlacesTab({
               countMeInLoading={countMeInLoadingId === place.id}
               onPress={() => {
                 if (place.google_place_id) {
-                  onGooglePlacePress(place.google_place_id, place.name);
+                  onGooglePlacePress(place.google_place_id, place.name, place.id);
                 }
               }}
               onCountMeIn={(isInterested) => {
@@ -1045,7 +1045,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.25,
     borderColor: colors.pendingText,
     borderRadius: radius.pill,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.sm + 3,
     paddingVertical: spacing.xs,
     alignItems: "center",
     justifyContent: "center",
@@ -1063,8 +1063,8 @@ const styles = StyleSheet.create({
   countMeInText: {
     ...typography.caption,
     color: colors.pendingText,
-    fontFamily: "Inter_500Medium",
-    fontSize: 12,
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 12.5,
   },
   countMeInTextDone: {
     color: colors.pendingText,
