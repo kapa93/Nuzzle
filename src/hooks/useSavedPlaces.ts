@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getSavedPlaces, savePlace, unsavePlace } from '@/api/savedPlaces';
 import { getActivePlaceCheckinCounts } from '@/api/places';
 import { useAuthStore } from '@/store/authStore';
+import { onCommunityJoined } from '@/store/notificationPromptStore';
 import type { Place } from '@/types';
 
 export function useSavedPlaces(userId: string | undefined) {
@@ -23,8 +24,11 @@ export function useToggleSavedPlace() {
   return useMutation({
     mutationFn: ({ placeId, isSaved }: { placeId: string; isSaved: boolean }) =>
       isSaved ? unsavePlace(user!.id, placeId) : savePlace(user!.id, placeId),
-    onSettled: () => {
+    onSettled: (_data, _err, variables) => {
       queryClient.invalidateQueries({ queryKey: ['savedPlaces', user?.id] });
+      if (!variables.isSaved) {
+        onCommunityJoined();
+      }
     },
   });
 }

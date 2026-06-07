@@ -27,6 +27,7 @@ import { PlaceRow } from "@/components/PlaceRow";
 import { useSavedPlaces, useToggleSavedPlace } from "@/hooks/useSavedPlaces";
 import { useAuthStore } from "@/store/authStore";
 import { useUIStore } from "@/store/uiStore";
+import { onCommunityJoined } from "@/store/notificationPromptStore";
 import { useLocationStore } from "@/store/locationStore";
 import { getDistanceMeters } from "@/utils/location";
 import { getPlaceHeroImage } from "@/utils/placeHeroImage";
@@ -598,9 +599,12 @@ export function MorePlacesTab({
         queryClient.setQueryData(["pendingPlaces"], ctx.previous);
       }
     },
-    onSettled: () => {
+    onSettled: (_data, _err, variables) => {
       setCountMeInLoadingId(null);
       queryClient.invalidateQueries({ queryKey: ["pendingPlaces"] });
+      if (!variables.isInterested) {
+        onCommunityJoined();
+      }
     },
   });
 

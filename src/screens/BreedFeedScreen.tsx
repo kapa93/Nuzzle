@@ -15,6 +15,7 @@ import { useRoute, useNavigation, useFocusEffect } from "@react-navigation/nativ
 import { getJoinedBreeds, joinBreedFeed, leaveBreedFeed } from "@/api/breedJoins";
 import { useAuthStore } from "@/store/authStore";
 import { useUIStore } from "@/store/uiStore";
+import { onCommunityJoined } from "@/store/notificationPromptStore";
 import { BreedHero } from "@/ui/BreedHero";
 import { SwipeableBreedBanner } from "@/ui/SwipeableBreedBanner";
 import { SegmentTabs } from "@/ui/SegmentTabs";
@@ -76,6 +77,7 @@ export function BreedFeedScreen() {
     mutationFn: (b: BreedEnum) => joinBreedFeed(user!.id, b),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["joinedBreeds", user?.id] });
+      onCommunityJoined();
     },
   });
 

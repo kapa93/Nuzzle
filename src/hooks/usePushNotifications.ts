@@ -17,8 +17,7 @@ export function usePushNotifications(userId: string) {
   useEffect(() => {
     let cancelled = false;
 
-    async function register() {
-      // Don't prompt until the user is signed in
+    async function registerIfGranted() {
       if (!userId) return;
       // Push tokens only work on physical devices
       if (!Device.isDevice) return;
@@ -26,15 +25,8 @@ export function usePushNotifications(userId: string) {
       if (Platform.OS === 'web') return;
 
       try {
-        const { status: existingStatus } = await Notifications.getPermissionsAsync();
-        let finalStatus = existingStatus;
-
-        if (existingStatus !== 'granted') {
-          const { status } = await Notifications.requestPermissionsAsync();
-          finalStatus = status;
-        }
-
-        if (finalStatus !== 'granted') return;
+        const { status } = await Notifications.getPermissionsAsync();
+        if (status !== 'granted') return;
 
         // projectId is required for bare / EAS builds
         const { data: token } = await Notifications.getExpoPushTokenAsync({
@@ -51,10 +43,9 @@ export function usePushNotifications(userId: string) {
       }
     }
 
-    const timer = setTimeout(register, 5000);
+    registerIfGranted();
 
     return () => {
-      clearTimeout(timer);
       cancelled = true;
       // Remove the token from Supabase when the user signs out
       if (tokenRef.current) {

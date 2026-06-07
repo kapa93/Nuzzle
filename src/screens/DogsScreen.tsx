@@ -24,6 +24,7 @@ import { OnboardingCompleteCard } from "@/components/OnboardingCompleteCard";
 import { CreatePostPromptCard } from "@/components/CreatePostPromptCard";
 import { MeetupPromptCard } from "@/components/MeetupPromptCard";
 import { useUIStore } from "@/store/uiStore";
+import { onCommunityJoined } from "@/store/notificationPromptStore";
 import { getDogsByOwner } from "@/api/dogs";
 import { getJoinedBreeds, joinBreedFeed, leaveBreedFeed } from "@/api/breedJoins";
 import { checkIntoPlace,
@@ -167,6 +168,7 @@ export function DogsScreen({
     mutationFn: (b: import("@/types").BreedEnum) => joinBreedFeed(user!.id, b),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["joinedBreeds", user?.id] });
+      onCommunityJoined();
     },
   });
 

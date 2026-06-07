@@ -17,11 +17,17 @@ jest.mock('@/store/authStore', () => ({
   useAuthStore: jest.fn(() => ({ user: { id: 'user-1' } })),
 }));
 
+jest.mock('@/store/notificationPromptStore', () => ({
+  onCommunityJoined: jest.fn(),
+}));
+
 import { getSavedPlaces, savePlace, unsavePlace } from '@/api/savedPlaces';
+import { onCommunityJoined } from '@/store/notificationPromptStore';
 
 const mockGetSavedPlaces = getSavedPlaces as jest.Mock;
 const mockSavePlace = savePlace as jest.Mock;
 const mockUnsavePlace = unsavePlace as jest.Mock;
+const mockOnCommunityJoined = onCommunityJoined as jest.Mock;
 
 function makeWrapper() {
   const queryClient = new QueryClient({
@@ -105,5 +111,26 @@ describe('useToggleSavedPlace', () => {
     result.current.mutate({ placeId: 'place-1', isSaved: false });
 
     await waitFor(() => expect(mockSavePlace).toHaveBeenCalledWith('user-1', 'place-1'));
+  });
+
+  it('calls onCommunityJoined when saving a place (isSaved: false)', async () => {
+    mockSavePlace.mockResolvedValue(undefined);
+
+    const { result } = renderHook(() => useToggleSavedPlace(), { wrapper: makeWrapper() });
+
+    result.current.mutate({ placeId: 'place-1', isSaved: false });
+
+    await waitFor(() => expect(mockOnCommunityJoined).toHaveBeenCalledTimes(1));
+  });
+
+  it('does not call onCommunityJoined when unsaving a place (isSaved: true)', async () => {
+    mockUnsavePlace.mockResolvedValue(undefined);
+
+    const { result } = renderHook(() => useToggleSavedPlace(), { wrapper: makeWrapper() });
+
+    result.current.mutate({ placeId: 'place-1', isSaved: true });
+
+    await waitFor(() => expect(mockUnsavePlace).toHaveBeenCalled());
+    expect(mockOnCommunityJoined).not.toHaveBeenCalled();
   });
 });

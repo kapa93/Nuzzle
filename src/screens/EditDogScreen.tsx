@@ -20,6 +20,7 @@ import { joinBreedFeed } from '@/api/breedJoins';
 import { uploadDogImage, pickImages } from '@/lib/imageUpload';
 import { useAuthStore } from '@/store/authStore';
 import { useOnboardingStore } from '@/store/onboardingStore';
+import { onCommunityJoined } from '@/store/notificationPromptStore';
 import { dogSchema } from '@/utils/validation';
 import {
   BREEDS,
@@ -194,12 +195,14 @@ export function EditDogScreen() {
         if (user) {
           await joinBreedFeed(user.id, breed as BreedEnum).catch(() => {});
           queryClient.invalidateQueries({ queryKey: ['joinedBreeds', user.id] });
+          onCommunityJoined();
         }
         useOnboardingStore.getState().completeOnboarding(name, breed);
       } else {
         if (!existingDog && user) {
           await joinBreedFeed(user.id, breed as BreedEnum).catch(() => {});
           queryClient.invalidateQueries({ queryKey: ['joinedBreeds', user.id] });
+          onCommunityJoined();
         }
         navigation.goBack();
       }

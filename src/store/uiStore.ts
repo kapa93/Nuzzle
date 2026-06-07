@@ -33,6 +33,9 @@ interface UIState {
   locationModalVisible: boolean;
   showLocationModal: () => void;
   hideLocationModal: () => void;
+  notificationPromptVisible: boolean;
+  showNotificationPrompt: () => void;
+  hideNotificationPrompt: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -56,4 +59,7 @@ export const useUIStore = create<UIState>((set) => ({
   locationModalVisible: false,
   showLocationModal: () => set({ locationModalVisible: true }),
   hideLocationModal: () => set({ locationModalVisible: false }),
+  notificationPromptVisible: false,
+  showNotificationPrompt: () => set({ notificationPromptVisible: true }),
+  hideNotificationPrompt: () => set({ notificationPromptVisible: false }),
 }));

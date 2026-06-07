@@ -5,6 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, ActivityIndicator, StyleSheet, Platform, Pressable } from 'react-native';
 import { GuestSignupPrompt } from '@/components/GuestSignupPrompt';
 import { LocationOnboardingModal } from '@/components/LocationOnboardingModal';
+import { NotificationPrePrompt } from '@/components/NotificationPrePrompt';
 import { ToastBanner } from '@/components/ToastBanner';
 import { NotificationsSheet } from '@/components/NotificationsSheet';
 import { X, ChevronLeft } from 'lucide-react-native';
@@ -612,9 +613,12 @@ export function RootNavigator() {
     <GuestSignupPrompt />
     <LocationOnboardingModal />
     {session && user && !needsOnboarding && (
-      <NotificationsSheet
-        onPostPress={(postId) => navRef.current?.navigate('PostDetail', { postId })}
-      />
+      <>
+        <NotificationPrePrompt />
+        <NotificationsSheet
+          onPostPress={(postId) => navRef.current?.navigate('PostDetail', { postId })}
+        />
+      </>
     )}
     </>
   );

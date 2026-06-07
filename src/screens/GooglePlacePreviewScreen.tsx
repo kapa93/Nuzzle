@@ -22,6 +22,7 @@ import { suggestLocalCommunity, markCommunityInterest, removeCommunityInterest }
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
+import { onCommunityJoined } from '@/store/notificationPromptStore';
 import { useStackHeaderHeight } from '@/hooks/useStackHeaderHeight';
 import { colors, radius, shadow, spacing, typography } from '@/theme';
 import type { PendingPlaceWithInterests } from '@/types';
@@ -94,6 +95,7 @@ export function GooglePlacePreviewScreen({ route, navigation }: Props) {
       }
 
       // outcome.kind === 'suggested'
+      onCommunityJoined();
       Alert.alert(
         'Community suggested',
         "Thanks! We'll review this place and notify you when the community goes live.",
@@ -154,8 +156,11 @@ export function GooglePlacePreviewScreen({ route, navigation }: Props) {
         queryClient.setQueryData(['pendingPlaces'], ctx.previous);
       }
     },
-    onSettled: () => {
+    onSettled: (_data, _err, variables) => {
       queryClient.invalidateQueries({ queryKey: ['pendingPlaces'] });
+      if (!variables.removing) {
+        onCommunityJoined();
+      }
     },
   });
 

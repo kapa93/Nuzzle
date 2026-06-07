@@ -23,6 +23,7 @@ import { uploadPostImage, pickImages } from '@/lib/imageUpload';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
+import { onPostCreated } from '@/store/notificationPromptStore';
 import { BREED_LABELS, POST_TYPE_LABELS, POST_TAG_LABELS, MEETUP_KIND_LABELS } from '@/utils/breed';
 import { BREED_PACK_IMAGES } from '@/utils/breedAssets';
 import { getPlaceHeroImage } from '@/utils/placeHeroImage';
@@ -259,6 +260,7 @@ export function CreatePostScreen() {
       }
       navigation.goBack();
       showToast('Woof! Post created');
+      onPostCreated();
     },
     onError: (err: Error) => {
       captureHandledError(err, {
