@@ -800,7 +800,7 @@ export function MorePlacesTab({
       <PlacesSection
         title="Explore local feeds or suggest a new one"
         isEmpty={nuzzlePlaces.length === 0}
-        emptyMessage="No places in this area yet."
+        emptyMessage="No communities in this area yet."
       >
         {nuzzlePlaces.slice(0, nuzzleDisplayCount).map((place) => (
           <PlaceRow

@@ -11,6 +11,14 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
+import Animated, {
+  Easing,
+  cancelAnimation,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Lock, Mail, User } from 'lucide-react-native';
@@ -24,6 +32,13 @@ import { useOnboardingStore } from '@/store/onboardingStore';
 import { signUpSchema } from '@/utils/validation';
 import { captureHandledError } from '@/lib/sentry';
 import { track } from '@/lib/posthog';
+
+// Match width to dog-friends.png aspect ratio (2910x720)
+// to avoid blank columns between repeated tiles.
+const MARQUEE_HEIGHT = 160;
+const MARQUEE_WIDTH = Math.round(MARQUEE_HEIGHT * (2910 / 720));
+/** Keeps scroll speed similar when MARQUEE_WIDTH changes */
+const MARQUEE_DURATION_MS = Math.round((103818 * MARQUEE_WIDTH) / 889);
 
 const INPUT_MUTED = colors.textMuted;
 const INPUT_BORDER = colors.border;
@@ -66,6 +81,26 @@ export function SignUpScreen() {
   const [error, setError] = useState('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [keyboardTopY, setKeyboardTopY] = useState<number | null>(null);
+  const marqueeX = useSharedValue(0);
+
+  useEffect(() => {
+    marqueeX.value = 0;
+    marqueeX.value = withRepeat(
+      withTiming(-MARQUEE_WIDTH, {
+        duration: MARQUEE_DURATION_MS,
+        easing: Easing.linear,
+      }),
+      -1,
+      false,
+    );
+    return () => {
+      cancelAnimation(marqueeX);
+    };
+  }, [marqueeX]);
+
+  const marqueeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: marqueeX.value }],
+  }));
 
   const scrollButtonAboveKeyboard = useCallback((animated = true) => {
     if (keyboardTopY == null) return;
@@ -328,6 +363,26 @@ export function SignUpScreen() {
         <AuthLegalNotice />
       </View>
     </ScrollView>
+
+        <View
+          style={[
+            styles.marqueeViewport,
+            keyboardHeight > 0 ? styles.marqueeHidden : null,
+          ]}
+        >
+          <Animated.View style={[styles.marqueeTrack, marqueeStyle]}>
+            <Image
+              source={require('../../assets/dog-friends.png')}
+              style={styles.marqueeImage}
+              resizeMode="contain"
+            />
+            <Image
+              source={require('../../assets/dog-friends.png')}
+              style={styles.marqueeImage}
+              resizeMode="contain"
+            />
+          </Animated.View>
+        </View>
     </View>
     </ScreenWithWallpaper>
   );
@@ -338,7 +393,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   formContentShiftUp: {
-    transform: [{ translateY: -20 }],
+    transform: [{ translateY: -25 }],
   },
   linearDogSilhouette: {
     width: 68.4,
@@ -363,6 +418,24 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 24,
     paddingBottom: 48,
+  },
+  marqueeViewport: {
+    position: 'absolute',
+    left: -24,
+    right: -24,
+    bottom: 25,
+    height: MARQUEE_HEIGHT,
+    overflow: 'hidden',
+  },
+  marqueeHidden: {
+    opacity: 0,
+  },
+  marqueeTrack: {
+    flexDirection: 'row',
+  },
+  marqueeImage: {
+    width: MARQUEE_WIDTH,
+    height: MARQUEE_HEIGHT,
   },
   title: {
     fontSize: 25,
@@ -411,7 +484,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   link: {
-    marginTop: 20,
+    marginTop: 17,
     alignItems: 'center',
   },
   linkText: {
