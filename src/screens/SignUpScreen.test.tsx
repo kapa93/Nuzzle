@@ -69,7 +69,6 @@ describe('SignUpScreen', () => {
     expect(screen.getByPlaceholderText('Name')).toBeTruthy();
     expect(screen.getByPlaceholderText('Email')).toBeTruthy();
     expect(screen.getByPlaceholderText('Password (min 6 characters)')).toBeTruthy();
-    expect(screen.getByPlaceholderText('City (optional)')).toBeTruthy();
   });
 
   it('renders the Sign Up button', () => {
@@ -125,8 +124,7 @@ describe('SignUpScreen', () => {
       expect(mockSignUp).toHaveBeenCalledWith(
         'alice@example.com',
         'password123',
-        'Alice',
-        undefined
+        'Alice'
       );
     });
   });
@@ -176,23 +174,4 @@ describe('SignUpScreen', () => {
     });
   });
 
-  it('passes city to signUp when provided', async () => {
-    mockSignUp.mockResolvedValue({ session: null });
-    render(<SignUpScreen />);
-
-    fireEvent.changeText(screen.getByPlaceholderText('Name'), 'Alice');
-    fireEvent.changeText(screen.getByPlaceholderText('Email'), 'alice@example.com');
-    fireEvent.changeText(screen.getByPlaceholderText('Password (min 6 characters)'), 'password123');
-    fireEvent.changeText(screen.getByPlaceholderText('City (optional)'), 'San Francisco');
-    fireEvent.press(screen.getByText('Sign Up'));
-
-    await waitFor(() => {
-      expect(mockSignUp).toHaveBeenCalledWith(
-        'alice@example.com',
-        'password123',
-        'Alice',
-        'San Francisco'
-      );
-    });
-  });
 });

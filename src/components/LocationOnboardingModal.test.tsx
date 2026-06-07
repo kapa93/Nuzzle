@@ -51,7 +51,7 @@ describe('LocationOnboardingModal', () => {
 
       expect(screen.getByText('Discover Local Dog Communities')).toBeTruthy();
       expect(screen.getByText('Use Current Location')).toBeTruthy();
-      expect(screen.getByText('Search for a Location')).toBeTruthy();
+      expect(screen.getByText('Enter Location')).toBeTruthy();
       expect(screen.getByText('Not Now')).toBeTruthy();
     });
 
@@ -159,11 +159,11 @@ describe('LocationOnboardingModal', () => {
     });
   });
 
-  describe('"Search for a Location" button', () => {
+  describe('"Enter Location" button', () => {
     it('makes LocationSearchModal visible', () => {
       render(<LocationOnboardingModal />);
 
-      fireEvent.press(screen.getByText('Search for a Location'));
+      fireEvent.press(screen.getByText('Enter Location'));
 
       expect(screen.getByTestId('location-search-modal')).toBeTruthy();
     });

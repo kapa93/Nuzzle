@@ -62,7 +62,7 @@ describe('LocationSearchModal', () => {
 
     it('renders the header title and back button', () => {
       renderModal();
-      expect(screen.getByText('Search for a Location')).toBeTruthy();
+      expect(screen.getByText('Set Your Location')).toBeTruthy();
       expect(screen.getByLabelText('Back')).toBeTruthy();
     });
   });
