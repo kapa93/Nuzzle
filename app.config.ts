@@ -14,5 +14,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     ...config.android,
     package: IS_PROD ? 'com.kapa.nuzzle' : 'com.kapa.nuzzledev',
+    googleServicesFile:
+      (IS_PROD
+        ? process.env.GOOGLE_SERVICES_JSON_PROD
+        : process.env.GOOGLE_SERVICES_JSON) ?? './google-services.json',
   },
 });
